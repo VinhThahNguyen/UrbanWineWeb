@@ -3,7 +3,6 @@ package com.urbanwine.sell_wine_express.dto.request;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +15,7 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegisterRequest {
+public class CreateShipperRequest {
 
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không đúng định dạng")
@@ -31,7 +30,6 @@ public class RegisterRequest {
 
     private String phone;
 
-    @NotNull(message = "Ngày sinh không được để trống")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthDate;
 }
