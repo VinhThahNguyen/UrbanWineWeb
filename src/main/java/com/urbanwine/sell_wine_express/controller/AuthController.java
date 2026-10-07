@@ -1,14 +1,13 @@
 package com.urbanwine.sell_wine_express.controller;
 
-import com.urbanwine.sell_wine_express.dto.LoginRequest;
-import com.urbanwine.sell_wine_express.dto.LoginResponse;
-import com.urbanwine.sell_wine_express.dto.RegisterRequest;
+import com.urbanwine.sell_wine_express.dto.*;
 import com.urbanwine.sell_wine_express.entity.User;
 import com.urbanwine.sell_wine_express.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -50,6 +49,55 @@ public class AuthController {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        try {
+            TokenRefreshResponse response = authService.refreshToken(request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@AuthenticationPrincipal User currentUser) {
+        if (currentUser == null) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Yêu cầu cần token xác thực hợp lệ");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+
+        authService.logout(currentUser);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Đăng xuất thành công!");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        if (currentUser == null) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Yêu cầu cần token xác thực hợp lệ");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+
+        try {
+            authService.changePassword(currentUser, request);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Đổi mật khẩu thành công!");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }
 }
