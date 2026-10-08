@@ -24,6 +24,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         initializeAdminUser();
+        initializeCustomerUser();
     }
 
     private void initializeAdminUser() {
@@ -45,6 +46,29 @@ public class DataInitializer implements CommandLineRunner {
             log.info(" ĐÃ KHỞI TẠO TÀI KHOẢN ADMIN MẶC ĐỊNH THÀNH CÔNG:");
             log.info(" Email: admin@urbanwine.com");
             log.info(" Password: Admin@123");
+            log.info("==========================================================");
+        }
+    }
+
+    private void initializeCustomerUser() {
+        // Tự động khởi tạo tài khoản Customer mẫu để test nếu chưa tồn tại
+        if (userRepository.findByEmail("customer@urbanwine.com").isEmpty()) {
+            User customer = User.builder()
+                    .email("customer@urbanwine.com")
+                    .passwordHash(passwordEncoder.encode("Customer@123"))
+                    .fullName("Nguyễn Khách Hàng")
+                    .phoneNumber("0988888888")
+                    .birthDate(LocalDate.of(1998, 5, 20))
+                    .role(Role.ROLE_CUSTOMER)
+                    .isOver18(true)
+                    .isActive(true)
+                    .build();
+
+            userRepository.save(customer);
+            log.info("==========================================================");
+            log.info(" ĐÃ KHỞI TẠO TÀI KHOẢN CUSTOMER MẪU THÀNH CÔNG:");
+            log.info(" Email: customer@urbanwine.com");
+            log.info(" Password: Customer@123");
             log.info("==========================================================");
         }
     }
