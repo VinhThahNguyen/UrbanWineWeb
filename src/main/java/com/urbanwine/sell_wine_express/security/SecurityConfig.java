@@ -50,6 +50,8 @@ public class SecurityConfig {
             // Cấu hình phân quyền endpoint
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/categories/**").permitAll()
+                .requestMatchers("/api/wines/**").permitAll()
                 .anyRequest().authenticated()
             )
             // Cấu hình Stateless Session
