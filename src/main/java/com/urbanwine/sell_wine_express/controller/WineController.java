@@ -23,15 +23,17 @@ public class WineController {
      * UC 2.2.1:
      * - Bước 2: Hiển thị catalog rượu (image, wineryName, category, price, abv, stock availability).
      * - Bước 3, 4: Lọc theo danh mục với param `categoryId`.
+     * - Tìm kiếm theo từ khóa `keyword` (tên rượu, hãng sản xuất, xuất xứ).
      * - BR-05: Chỉ trả về rượu active.
      */
     @GetMapping
     public ResponseEntity<PageResponse<WineSummaryResponse>> getWineCatalog(
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        PageResponse<WineSummaryResponse> response = wineService.getWineCatalog(categoryId, page, size);
+        PageResponse<WineSummaryResponse> response = wineService.getWineCatalog(keyword, categoryId, page, size);
         return ResponseEntity.ok(response);
     }
 

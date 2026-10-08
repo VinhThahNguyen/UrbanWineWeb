@@ -21,21 +21,30 @@ public class WineService {
     private final WineRepository wineRepository;
 
     /**
-     * Lấy danh mục sản phẩm rượu có phân trang (UC 2.2.1 - Bước 2, Bước 4).
-     * Chỉ lấy rượu active (BR-05).
-     * Hỗ trợ lọc theo categoryId nếu có.
-     * Tự động tính toán trạng thái hết hàng (E2).
+     * Lấy danh mục sản phẩm rượu có phân trang (UC 2.2.1).
+     * - Chỉ lấy rượu active (BR-05).
+     * - Hỗ trợ lọc theo categoryId nếu có.
+     * - Hỗ trợ tìm kiếm theo từ khóa keyword (tên, nhà làm rượu, xuất xứ).
+     * - Tự động tính toán trạng thái hết hàng (E2).
      */
     @Transactional(readOnly = true)
-    public PageResponse<WineSummaryResponse> getWineCatalog(Integer categoryId, int page, int size) {
+    public PageResponse<WineSummaryResponse> getWineCatalog(String keyword, Integer categoryId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
 
         Page<Wine> winePage;
-        if (categoryId != null) {
-            // Bước 3, 4: Lọc theo danh mục đã chọn
+        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
+
+        if (hasKeyword && categoryId != null) {
+            // Có cả từ khóa tìm kiếm và lọc theo danh mục
+            winePage = wineRepository.searchByKeywordAndCategory(keyword.trim(), categoryId, pageable);
+        } else if (hasKeyword) {
+            // Chỉ tìm kiếm theo từ khóa
+            winePage = wineRepository.searchByKeyword(keyword.trim(), pageable);
+        } else if (categoryId != null) {
+            // Chỉ lọc theo danh mục
             winePage = wineRepository.findByCategoryCategoryIdAndIsActiveTrue(categoryId, pageable);
         } else {
-            // Bước 2: Hiển thị toàn bộ danh mục rượu active
+            // Lấy tất cả rượu active mặc định
             winePage = wineRepository.findByIsActiveTrue(pageable);
         }
 
