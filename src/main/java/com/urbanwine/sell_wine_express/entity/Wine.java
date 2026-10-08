@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Wine {
 
     @Id
@@ -20,6 +21,21 @@ public class Wine {
     @Column(name = "wine_name", nullable = false, length = 150)
     private String wineName;
 
+    @Column(name = "winery_name", nullable = false, length = 150)
+    private String wineryName;
+
+    @Column(name = "origin", length = 100)
+    private String origin;
+
+    @Column(name = "grape_variety", length = 100)
+    private String grapeVariety;
+
+    @Column(name = "vintage_year")
+    private Integer vintageYear;
+
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
+    private String description;
+
     @Column(name = "price", nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
@@ -27,10 +43,15 @@ public class Wine {
     private Double abv;
 
     @Column(name = "stock_quantity", nullable = false)
+    @Builder.Default
     private Integer stockQuantity = 0;
 
     @Column(name = "image_url", length = 500)
     private String imageUrl;
+
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)

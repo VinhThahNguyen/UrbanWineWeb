@@ -6,12 +6,14 @@ import com.urbanwine.sell_wine_express.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 
 @Component
+@Order(1)
 @RequiredArgsConstructor
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
@@ -21,7 +23,11 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Tự động khởi tạo tài khoản Admin mặc định nếu chưa tồn tại
+        initializeAdminUser();
+    }
+
+    private void initializeAdminUser() {
+        // Tự động khởi tạo tài khoản Admin mặc định của hệ thống nếu chưa tồn tại
         if (userRepository.findByEmail("admin@urbanwine.com").isEmpty()) {
             User admin = User.builder()
                     .email("admin@urbanwine.com")
