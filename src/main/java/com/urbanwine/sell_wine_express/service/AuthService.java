@@ -1,6 +1,7 @@
 package com.urbanwine.sell_wine_express.service;
 
-import com.urbanwine.sell_wine_express.dto.*;
+import com.urbanwine.sell_wine_express.dto.request.*;
+import com.urbanwine.sell_wine_express.dto.respone.*;
 import com.urbanwine.sell_wine_express.entity.RefreshToken;
 import com.urbanwine.sell_wine_express.entity.User;
 import com.urbanwine.sell_wine_express.enums.OtpType;
