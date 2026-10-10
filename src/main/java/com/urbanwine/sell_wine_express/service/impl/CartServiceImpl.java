@@ -175,4 +175,19 @@ public class CartServiceImpl implements CartService {
 
         return mapToCartResponse(cart);
     }
+
+    @Override
+    @Transactional
+    public void clearPurchasedItems(User user, List<Long> wineIds) {
+        if (wineIds == null || wineIds.isEmpty()) {
+            return;
+        }
+        cartRepository.findByUser(user).ifPresent(cart -> {
+            if (cart.getItems() != null && !cart.getItems().isEmpty()) {
+                cart.getItems().removeIf(item -> wineIds.contains(item.getWine().getWineId()));
+                cartRepository.save(cart);
+            }
+        });
+    }
 }
+

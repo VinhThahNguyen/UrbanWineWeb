@@ -6,18 +6,23 @@ import com.urbanwine.sell_wine_express.dto.request.PlaceOrderRequest;
 import com.urbanwine.sell_wine_express.dto.respone.CheckoutSummaryResponse;
 import com.urbanwine.sell_wine_express.dto.respone.OrderItemResponse;
 import com.urbanwine.sell_wine_express.dto.respone.OrderResponse;
+import com.urbanwine.sell_wine_express.dto.respone.PaymentStatusResponse;
 import com.urbanwine.sell_wine_express.entity.Order;
 import com.urbanwine.sell_wine_express.entity.OrderDetail;
 import com.urbanwine.sell_wine_express.entity.PaymentTransaction;
 import com.urbanwine.sell_wine_express.entity.User;
 import com.urbanwine.sell_wine_express.entity.Wine;
 import com.urbanwine.sell_wine_express.enums.OrderStatus;
+import com.urbanwine.sell_wine_express.enums.PaymentMethod;
 import com.urbanwine.sell_wine_express.enums.PaymentStatus;
 import com.urbanwine.sell_wine_express.repository.OrderDetailRepository;
 import com.urbanwine.sell_wine_express.repository.OrderRepository;
 import com.urbanwine.sell_wine_express.repository.PaymentTransactionRepository;
 import com.urbanwine.sell_wine_express.repository.WineRepository;
+import com.urbanwine.sell_wine_express.service.CartService;
 import com.urbanwine.sell_wine_express.service.OrderService;
+import com.urbanwine.sell_wine_express.service.VnPayService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,6 +43,8 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final OrderDetailRepository orderDetailRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
+    private final CartService cartService;
+    private final VnPayService vnPayService;
 
     // Phí ship nội thành cố định 30.000 VNĐ
     public static final BigDecimal SHIPPING_FEE = new BigDecimal("30000");
@@ -105,17 +112,26 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderResponse placeOrder(User customer, PlaceOrderRequest request) {
+    public OrderResponse placeOrder(User customer, PlaceOrderRequest request, HttpServletRequest servletRequest) {
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new IllegalArgumentException("Giỏ hàng phải có ít nhất một sản phẩm");
         }
 
-        // 1. Kiểm tra địa chỉ nội thành Hà Nội (BR-02, E2)
+        if (customer == null) {
+            throw new IllegalArgumentException("Không xác định được danh tính khách hàng. Vui lòng đăng nhập lại!");
+        }
+
+        // 1. Kiểm tra điều kiện tuổi 18+ (PRE-2, BR-01)
+        if (customer.getIsOver18() != null && !customer.getIsOver18()) {
+            throw new IllegalArgumentException("Khách hàng phải từ 18 tuổi trở lên để mua rượu vang (Quy định BR-01)");
+        }
+
+        // 2. Kiểm tra địa chỉ nội thành Hà Nội (BR-02, E2)
         if (!validateInnerCityAddress(request.getDeliveryAddress())) {
             throw new IllegalArgumentException("Địa chỉ giao hàng không hợp lệ. Hệ thống chỉ hỗ trợ giao hàng nội thành Hà Nội");
         }
 
-        // 2. Kiểm tra tồn kho và tính toán tổng tiền
+        // 3. Kiểm tra tồn kho thời gian thực (E1) và tạm giữ tồn kho 15 phút (Soft reservation)
         BigDecimal merchandiseSubtotal = BigDecimal.ZERO;
         List<OrderItemResponse> itemResponses = new ArrayList<>();
         List<PreparedItem> preparedItems = new ArrayList<>();
@@ -136,7 +152,7 @@ public class OrderServiceImpl implements OrderService {
             BigDecimal lineTotal = wine.getPrice().multiply(BigDecimal.valueOf(itemReq.getQuantity()));
             merchandiseSubtotal = merchandiseSubtotal.add(lineTotal);
 
-            // POST-2: Tạm giữ tồn kho bằng cách trừ số lượng tồn
+            // POST-2: Tạm giữ tồn kho bằng cách trừ số lượng tồn trong 15 phút
             wine.setStockQuantity(wine.getStockQuantity() - itemReq.getQuantity());
             wineRepository.save(wine);
 
@@ -146,7 +162,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal vatAmount = merchandiseSubtotal.multiply(VAT_RATE).setScale(0, RoundingMode.HALF_UP);
         BigDecimal totalAmount = merchandiseSubtotal.add(vatAmount).add(SHIPPING_FEE);
 
-        // 3. POST-1: Tạo đơn hàng mới với trạng thái PENDING
+        // 4. POST-1: Tạo đơn hàng mới với trạng thái PENDING
         Order order = new Order();
         order.setCustomer(customer);
         order.setRecipientName(request.getRecipientName().trim());
@@ -157,7 +173,7 @@ public class OrderServiceImpl implements OrderService {
         order.setCreatedAt(LocalDateTime.now());
         Order savedOrder = orderRepository.save(order);
 
-        // 4. Lưu chi tiết đơn hàng (OrderDetails)
+        // 5. Lưu chi tiết đơn hàng (OrderDetails)
         for (PreparedItem prep : preparedItems) {
             OrderDetail orderDetail = new OrderDetail();
             orderDetail.setOrder(savedOrder);
@@ -176,15 +192,27 @@ public class OrderServiceImpl implements OrderService {
                     .build());
         }
 
-        // 5. Khởi tạo bản ghi giao dịch thanh toán ban đầu (UNPAID)
+        // 6. Ghi nhận giao dịch thanh toán (PaymentTransaction)
+        PaymentMethod method = (request.getPaymentMethod() != null) ? request.getPaymentMethod() : PaymentMethod.COD;
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setOrder(savedOrder);
+        paymentTransaction.setPaymentMethod(method.name());
         paymentTransaction.setPaymentStatus(PaymentStatus.UNPAID);
         paymentTransaction.setCreatedAt(LocalDateTime.now());
         paymentTransactionRepository.save(paymentTransaction);
 
-        log.info("Đặt hàng thành công! Đơn hàng ID: {}, Khách hàng: {}, Tổng tiền: {} VNĐ",
-                savedOrder.getOrderId(), customer.getEmail(), totalAmount);
+        // 7. Xóa các sản phẩm đã đặt khỏi giỏ hàng (Cart) của khách hàng (POST-2)
+        List<Long> wineIds = request.getItems().stream().map(OrderItemRequest::getWineId).toList();
+        cartService.clearPurchasedItems(customer, wineIds);
+
+        // 8. Nếu phương thức là VNPAY: Khởi tạo URL thanh toán VNPay Gateway
+        String paymentUrl = null;
+        if (method == PaymentMethod.VNPAY) {
+            paymentUrl = vnPayService.createPaymentUrl(savedOrder, servletRequest);
+        }
+
+        log.info("Đặt hàng thành công! Đơn hàng ID: {}, Phương thức: {}, Khách hàng: {}, Tổng tiền: {} VNĐ",
+                savedOrder.getOrderId(), method, customer.getEmail(), totalAmount);
 
         return OrderResponse.builder()
                 .orderId(savedOrder.getOrderId())
@@ -197,6 +225,8 @@ public class OrderServiceImpl implements OrderService {
                 .totalAmount(totalAmount)
                 .orderStatus(savedOrder.getOrderStatus())
                 .paymentStatus(PaymentStatus.UNPAID)
+                .paymentMethod(method)
+                .paymentUrl(paymentUrl)
                 .createdAt(savedOrder.getCreatedAt())
                 .items(itemResponses)
                 .build();
@@ -224,6 +254,39 @@ public class OrderServiceImpl implements OrderService {
         }
 
         return mapToOrderResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PaymentStatusResponse getPaymentStatus(User customer, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        if (!order.getCustomer().getUserId().equals(customer.getUserId())) {
+            throw new IllegalArgumentException("Bạn không có quyền xem thông tin thanh toán của đơn hàng này");
+        }
+
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        PaymentStatus paymentStatus = (paymentTx != null) ? paymentTx.getPaymentStatus() : PaymentStatus.UNPAID;
+        String bankReceiptCode = (paymentTx != null) ? paymentTx.getBankReceiptCode() : null;
+
+        PaymentMethod paymentMethod = null;
+        if (paymentTx != null && paymentTx.getPaymentMethod() != null) {
+            try {
+                paymentMethod = PaymentMethod.valueOf(paymentTx.getPaymentMethod());
+            } catch (Exception ignored) {}
+        }
+
+        return PaymentStatusResponse.builder()
+                .orderId(order.getOrderId())
+                .totalAmount(order.getTotalAmount())
+                .orderStatus(order.getOrderStatus())
+                .paymentMethod(paymentMethod)
+                .paymentStatus(paymentStatus)
+                .bankReceiptCode(bankReceiptCode)
+                .isPaid(paymentStatus == PaymentStatus.PAID)
+                .createdAt(order.getCreatedAt())
+                .build();
     }
 
     /**
@@ -256,9 +319,14 @@ public class OrderServiceImpl implements OrderService {
                     .build());
         }
 
-        PaymentStatus paymentStatus = paymentTransactionRepository.findByOrder(order)
-                .map(PaymentTransaction::getPaymentStatus)
-                .orElse(PaymentStatus.UNPAID);
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        PaymentStatus paymentStatus = (paymentTx != null) ? paymentTx.getPaymentStatus() : PaymentStatus.UNPAID;
+        PaymentMethod paymentMethod = null;
+        if (paymentTx != null && paymentTx.getPaymentMethod() != null) {
+            try {
+                paymentMethod = PaymentMethod.valueOf(paymentTx.getPaymentMethod());
+            } catch (Exception ignored) {}
+        }
 
         BigDecimal vatAmount = merchandiseSubtotal.multiply(VAT_RATE).setScale(0, RoundingMode.HALF_UP);
 
@@ -273,6 +341,7 @@ public class OrderServiceImpl implements OrderService {
                 .totalAmount(order.getTotalAmount())
                 .orderStatus(order.getOrderStatus())
                 .paymentStatus(paymentStatus)
+                .paymentMethod(paymentMethod)
                 .createdAt(order.getCreatedAt())
                 .items(itemResponses)
                 .build();
@@ -281,7 +350,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void cancelExpiredPendingOrders() {
-        // Mốc thời gian 15 phút trước (fix cứng 15 phút)
+        // Mốc thời gian 15 phút trước
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(15);
         List<Order> expiredOrders = orderRepository.findByOrderStatusAndCreatedAtBefore(OrderStatus.PENDING, threshold);
 

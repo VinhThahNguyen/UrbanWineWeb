@@ -10,26 +10,18 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderResponse {
+public class PaymentStatusResponse {
     private Long orderId;
-    private String recipientName;
-    private String recipientPhone;
-    private String deliveryAddress;
-    private BigDecimal merchandiseSubtotal;
-    private BigDecimal vatAmount;
-    private BigDecimal shippingFee;
     private BigDecimal totalAmount;
     private OrderStatus orderStatus;
-    private PaymentStatus paymentStatus;
     private PaymentMethod paymentMethod;
-    private String paymentUrl;
+    private PaymentStatus paymentStatus;
+    private String bankReceiptCode;
+    private Boolean isPaid;
     private LocalDateTime createdAt;
-    private List<OrderItemResponse> items;
 }
-

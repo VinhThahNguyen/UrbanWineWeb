@@ -4,8 +4,10 @@ import com.urbanwine.sell_wine_express.dto.request.CheckoutSummaryRequest;
 import com.urbanwine.sell_wine_express.dto.request.PlaceOrderRequest;
 import com.urbanwine.sell_wine_express.dto.respone.CheckoutSummaryResponse;
 import com.urbanwine.sell_wine_express.dto.respone.OrderResponse;
+import com.urbanwine.sell_wine_express.dto.respone.PaymentStatusResponse;
 import com.urbanwine.sell_wine_express.entity.User;
 import com.urbanwine.sell_wine_express.service.OrderService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,15 +37,28 @@ public class OrderController {
     }
 
     /**
-     * Bước 2: Xác nhận đặt hàng (Tạo đơn PENDING, UNPAID, tạm giữ trừ kho)
+     * Bước 2: Xác nhận đặt hàng và chọn phương thức thanh toán (COD hoặc VNPAY)
      */
     @PostMapping("/place-order")
     public ResponseEntity<OrderResponse> placeOrder(
             @AuthenticationPrincipal User customer,
-            @Valid @RequestBody PlaceOrderRequest request
+            @Valid @RequestBody PlaceOrderRequest request,
+            HttpServletRequest servletRequest
     ) {
-        OrderResponse response = orderService.placeOrder(customer, request);
+        OrderResponse response = orderService.placeOrder(customer, request, servletRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Kiểm tra trạng thái thanh toán của đơn hàng (dùng cho Frontend polling thời gian thực)
+     */
+    @GetMapping("/{orderId}/payment-status")
+    public ResponseEntity<PaymentStatusResponse> getPaymentStatus(
+            @AuthenticationPrincipal User customer,
+            @PathVariable Long orderId
+    ) {
+        PaymentStatusResponse status = orderService.getPaymentStatus(customer, orderId);
+        return ResponseEntity.ok(status);
     }
 
     /**
