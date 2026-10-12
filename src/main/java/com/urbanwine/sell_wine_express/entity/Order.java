@@ -43,6 +43,16 @@ public class Order {
     @Column(name = "order_status", nullable = false, length = 20)
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cancel_status", length = 20)
+    private com.urbanwine.sell_wine_express.enums.CancelStatus cancelStatus = com.urbanwine.sell_wine_express.enums.CancelStatus.NONE;
+
+    @Column(name = "cancellation_reason", length = 500)
+    private String cancellationReason;
+
+    @Column(name = "cancel_requested_at")
+    private LocalDateTime cancelRequestedAt;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 }

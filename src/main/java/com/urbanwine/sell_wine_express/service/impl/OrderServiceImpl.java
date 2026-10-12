@@ -1,5 +1,6 @@
 package com.urbanwine.sell_wine_express.service.impl;
 
+import com.urbanwine.sell_wine_express.dto.request.CancelOrderRequest;
 import com.urbanwine.sell_wine_express.dto.request.CheckoutSummaryRequest;
 import com.urbanwine.sell_wine_express.dto.request.OrderItemRequest;
 import com.urbanwine.sell_wine_express.dto.request.PlaceOrderRequest;
@@ -12,6 +13,7 @@ import com.urbanwine.sell_wine_express.entity.OrderDetail;
 import com.urbanwine.sell_wine_express.entity.PaymentTransaction;
 import com.urbanwine.sell_wine_express.entity.User;
 import com.urbanwine.sell_wine_express.entity.Wine;
+import com.urbanwine.sell_wine_express.enums.CancelStatus;
 import com.urbanwine.sell_wine_express.enums.OrderStatus;
 import com.urbanwine.sell_wine_express.enums.PaymentMethod;
 import com.urbanwine.sell_wine_express.enums.PaymentStatus;
@@ -216,6 +218,7 @@ public class OrderServiceImpl implements OrderService {
 
         return OrderResponse.builder()
                 .orderId(savedOrder.getOrderId())
+                .orderCode(String.format("ORD-%06d", savedOrder.getOrderId()))
                 .recipientName(savedOrder.getRecipientName())
                 .recipientPhone(savedOrder.getRecipientPhone())
                 .deliveryAddress(savedOrder.getDeliveryAddress())
@@ -224,6 +227,7 @@ public class OrderServiceImpl implements OrderService {
                 .shippingFee(SHIPPING_FEE)
                 .totalAmount(totalAmount)
                 .orderStatus(savedOrder.getOrderStatus())
+                .cancelStatus(savedOrder.getCancelStatus())
                 .paymentStatus(PaymentStatus.UNPAID)
                 .paymentMethod(method)
                 .paymentUrl(paymentUrl)
@@ -329,9 +333,11 @@ public class OrderServiceImpl implements OrderService {
         }
 
         BigDecimal vatAmount = merchandiseSubtotal.multiply(VAT_RATE).setScale(0, RoundingMode.HALF_UP);
+        String orderCode = String.format("ORD-%06d", order.getOrderId());
 
         return OrderResponse.builder()
                 .orderId(order.getOrderId())
+                .orderCode(orderCode)
                 .recipientName(order.getRecipientName())
                 .recipientPhone(order.getRecipientPhone())
                 .deliveryAddress(order.getDeliveryAddress())
@@ -340,6 +346,9 @@ public class OrderServiceImpl implements OrderService {
                 .shippingFee(SHIPPING_FEE)
                 .totalAmount(order.getTotalAmount())
                 .orderStatus(order.getOrderStatus())
+                .cancelStatus(order.getCancelStatus())
+                .cancellationReason(order.getCancellationReason())
+                .cancelRequestedAt(order.getCancelRequestedAt())
                 .paymentStatus(paymentStatus)
                 .paymentMethod(paymentMethod)
                 .createdAt(order.getCreatedAt())
@@ -361,12 +370,16 @@ public class OrderServiceImpl implements OrderService {
         log.info("Tìm thấy {} đơn hàng PENDING quá hạn 15 phút cần hủy và hoàn kho.", expiredOrders.size());
 
         for (Order order : expiredOrders) {
-            // 1. Kiểm tra trạng thái thanh toán (chỉ hủy nếu chưa thanh toán)
-            PaymentStatus paymentStatus = paymentTransactionRepository.findByOrder(order)
-                    .map(PaymentTransaction::getPaymentStatus)
-                    .orElse(PaymentStatus.UNPAID);
+            // 1. Kiểm tra trạng thái thanh toán và phương thức
+            PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+            PaymentStatus paymentStatus = (paymentTx != null) ? paymentTx.getPaymentStatus() : PaymentStatus.UNPAID;
 
             if (paymentStatus == PaymentStatus.PAID) {
+                continue;
+            }
+
+            // Chỉ tự động hủy đối với đơn thanh toán online (VNPAY), không tự động hủy đơn COD
+            if (paymentTx != null && PaymentMethod.COD.name().equalsIgnoreCase(paymentTx.getPaymentMethod())) {
                 continue;
             }
 
@@ -382,12 +395,218 @@ public class OrderServiceImpl implements OrderService {
                         detail.getQuantity(), wine.getWineName(), restoredStock, order.getOrderId());
             }
 
-            // 3. Chuyển trạng thái đơn sang CANCELLED
+            // 3. Chuyển trạng thái đơn sang CANCELLED và cập nhật cancelStatus
             order.setOrderStatus(OrderStatus.CANCELLED);
+            order.setCancelStatus(CancelStatus.APPROVED);
+            order.setCancellationReason("Hệ thống tự động hủy do quá hạn thanh toán 15 phút");
+            order.setCancelRequestedAt(LocalDateTime.now());
             orderRepository.save(order);
 
             log.info("Đơn hàng #{} đã tự động HỦY do quá hạn 15 phút chưa thanh toán.", order.getOrderId());
         }
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse cancelOrder(User customer, Long orderId, CancelOrderRequest request) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        if (!order.getCustomer().getUserId().equals(customer.getUserId())) {
+            throw new IllegalArgumentException("Bạn không có quyền thao tác trên đơn hàng này");
+        }
+
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalArgumentException("Đơn hàng này đã được hủy trước đó");
+        }
+
+        if (order.getOrderStatus() == OrderStatus.COMPLETED) {
+            throw new IllegalArgumentException("Không thể hủy đơn hàng đã hoàn thành");
+        }
+
+        if (order.getOrderStatus() == OrderStatus.SHIPPING) {
+            throw new IllegalArgumentException("Đơn hàng đang trong quá trình vận chuyển. Quý khách vui lòng liên hệ tổng đài hoặc trao đổi trực tiếp với nhân viên giao hàng để được hỗ trợ (Quy định BR-04)");
+        }
+
+        String reason = (request != null && request.getReason() != null) ? request.getReason().trim() : "Khách hàng yêu cầu hủy";
+
+        // Normal Flow: Hủy trực tiếp khi đơn ở trạng thái PENDING
+        if (order.getOrderStatus() == OrderStatus.PENDING) {
+            order.setOrderStatus(OrderStatus.CANCELLED);
+            order.setCancelStatus(CancelStatus.APPROVED);
+            order.setCancellationReason(reason);
+            order.setCancelRequestedAt(LocalDateTime.now());
+            orderRepository.save(order);
+
+            // POST-3: Hoàn lại số lượng tồn kho ngay lập tức
+            List<OrderDetail> details = orderDetailRepository.findByOrder(order);
+            for (OrderDetail detail : details) {
+                Wine wine = detail.getWine();
+                wine.setStockQuantity(wine.getStockQuantity() + detail.getQuantity());
+                wineRepository.save(wine);
+                log.info("Khách hủy đơn PENDING #{}: Đã hoàn trả {} chai '{}' vào kho.",
+                        orderId, detail.getQuantity(), wine.getWineName());
+            }
+
+            log.info("Khách hàng {} đã hủy trực tiếp thành công đơn hàng PENDING #{}", customer.getEmail(), orderId);
+            return mapToOrderResponse(order);
+        }
+
+        // Alternative Flow: Gửi yêu cầu hủy khi đơn ở trạng thái PROCESSING
+        if (order.getOrderStatus() == OrderStatus.PROCESSING) {
+            if (order.getCancelStatus() == CancelStatus.REQUESTED) {
+                throw new IllegalArgumentException("Đơn hàng đã có yêu cầu hủy đang chờ Quản lý cửa hàng xét duyệt");
+            }
+
+            order.setCancelStatus(CancelStatus.REQUESTED);
+            order.setCancellationReason(reason);
+            order.setCancelRequestedAt(LocalDateTime.now());
+            orderRepository.save(order);
+
+            log.info("Khách hàng {} đã gửi yêu cầu hủy đơn hàng PROCESSING #{} với lý do: '{}'. Đang chờ Admin duyệt.",
+                    customer.getEmail(), orderId, reason);
+            return mapToOrderResponse(order);
+        }
+
+        throw new IllegalArgumentException("Trạng thái đơn hàng hiện tại không hợp lệ để hủy: " + order.getOrderStatus());
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse resumePayment(User customer, Long orderId, HttpServletRequest servletRequest) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        if (!order.getCustomer().getUserId().equals(customer.getUserId())) {
+            throw new IllegalArgumentException("Bạn không có quyền thực hiện thanh toán cho đơn hàng này");
+        }
+
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        PaymentStatus paymentStatus = (paymentTx != null) ? paymentTx.getPaymentStatus() : PaymentStatus.UNPAID;
+
+        if (paymentStatus == PaymentStatus.PAID) {
+            throw new IllegalArgumentException("Đơn hàng này đã được thanh toán thành công, không thể thanh toán lại");
+        }
+
+        if (order.getOrderStatus() == OrderStatus.COMPLETED) {
+            throw new IllegalArgumentException("Đơn hàng đã hoàn thành");
+        }
+
+        if (order.getOrderStatus() == OrderStatus.SHIPPING) {
+            throw new IllegalArgumentException("Đơn hàng đang trong quá trình vận chuyển");
+        }
+
+        // Trường hợp đơn đã bị CANCELLED (do hết hạn 15 phút hoặc đã hủy trước đó):
+        // Đây là flow khôi phục / thanh toán lại: Phải kiểm tra tồn kho thời gian thực (Exception E2)
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            List<OrderDetail> details = orderDetailRepository.findByOrder(order);
+
+            // Kiểm tra tồn kho từng sản phẩm (E2)
+            for (OrderDetail detail : details) {
+                Wine wine = detail.getWine();
+                if (!Boolean.TRUE.equals(wine.getIsActive())) {
+                    throw new IllegalArgumentException("Sản phẩm '" + wine.getWineName() + "' hiện đã ngừng kinh doanh. Quý khách vui lòng tạo đơn mới!");
+                }
+                if (wine.getStockQuantity() < detail.getQuantity()) {
+                    throw new IllegalArgumentException("Sản phẩm '" + wine.getWineName() + "' hiện không đủ số lượng tồn kho (Chỉ còn: " + wine.getStockQuantity() + "). Vui lòng tạo đơn mới với các sản phẩm còn hàng!");
+                }
+            }
+
+            // Nếu còn đủ hàng, trừ lại tồn kho để giữ chỗ
+            for (OrderDetail detail : details) {
+                Wine wine = detail.getWine();
+                wine.setStockQuantity(wine.getStockQuantity() - detail.getQuantity());
+                wineRepository.save(wine);
+            }
+
+            // Khôi phục trạng thái đơn hàng sang PENDING
+            order.setOrderStatus(OrderStatus.PENDING);
+            order.setCancelStatus(CancelStatus.NONE);
+            order.setCancellationReason(null);
+            order.setCancelRequestedAt(null);
+            order.setCreatedAt(LocalDateTime.now()); // Reset mốc 15 phút
+            orderRepository.save(order);
+        }
+
+        // Tạo URL thanh toán VNPay mới
+        String paymentUrl = vnPayService.createPaymentUrl(order, servletRequest);
+
+        // Cập nhật giao dịch thanh toán
+        if (paymentTx == null) {
+            paymentTx = new PaymentTransaction();
+            paymentTx.setOrder(order);
+            paymentTx.setPaymentMethod(PaymentMethod.VNPAY.name());
+            paymentTx.setPaymentStatus(PaymentStatus.UNPAID);
+            paymentTx.setCreatedAt(LocalDateTime.now());
+        } else {
+            paymentTx.setPaymentMethod(PaymentMethod.VNPAY.name());
+            paymentTx.setPaymentStatus(PaymentStatus.UNPAID);
+        }
+        paymentTransactionRepository.save(paymentTx);
+
+        OrderResponse response = mapToOrderResponse(order);
+        response.setPaymentUrl(paymentUrl);
+        response.setPaymentMethod(PaymentMethod.VNPAY);
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getPendingCancellationOrders() {
+        List<Order> orders = orderRepository.findByCancelStatus(CancelStatus.REQUESTED);
+        List<OrderResponse> responses = new ArrayList<>();
+        for (Order order : orders) {
+            responses.add(mapToOrderResponse(order));
+        }
+        return responses;
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse reviewCancellationRequest(Long orderId, boolean approve, String adminNote) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        if (order.getCancelStatus() != CancelStatus.REQUESTED) {
+            throw new IllegalArgumentException("Đơn hàng này không có yêu cầu hủy nào đang chờ duyệt");
+        }
+
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+
+        if (approve) {
+            order.setOrderStatus(OrderStatus.CANCELLED);
+            order.setCancelStatus(CancelStatus.APPROVED);
+            if (adminNote != null && !adminNote.isBlank()) {
+                order.setCancellationReason((order.getCancellationReason() != null ? order.getCancellationReason() + " | " : "") + "Ghi chú quản lý: " + adminNote);
+            }
+            orderRepository.save(order);
+
+            // Hoàn trả kho
+            List<OrderDetail> details = orderDetailRepository.findByOrder(order);
+            for (OrderDetail detail : details) {
+                Wine wine = detail.getWine();
+                wine.setStockQuantity(wine.getStockQuantity() + detail.getQuantity());
+                wineRepository.save(wine);
+            }
+
+            // Nếu đơn đã thanh toán -> chuyển sang REFUNDED
+            if (paymentTx != null && paymentTx.getPaymentStatus() == PaymentStatus.PAID) {
+                paymentTx.setPaymentStatus(PaymentStatus.REFUNDED);
+                paymentTransactionRepository.save(paymentTx);
+                log.info("Đơn hàng #{} đã thanh toán, chuyển trạng thái giao dịch sang REFUNDED", orderId);
+            }
+
+            log.info("Quản lý đã CHẤP THUẬN yêu cầu hủy đơn hàng #{}. Đã hoàn kho và xử lý hoàn tiền.", orderId);
+        } else {
+            order.setCancelStatus(CancelStatus.REJECTED);
+            if (adminNote != null && !adminNote.isBlank()) {
+                order.setCancellationReason((order.getCancellationReason() != null ? order.getCancellationReason() + " | " : "") + "Từ chối bởi quản lý: " + adminNote);
+            }
+            orderRepository.save(order);
+            log.info("Quản lý đã TỪ CHỐI yêu cầu hủy đơn hàng #{}.", orderId);
+        }
+
+        return mapToOrderResponse(order);
     }
 
     private record PreparedItem(Wine wine, Integer quantity, BigDecimal unitPrice, BigDecimal lineTotal) {}

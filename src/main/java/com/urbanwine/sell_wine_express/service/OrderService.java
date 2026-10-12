@@ -23,4 +23,12 @@ public interface OrderService {
     PaymentStatusResponse getPaymentStatus(User customer, Long orderId);
 
     void cancelExpiredPendingOrders();
+
+    OrderResponse cancelOrder(User customer, Long orderId, com.urbanwine.sell_wine_express.dto.request.CancelOrderRequest request);
+
+    OrderResponse resumePayment(User customer, Long orderId, HttpServletRequest servletRequest);
+
+    List<OrderResponse> getPendingCancellationOrders();
+
+    OrderResponse reviewCancellationRequest(Long orderId, boolean approve, String adminNote);
 }

@@ -18,6 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 public class OrderResponse {
     private Long orderId;
+    private String orderCode;
     private String recipientName;
     private String recipientPhone;
     private String deliveryAddress;
@@ -26,6 +27,9 @@ public class OrderResponse {
     private BigDecimal shippingFee;
     private BigDecimal totalAmount;
     private OrderStatus orderStatus;
+    private com.urbanwine.sell_wine_express.enums.CancelStatus cancelStatus;
+    private String cancellationReason;
+    private LocalDateTime cancelRequestedAt;
     private PaymentStatus paymentStatus;
     private PaymentMethod paymentMethod;
     private String paymentUrl;

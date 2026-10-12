@@ -83,4 +83,54 @@ public class OrderController {
         OrderResponse response = orderService.getOrderDetail(customer, orderId);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * UC_2.2.6: Hủy đơn hàng (PENDING) hoặc Gửi yêu cầu hủy đơn (PROCESSING)
+     */
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<OrderResponse> cancelOrder(
+            @AuthenticationPrincipal User customer,
+            @PathVariable Long orderId,
+            @Valid @RequestBody com.urbanwine.sell_wine_express.dto.request.CancelOrderRequest request
+    ) {
+        OrderResponse response = orderService.cancelOrder(customer, orderId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * UC_2.2.6: Tiếp tục thanh toán cho đơn hàng chưa thanh toán (Resume Payment)
+     */
+    @PostMapping("/{orderId}/resume-payment")
+    public ResponseEntity<OrderResponse> resumePayment(
+            @AuthenticationPrincipal User customer,
+            @PathVariable Long orderId,
+            HttpServletRequest servletRequest
+    ) {
+        OrderResponse response = orderService.resumePayment(customer, orderId, servletRequest);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Quản lý/Admin: Lấy danh sách các đơn hàng đang chờ duyệt hủy
+     */
+    @GetMapping("/admin/cancellations")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<List<OrderResponse>> getPendingCancellations() {
+        List<OrderResponse> responses = orderService.getPendingCancellationOrders();
+        return ResponseEntity.ok(responses);
+    }
+
+    /**
+     * Quản lý/Admin: Duyệt hoặc từ chối yêu cầu hủy đơn hàng
+     */
+    @PostMapping("/admin/{orderId}/review-cancellation")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<OrderResponse> reviewCancellation(
+            @PathVariable Long orderId,
+            @RequestParam boolean approve,
+            @RequestParam(required = false) String adminNote
+    ) {
+        OrderResponse response = orderService.reviewCancellationRequest(orderId, approve, adminNote);
+        return ResponseEntity.ok(response);
+    }
 }

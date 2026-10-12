@@ -14,4 +14,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCustomerOrderByCreatedAtDesc(User customer);
 
     List<Order> findByOrderStatusAndCreatedAtBefore(OrderStatus orderStatus, LocalDateTime thresholdTime);
+
+    List<Order> findByCancelStatus(com.urbanwine.sell_wine_express.enums.CancelStatus cancelStatus);
 }

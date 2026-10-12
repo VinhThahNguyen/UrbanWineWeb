@@ -1,0 +1,244 @@
+### ================================================================
+### KỊCH BẢN TEST HOÀN CHỈNH: TỪ ĐĂNG KÝ TÀI KHOẢN MỚI -> THANH TOÁN -> UC_2.2.6
+### Cần khởi động ứng dụng Spring Boot trước (Port mặc định: 8080)
+### ================================================================
+
+@baseUrl = http://localhost:8080/api
+
+### ----------------------------------------------------------------
+### BƯỚC 0.1: ĐĂNG KÝ TÀI KHOẢN MỚI (REGISTER)
+### Yêu cầu: birthDate phải đủ 18 tuổi (BR-01)
+### ----------------------------------------------------------------
+# @name registerUser
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "mycustomer@gmail.com",
+  "password": "Password@123",
+  "fullName": "Nguyễn Thành Vinh",
+  "phone": "0987654321",
+  "birthDate": "2000-01-01"
+}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 0.2: KÍCH HOẠT TÀI KHOẢN BẰNG MÃ OTP ĐĂNG KÝ (VERIFY REGISTER OTP)
+### Thay "123456" bằng mã OTP thực tế hiển thị trên Console của Spring Boot:
+### >>> MÃ OTP CHO [mycustomer@gmail.com] (Loại: REGISTER) LÀ: [xxxxxx] <<<
+### ----------------------------------------------------------------
+# @name verifyRegisterOtp
+POST {{baseUrl}}/auth/verify-register-otp
+Content-Type: application/json
+
+{
+  "email": "mycustomer@gmail.com",
+  "otpCode": "123456"
+}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 1: ĐĂNG NHẬP (LOGIN)
+### Cách 1.1: Đăng nhập tài khoản Customer vừa tạo (Yêu cầu 2FA OTP)
+### ----------------------------------------------------------------
+# @name customerLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "mycustomer@gmail.com",
+  "password": "Password@123"
+}
+
+### ----------------------------------------------------------------
+### BƯỚC 1.2: XÁC THỰC OTP CHO CUSTOMER (Lấy mã OTP từ Console Log hoặc Email)
+### Thay "123456" bằng mã OTP thực tế hiển thị trên Console của Spring Boot
+### ----------------------------------------------------------------
+# @name verifyOtp
+POST {{baseUrl}}/auth/verify-login-otp
+Content-Type: application/json
+
+{
+  "email": "mycustomer@gmail.com",
+  "otpCode": "123456"
+}
+
+### Lưu token sau khi xác thực OTP thành công:
+@customerToken = {{verifyOtp.response.body.accessToken}}
+
+
+### ----------------------------------------------------------------
+### Cách 1.2 (Dự phòng nhanh): Đăng nhập Admin (Cấp Token trực tiếp không cần OTP)
+### ----------------------------------------------------------------
+# @name adminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@urbanwine.com",
+  "password": "Admin@123"
+}
+
+@adminToken = {{adminLogin.response.body.accessToken}}
+
+### Token sử dụng cho các bước tiếp theo (ưu tiên customerToken)
+@authToken = {{customerToken}}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 2: XEM DANH SÁCH RƯỢU ĐỂ LẤY WINE ID CÒN TỒN KHO
+### ----------------------------------------------------------------
+# @name getWines
+GET {{baseUrl}}/wines?page=0&size=10
+Authorization: Bearer {{authToken}}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 3 (Tùy chọn): XEM TỔNG HỢP THANH TOÁN TRƯỚC KHI ĐẶT (CHECKOUT SUMMARY)
+### Lưu ý: Địa chỉ giao hàng bắt buộc phải chứa "Hà Nội" hoặc "Ha Noi" (BR-02)
+### ----------------------------------------------------------------
+POST {{baseUrl}}/orders/checkout-summary
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "deliveryAddress": "Số 25 Phố Huế, Hoàn Kiếm, Hà Nội",
+  "items": [
+    {
+      "wineId": 1,
+      "quantity": 1
+    }
+  ]
+}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 4A: TEST PHƯƠNG THỨC 1 - THANH TOÁN KHI NHẬN HÀNG (COD)
+### Kỳ vọng: orderStatus: PENDING, paymentStatus: UNPAID, paymentMethod: COD, paymentUrl: null
+### ----------------------------------------------------------------
+# @name placeOrderCod
+POST {{baseUrl}}/orders/place-order
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "recipientName": "Nguyễn Khách Hàng",
+  "recipientPhone": "0988888888",
+  "deliveryAddress": "Số 10 Tràng Tiền, Hoàn Kiếm, Hà Nội",
+  "paymentMethod": "COD",
+  "items": [
+    {
+      "wineId": 1,
+      "quantity": 1
+    }
+  ]
+}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 4B: TEST PHƯƠNG THỨC 2 - THANH TOÁN QUA CỔNG VNPAY (VNPAY)
+### Kỳ vọng: paymentMethod: VNPAY, paymentUrl: chứa link sandbox.vnpayment.vn
+### ----------------------------------------------------------------
+# @name placeOrderVnpay
+POST {{baseUrl}}/orders/place-order
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "recipientName": "Nguyễn Khách Hàng",
+  "recipientPhone": "0988888888",
+  "deliveryAddress": "Số 10 Tràng Tiền, Hoàn Kiếm, Hà Nội",
+  "paymentMethod": "VNPAY",
+  "items": [
+    {
+      "wineId": 1,
+      "quantity": 1
+    }
+  ]
+}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 5: KIỂM TRA TRẠNG THÁI THANH TOÁN ĐƠN HÀNG (POLLING PAYMENT STATUS)
+### Thay số 1 bằng orderId trả về từ bước đặt hàng trên
+### ----------------------------------------------------------------
+GET {{baseUrl}}/orders/1/payment-status
+Authorization: Bearer {{authToken}}
+
+
+### ================================================================
+### BỔ SUNG: KỊCH BẢN TEST UC_2.2.6 VIEW ORDER HISTORY & MANAGEMENT
+### ================================================================
+
+### ----------------------------------------------------------------
+### BƯỚC 6: XEM TẤT CẢ LỊCH SỬ ĐƠN HÀNG CỦA TÔI (MY ORDERS)
+### Kỳ vọng: Trả về danh sách đơn kèm orderCode, orderStatus, cancelStatus, items
+### ----------------------------------------------------------------
+# @name getMyOrders
+GET {{baseUrl}}/orders/my-orders
+Authorization: Bearer {{customerToken}}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 7: XEM CHI TIẾT MỘT ĐƠN HÀNG CỤ THỂ
+### Thay '1' bằng orderId của bạn
+### ----------------------------------------------------------------
+# @name getOrderDetail
+GET {{baseUrl}}/orders/1
+Authorization: Bearer {{customerToken}}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 8: HỦY ĐƠN HÀNG ĐANG Ở TRẠNG THÁI PENDING (HỦY TRỰC TIẾP, HOÀN KHO)
+### Thay '1' bằng orderId đang ở PENDING
+### ----------------------------------------------------------------
+# @name cancelPendingOrder
+POST {{baseUrl}}/orders/1/cancel
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "reason": "Tôi đặt nhầm số lượng, muốn đặt lại"
+}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 9: GỬI YÊU CẦU HỦY ĐƠN HÀNG Ở TRẠNG THÁI PROCESSING (CHỜ DUYỆT)
+### Thay '2' bằng orderId đang ở PROCESSING
+### ----------------------------------------------------------------
+# @name requestCancelProcessingOrder
+POST {{baseUrl}}/orders/2/cancel
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "reason": "Tôi có việc đột xuất phải đi công tác, không nhận hàng được"
+}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 10: QUẢN LÝ (ADMIN) XEM DANH SÁCH CÁC ĐƠN ĐANG CHỜ DUYỆT HỦY
+### Sử dụng adminToken
+### ----------------------------------------------------------------
+# @name getPendingCancellations
+GET {{baseUrl}}/orders/admin/cancellations
+Authorization: Bearer {{adminToken}}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 11: QUẢN LÝ (ADMIN) PHÊ DUYỆT HOẶC TỪ CHỐI YÊU CẦU HỦY ĐƠN
+### approve=true (chấp thuận hủy và hoàn kho/tiền) hoặc approve=false (từ chối hủy)
+### ----------------------------------------------------------------
+# @name reviewCancellation
+POST {{baseUrl}}/orders/admin/2/review-cancellation?approve=true&adminNote=Đồng_ý_hủy_theo_yêu_cầu_khách
+Authorization: Bearer {{adminToken}}
+
+
+### ----------------------------------------------------------------
+### BƯỚC 12: TIẾP TỤC THANH TOÁN (RESUME PAYMENT) CHO ĐƠN HÀNG CHƯA THANH TOÁN
+### Cấp lại URL VNPay mới, tự động kiểm tra tồn kho E2 nếu đơn đã bị hết hạn
+### ----------------------------------------------------------------
+# @name resumePayment
+POST {{baseUrl}}/orders/1/resume-payment
+Authorization: Bearer {{customerToken}}
+
