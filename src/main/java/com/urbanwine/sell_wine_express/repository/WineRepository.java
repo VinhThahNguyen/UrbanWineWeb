@@ -37,4 +37,23 @@ public interface WineRepository extends JpaRepository<Wine, Long> {
 
     // Bước 5, 6: Lấy chi tiết rượu theo id và phải đang active
     Optional<Wine> findByWineIdAndIsActiveTrue(Long wineId);
+
+    // UC_2.1.1 E2: Kiểm tra trùng tên rượu (không phân biệt hoa/thường)
+    Optional<Wine> findByWineNameIgnoreCase(String wineName);
+    boolean existsByWineNameIgnoreCase(String wineName);
+    boolean existsByWineNameIgnoreCaseAndWineIdNot(String wineName, Long wineId);
+
+    // UC_2.1.1 Normal flow step 2: Lấy danh sách rượu cho Admin với bộ lọc keyword, categoryId, isActive
+    @Query("SELECT w FROM Wine w WHERE " +
+           "(:isActive IS NULL OR w.isActive = :isActive) AND " +
+           "(:categoryId IS NULL OR w.category.categoryId = :categoryId) AND " +
+           "(:keyword IS NULL OR :keyword = '' OR " +
+           " LOWER(w.wineName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           " LOWER(w.wineryName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           " LOWER(w.origin) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Wine> findWinesForAdmin(
+            @Param("keyword") String keyword,
+            @Param("categoryId") Integer categoryId,
+            @Param("isActive") Boolean isActive,
+            Pageable pageable);
 }
