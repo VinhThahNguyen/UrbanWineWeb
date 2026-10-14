@@ -1,0 +1,120 @@
+### =========================================================================
+### USE CASE UC_2.1.2: PROCESS ORDER (QUẢN LÝ / STORE MANAGER XỬ LÝ ĐƠN HÀNG)
+### =========================================================================
+@baseUrl = http://localhost:8080
+
+### -------------------------------------------------------------------------
+### 1. ĐĂNG NHẬP ADMIN ĐỂ LẤY TOKEN (PRE-1, BR-05)
+### Tài khoản: admin@urbanwine.com / Admin@123
+### -------------------------------------------------------------------------
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@urbanwine.com",
+  "password": "Admin@123"
+}
+
+### Lưu Access Token
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+
+### -------------------------------------------------------------------------
+### 2. NORMAL FLOW - BƯỚC 1 & 2: XEM DANH SÁCH ĐƠN HÀNG CẦN XỬ LÝ (PRE-2)
+### Mặc định lấy các đơn PENDING hoặc PROCESSING có yêu cầu hủy (cancelStatus = REQUESTED)
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/orders?page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 2.1 XEM DANH SÁCH CHỈ CÁC ĐƠN HÀNG TRẠNG THÁI PENDING (Chờ Quản lý duyệt)
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/orders?status=PENDING&page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 2.2 XEM DANH SÁCH ĐƠN HÀNG CÓ YÊU CẦU HỦY ĐANG CHỜ DUYỆT (CancelStatus = REQUESTED)
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/orders?cancelStatus=REQUESTED&page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 3. NORMAL FLOW - BƯỚC 3 & 4: XEM CHI TIẾT ĐƠN HÀNG
+### Hiển thị đầy đủ: người nhận, địa chỉ nội thành, danh sách rượu, tiền hàng, VAT, ship
+### Thay 1 bằng orderId thực tế cần xem
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/orders/1
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 4. NORMAL FLOW - BƯỚC 5 & 6: DUYỆT ĐƠN HÀNG PENDING -> PROCESSING
+### - Đơn COD: Duyệt thành công ngay.
+### - Đơn VNPAY: Chỉ duyệt thành công khi đã PAID (Quy định BR-07).
+### - Tự động ghi nhận approvedAt và gửi email xác nhận cho khách hàng.
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/orders/1/approve
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 5. ALTERNATIVE FLOW 1: TỪ CHỐI ĐƠN HÀNG PENDING KÈM LÝ DO (Reject Order)
+### - Chuyển sang CANCELLED, lưu lý do và adminNote.
+### - POST-2: Tự động hoàn lại số lượng tồn kho cho các sản phẩm.
+### - POST-3: Tự động kích hoạt hoàn tiền VNPay nếu đơn đã thanh toán.
+### - Gửi email thông báo từ chối và hướng dẫn hoàn tiền cho khách hàng.
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/orders/2/reject
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "reason": "Không thể liên lạc được với khách hàng qua số điện thoại để xác thực địa chỉ nội thành"
+}
+
+
+### -------------------------------------------------------------------------
+### 6. NGOẠI LỆ E2: TỪ CHỐI ĐƠN HÀNG NHƯNG BỎ TRỐNG LÝ DO
+### Kỳ vọng: HTTP 400 Bad Request, báo lỗi "Vui lòng nhập lý do từ chối đơn hàng"
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/orders/2/reject
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "reason": "   "
+}
+
+
+### -------------------------------------------------------------------------
+### 7. ALTERNATIVE FLOW 2 (BƯỚC 3a): CHẤP THUẬN YÊU CẦU HỦY CỦA KHÁCH
+### Áp dụng cho đơn PROCESSING có cancelStatus = REQUESTED (BR-04)
+### - Chuyển sang CANCELLED, hoàn kho (POST-2), hoàn tiền nếu đã trả (POST-3), gửi email.
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/orders/3/review-cancellation
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "approve": true,
+  "adminNote": "Đồng ý hỗ trợ hủy đơn trước khi xuất kho giao cho shipper"
+}
+
+
+### -------------------------------------------------------------------------
+### 8. ALTERNATIVE FLOW 2 (BƯỚC 3b): TỪ CHỐI YÊU CẦU HỦY CỦA KHÁCH
+### Áp dụng khi hàng đã đóng gói/xuất kho (BR-04)
+### - Giữ nguyên trạng thái PROCESSING để tiếp tục giao, gửi email lý do từ chối.
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/orders/4/review-cancellation
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "approve": false,
+  "adminNote": "Rượu vang đã được đóng hộp niêm phong và bàn giao cho shipper vận chuyển, không thể hủy đơn lúc này"
+}

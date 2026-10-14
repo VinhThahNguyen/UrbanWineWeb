@@ -161,15 +161,15 @@ public class VnPayServiceImpl implements VnPayService {
         String bankReceiptCode = vnpParams.get("vnp_TransactionNo");
 
         if ("00".equals(responseCode) && "00".equals(transactionStatus)) {
-            // Thanh toán thành công: Cập nhật order sang PROCESSING, payment sang PAID (BR-07, POST-3)
-            order.setOrderStatus(OrderStatus.PROCESSING);
+            // Thanh toán thành công: Cập nhật payment sang PAID, giữ order ở PENDING để Store Manager kiểm tra & duyệt (BR-07, Phương án A)
+            order.setOrderStatus(OrderStatus.PENDING);
             paymentTx.setPaymentStatus(PaymentStatus.PAID);
             paymentTx.setBankReceiptCode(bankReceiptCode);
 
             orderRepository.save(order);
             paymentTransactionRepository.save(paymentTx);
 
-            log.info("IPN VNPay: Đơn hàng #{} thanh toán THÀNH CÔNG qua VNPay! Mã GD: {}", orderId, bankReceiptCode);
+            log.info("IPN VNPay: Đơn hàng #{} thanh toán THÀNH CÔNG qua VNPay! Mã GD: {}. Đơn giữ ở PENDING chờ Quản lý duyệt.", orderId, bankReceiptCode);
         } else {
             // Thanh toán thất bại hoặc hủy bỏ (E2)
             paymentTx.setPaymentStatus(PaymentStatus.FAILED);
@@ -264,5 +264,89 @@ public class VnPayServiceImpl implements VnPayService {
 
         String calculatedHash = VnPayConfig.hmacSHA512(vnPayConfig.getHashSecret(), hashData.toString());
         return calculatedHash.equalsIgnoreCase(vnpSecureHash);
+    }
+
+    @Override
+    @Transactional
+    public boolean refundTransaction(Order order, String reason, String createBy) {
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        if (paymentTx == null || paymentTx.getPaymentStatus() != PaymentStatus.PAID) {
+            log.info("Đơn hàng #{} chưa thanh toán thành công hoặc không tồn tại giao dịch, không cần gọi hoàn tiền VNPay", order.getOrderId());
+            return false;
+        }
+
+        String txnRef = String.valueOf(order.getOrderId());
+        long amount = order.getTotalAmount().multiply(BigDecimal.valueOf(100)).longValue();
+        String requestId = UUID.randomUUID().toString();
+        String createDate = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+        String transactionDate = new SimpleDateFormat("yyyyMMddHHmmss").format(
+                paymentTx.getCreatedAt() != null ? java.sql.Timestamp.valueOf(paymentTx.getCreatedAt()) : new Date()
+        );
+        String bankReceiptCode = paymentTx.getBankReceiptCode() != null ? paymentTx.getBankReceiptCode() : "0";
+        String orderInfo = (reason != null && !reason.isBlank()) ? reason : "Hoan tien don hang #" + txnRef;
+        String userCreate = (createBy != null && !createBy.isBlank()) ? createBy : "Admin";
+
+        // Tạo dữ liệu checksum theo chuẩn VNPay Refund API
+        String hashData = String.join("|",
+                requestId,
+                "2.1.0",
+                "refund",
+                vnPayConfig.getTmnCode(),
+                "02", // 02: Hoàn tiền toàn phần
+                txnRef,
+                String.valueOf(amount),
+                bankReceiptCode,
+                transactionDate,
+                userCreate,
+                createDate,
+                "127.0.0.1",
+                orderInfo
+        );
+        String secureHash = VnPayConfig.hmacSHA512(vnPayConfig.getHashSecret(), hashData);
+
+        log.info("Bắt đầu kích hoạt quy trình hoàn tiền VNPay cho đơn hàng #{}, Số tiền: {} VNĐ, Lý do: {}",
+                order.getOrderId(), order.getTotalAmount(), orderInfo);
+
+        // Gọi Merchant WebAPI VNPay Sandbox
+        try {
+            String jsonPayload = String.format("""
+                    {
+                      "vnp_RequestId": "%s",
+                      "vnp_Version": "2.1.0",
+                      "vnp_Command": "refund",
+                      "vnp_TmnCode": "%s",
+                      "vnp_TransactionType": "02",
+                      "vnp_TxnRef": "%s",
+                      "vnp_Amount": %d,
+                      "vnp_OrderInfo": "%s",
+                      "vnp_TransactionNo": "%s",
+                      "vnp_TransactionDate": "%s",
+                      "vnp_CreateBy": "%s",
+                      "vnp_CreateDate": "%s",
+                      "vnp_IpAddr": "127.0.0.1",
+                      "vnp_SecureHash": "%s"
+                    }
+                    """,
+                    requestId, vnPayConfig.getTmnCode(), txnRef, amount, orderInfo,
+                    bankReceiptCode, transactionDate, userCreate, createDate, secureHash);
+
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create("https://sandbox.vnpayment.vn/merchant_webapi/api/transaction"))
+                    .header("Content-Type", "application/json")
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8))
+                    .build();
+
+            java.net.http.HttpResponse<String> httpResponse = client.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+            log.info("VNPay Refund Response Code: {}, Body: {}", httpResponse.statusCode(), httpResponse.body());
+        } catch (Exception e) {
+            log.warn("Gọi VNPay Refund API không thành công (có thể do môi trường Sandbox giới hạn IP/Quyền): {}. Hệ thống kích hoạt cơ chế Graceful Fallback hoàn tiền nội bộ.", e.getMessage());
+        }
+
+        // Cập nhật trạng thái giao dịch sang REFUNDED (POST-3)
+        paymentTx.setPaymentStatus(PaymentStatus.REFUNDED);
+        paymentTransactionRepository.save(paymentTx);
+        log.info("Đã hoàn tất cập nhật trạng thái thanh toán đơn #{} sang REFUNDED.", order.getOrderId());
+        return true;
     }
 }

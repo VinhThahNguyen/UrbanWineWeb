@@ -21,12 +21,19 @@ import com.urbanwine.sell_wine_express.repository.OrderDetailRepository;
 import com.urbanwine.sell_wine_express.repository.OrderRepository;
 import com.urbanwine.sell_wine_express.repository.PaymentTransactionRepository;
 import com.urbanwine.sell_wine_express.repository.WineRepository;
+import com.urbanwine.sell_wine_express.dto.request.RejectOrderRequest;
+import com.urbanwine.sell_wine_express.dto.respone.PageResponse;
 import com.urbanwine.sell_wine_express.service.CartService;
+import com.urbanwine.sell_wine_express.service.OrderEmailService;
 import com.urbanwine.sell_wine_express.service.OrderService;
 import com.urbanwine.sell_wine_express.service.VnPayService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +54,7 @@ public class OrderServiceImpl implements OrderService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final CartService cartService;
     private final VnPayService vnPayService;
+    private final OrderEmailService orderEmailService;
 
     // Phí ship nội thành cố định 30.000 VNĐ
     public static final BigDecimal SHIPPING_FEE = new BigDecimal("30000");
@@ -349,11 +357,27 @@ public class OrderServiceImpl implements OrderService {
                 .cancelStatus(order.getCancelStatus())
                 .cancellationReason(order.getCancellationReason())
                 .cancelRequestedAt(order.getCancelRequestedAt())
+                .approvedAt(order.getApprovedAt())
+                .adminNote(order.getAdminNote())
                 .paymentStatus(paymentStatus)
                 .paymentMethod(paymentMethod)
                 .createdAt(order.getCreatedAt())
                 .items(itemResponses)
                 .build();
+    }
+
+    /**
+     * POST-2: Hoàn trả số lượng tồn kho (restock) cho các sản phẩm trong đơn hàng
+     */
+    private void restockOrderItems(Order order) {
+        List<OrderDetail> details = orderDetailRepository.findByOrder(order);
+        for (OrderDetail detail : details) {
+            Wine wine = detail.getWine();
+            wine.setStockQuantity(wine.getStockQuantity() + detail.getQuantity());
+            wineRepository.save(wine);
+            log.info("Hoàn trả kho {} chai '{}' (Tồn mới: {}) cho đơn #{}",
+                    detail.getQuantity(), wine.getWineName(), wine.getStockQuantity(), order.getOrderId());
+        }
     }
 
     @Override
@@ -384,16 +408,7 @@ public class OrderServiceImpl implements OrderService {
             }
 
             // 2. Hoàn trả số lượng tồn kho (restock) cho từng chai rượu trong đơn
-            List<OrderDetail> details = orderDetailRepository.findByOrder(order);
-            for (OrderDetail detail : details) {
-                Wine wine = detail.getWine();
-                int restoredStock = wine.getStockQuantity() + detail.getQuantity();
-                wine.setStockQuantity(restoredStock);
-                wineRepository.save(wine);
-
-                log.info("Đã hoàn kho lại {} chai '{}' (Tồn kho mới: {}) cho đơn #{}",
-                        detail.getQuantity(), wine.getWineName(), restoredStock, order.getOrderId());
-            }
+            restockOrderItems(order);
 
             // 3. Chuyển trạng thái đơn sang CANCELLED và cập nhật cancelStatus
             order.setOrderStatus(OrderStatus.CANCELLED);
@@ -439,14 +454,7 @@ public class OrderServiceImpl implements OrderService {
             orderRepository.save(order);
 
             // POST-3: Hoàn lại số lượng tồn kho ngay lập tức
-            List<OrderDetail> details = orderDetailRepository.findByOrder(order);
-            for (OrderDetail detail : details) {
-                Wine wine = detail.getWine();
-                wine.setStockQuantity(wine.getStockQuantity() + detail.getQuantity());
-                wineRepository.save(wine);
-                log.info("Khách hủy đơn PENDING #{}: Đã hoàn trả {} chai '{}' vào kho.",
-                        orderId, detail.getQuantity(), wine.getWineName());
-            }
+            restockOrderItems(order);
 
             log.info("Khách hàng {} đã hủy trực tiếp thành công đơn hàng PENDING #{}", customer.getEmail(), orderId);
             return mapToOrderResponse(order);
@@ -572,39 +580,142 @@ public class OrderServiceImpl implements OrderService {
         }
 
         PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        boolean isPrepaid = (paymentTx != null && paymentTx.getPaymentStatus() == PaymentStatus.PAID);
 
         if (approve) {
             order.setOrderStatus(OrderStatus.CANCELLED);
             order.setCancelStatus(CancelStatus.APPROVED);
-            if (adminNote != null && !adminNote.isBlank()) {
-                order.setCancellationReason((order.getCancellationReason() != null ? order.getCancellationReason() + " | " : "") + "Ghi chú quản lý: " + adminNote);
-            }
+            order.setAdminNote(adminNote);
             orderRepository.save(order);
 
-            // Hoàn trả kho
-            List<OrderDetail> details = orderDetailRepository.findByOrder(order);
-            for (OrderDetail detail : details) {
-                Wine wine = detail.getWine();
-                wine.setStockQuantity(wine.getStockQuantity() + detail.getQuantity());
-                wineRepository.save(wine);
-            }
+            // POST-2: Hoàn trả kho
+            restockOrderItems(order);
 
-            // Nếu đơn đã thanh toán -> chuyển sang REFUNDED
-            if (paymentTx != null && paymentTx.getPaymentStatus() == PaymentStatus.PAID) {
-                paymentTx.setPaymentStatus(PaymentStatus.REFUNDED);
-                paymentTransactionRepository.save(paymentTx);
-                log.info("Đơn hàng #{} đã thanh toán, chuyển trạng thái giao dịch sang REFUNDED", orderId);
+            // POST-3: Kích hoạt quy trình hoàn tiền cho đơn đã thanh toán online
+            if (isPrepaid) {
+                vnPayService.refundTransaction(order, adminNote, "Admin");
             }
 
             log.info("Quản lý đã CHẤP THUẬN yêu cầu hủy đơn hàng #{}. Đã hoàn kho và xử lý hoàn tiền.", orderId);
+
+            // Gửi thông báo cho khách hàng
+            orderEmailService.sendCancellationApprovedEmail(order, adminNote, isPrepaid);
         } else {
             order.setCancelStatus(CancelStatus.REJECTED);
-            if (adminNote != null && !adminNote.isBlank()) {
-                order.setCancellationReason((order.getCancellationReason() != null ? order.getCancellationReason() + " | " : "") + "Từ chối bởi quản lý: " + adminNote);
-            }
+            order.setAdminNote(adminNote);
             orderRepository.save(order);
             log.info("Quản lý đã TỪ CHỐI yêu cầu hủy đơn hàng #{}.", orderId);
+
+            // Gửi thông báo từ chối hủy cho khách hàng
+            orderEmailService.sendCancellationRejectedEmail(order, adminNote);
         }
+
+        return mapToOrderResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<OrderResponse> getAdminOrders(OrderStatus status, CancelStatus cancelStatus, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Order> orderPage;
+
+        if (status != null) {
+            orderPage = orderRepository.findByOrderStatus(status, pageable);
+        } else if (cancelStatus != null) {
+            orderPage = orderRepository.findByCancelStatus(cancelStatus, pageable);
+        } else {
+            // Mặc định: Lấy các đơn hàng cần sự chú ý của Quản lý (PENDING hoặc PROCESSING có yêu cầu hủy)
+            orderPage = orderRepository.findRequiringAttentionOrders(OrderStatus.PENDING, CancelStatus.REQUESTED, pageable);
+        }
+
+        List<OrderResponse> content = orderPage.getContent().stream()
+                .map(this::mapToOrderResponse)
+                .toList();
+
+        return PageResponse.<OrderResponse>builder()
+                .content(content)
+                .pageNumber(orderPage.getNumber())
+                .pageSize(orderPage.getSize())
+                .totalElements(orderPage.getTotalElements())
+                .totalPages(orderPage.getTotalPages())
+                .isLast(orderPage.isLast())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse getAdminOrderDetail(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+        return mapToOrderResponse(order);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse approveOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        if (order.getOrderStatus() != OrderStatus.PENDING) {
+            throw new IllegalArgumentException("Chỉ có thể phê duyệt đơn hàng đang ở trạng thái Chờ xử lý (PENDING). Trạng thái hiện tại: " + order.getOrderStatus());
+        }
+
+        // BR-07: Đơn hàng thanh toán online chỉ được chuyển sang PROCESSING khi đã nhận được xác nhận thanh toán thành công
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        if (paymentTx != null && PaymentMethod.VNPAY.name().equalsIgnoreCase(paymentTx.getPaymentMethod())) {
+            if (paymentTx.getPaymentStatus() != PaymentStatus.PAID) {
+                throw new IllegalArgumentException("Đơn hàng thanh toán online chưa hoàn tất giao dịch (Chưa thanh toán), không thể phê duyệt sang trạng thái Đang xử lý theo quy định BR-07");
+            }
+        }
+
+        order.setOrderStatus(OrderStatus.PROCESSING);
+        order.setApprovedAt(LocalDateTime.now());
+        orderRepository.save(order);
+
+        log.info("Quản lý đã PHÊ DUYỆT thành công đơn hàng #{}, chuyển trạng thái sang PROCESSING", orderId);
+
+        // Gửi email xác nhận đơn hàng thành công cho khách hàng
+        orderEmailService.sendOrderApprovedEmail(order);
+
+        return mapToOrderResponse(order);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse rejectOrder(Long orderId, RejectOrderRequest request) {
+        if (request == null || request.getReason() == null || request.getReason().trim().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng cung cấp lý do từ chối đơn hàng (Ngoại lệ E2)");
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        if (order.getOrderStatus() != OrderStatus.PENDING) {
+            throw new IllegalArgumentException("Chỉ có thể từ chối đơn hàng đang ở trạng thái Chờ xử lý (PENDING). Trạng thái hiện tại: " + order.getOrderStatus());
+        }
+
+        String reason = request.getReason().trim();
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        order.setCancelStatus(CancelStatus.APPROVED);
+        order.setCancellationReason(reason);
+        order.setAdminNote(reason);
+        order.setCancelRequestedAt(LocalDateTime.now());
+        orderRepository.save(order);
+
+        // POST-2: Tự động hoàn lại số lượng sản phẩm vào kho
+        restockOrderItems(order);
+
+        // POST-3: Kích hoạt quy trình hoàn tiền cho đơn thanh toán online đã trả tiền
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        boolean isPrepaid = (paymentTx != null && paymentTx.getPaymentStatus() == PaymentStatus.PAID);
+        if (isPrepaid) {
+            vnPayService.refundTransaction(order, reason, "Admin");
+        }
+
+        log.info("Quản lý đã TỪ CHỐI đơn hàng #{} với lý do: '{}'. Đã hoàn kho và xử lý hoàn tiền nếu có.", orderId, reason);
+
+        // Gửi email thông báo từ chối đơn hàng cho khách hàng
+        orderEmailService.sendOrderRejectedEmail(order, reason, isPrepaid);
 
         return mapToOrderResponse(order);
     }

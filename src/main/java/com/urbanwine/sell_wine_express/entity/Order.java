@@ -53,6 +53,12 @@ public class Order {
     @Column(name = "cancel_requested_at")
     private LocalDateTime cancelRequestedAt;
 
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    @Column(name = "admin_note", length = 500)
+    private String adminNote;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 }

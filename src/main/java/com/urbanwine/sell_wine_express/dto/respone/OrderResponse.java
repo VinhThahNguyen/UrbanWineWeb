@@ -30,6 +30,8 @@ public class OrderResponse {
     private com.urbanwine.sell_wine_express.enums.CancelStatus cancelStatus;
     private String cancellationReason;
     private LocalDateTime cancelRequestedAt;
+    private LocalDateTime approvedAt;
+    private String adminNote;
     private PaymentStatus paymentStatus;
     private PaymentMethod paymentMethod;
     private String paymentUrl;

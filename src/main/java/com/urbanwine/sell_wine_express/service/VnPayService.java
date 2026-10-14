@@ -14,4 +14,6 @@ public interface VnPayService {
     VnPayIpnResponse processIpn(Map<String, String> vnpParams);
 
     PaymentStatusResponse processReturn(Map<String, String> vnpParams);
+
+    boolean refundTransaction(Order order, String reason, String createBy);
 }
