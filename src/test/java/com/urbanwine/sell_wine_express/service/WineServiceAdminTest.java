@@ -3,6 +3,7 @@ package com.urbanwine.sell_wine_express.service;
 import com.urbanwine.sell_wine_express.dto.request.WineCreateRequest;
 import com.urbanwine.sell_wine_express.dto.request.WineUpdateRequest;
 import com.urbanwine.sell_wine_express.dto.respone.PageResponse;
+import com.urbanwine.sell_wine_express.dto.respone.StockAlertResponse;
 import com.urbanwine.sell_wine_express.dto.respone.WineAdminResponse;
 import com.urbanwine.sell_wine_express.entity.Category;
 import com.urbanwine.sell_wine_express.entity.Wine;
@@ -213,5 +214,52 @@ class WineServiceAdminTest {
         assertEquals(1, result.getContent().size());
         assertEquals("Chateau Margaux 2015", result.getContent().get(0).getWineName());
         assertTrue(result.getContent().get(0).getIsActive());
+    }
+
+    // =========================================================================
+    // UC_2.1.3 VIEW STOCK ALERT UNIT TESTS
+    // =========================================================================
+
+    @Test
+    @DisplayName("UC_2.1.3 Normal Flow: Lấy danh sách cảnh báo khi có sản phẩm tồn kho <= 5")
+    void testGetStockAlerts_HasLowStockItems() {
+        Wine lowStockWine = Wine.builder()
+                .wineId(2L)
+                .wineName("Penfolds Grange 2017")
+                .wineryName("Penfolds")
+                .category(testCategory)
+                .stockQuantity(3)
+                .price(new BigDecimal("18500000"))
+                .isActive(true)
+                .build();
+
+        when(wineRepository.findLowStockWines(eq(5), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(lowStockWine)));
+
+        StockAlertResponse response = wineService.getStockAlerts(null, null, 0, 10);
+
+        assertNotNull(response);
+        assertEquals(5, response.getThreshold());
+        assertEquals(1, response.getTotalAlerts());
+        assertTrue(response.getAlertMessage().contains("Có 1 sản phẩm đang thiếu rượu"));
+        assertNotNull(response.getWines());
+        assertEquals(1, response.getWines().getContent().size());
+        assertEquals("Penfolds Grange 2017", response.getWines().getContent().get(0).getWineName());
+        assertEquals(3, response.getWines().getContent().get(0).getStockQuantity());
+    }
+
+    @Test
+    @DisplayName("UC_2.1.3 Ngoại lệ E1: Kho an toàn khi không có sản phẩm nào <= 5 chai")
+    void testGetStockAlerts_EmptySafeStock_ExceptionE1() {
+        when(wineRepository.findLowStockWines(eq(5), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        StockAlertResponse response = wineService.getStockAlerts(null, null, 0, 10);
+
+        assertNotNull(response);
+        assertEquals(5, response.getThreshold());
+        assertEquals(0, response.getTotalAlerts());
+        assertEquals("Tồn kho ổn định. Hiện tại không có sản phẩm nào cần nhập thêm.", response.getAlertMessage());
+        assertTrue(response.getWines().getContent().isEmpty());
     }
 }

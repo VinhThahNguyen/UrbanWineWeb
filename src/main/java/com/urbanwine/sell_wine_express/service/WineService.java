@@ -48,5 +48,22 @@ public interface WineService {
      * Bật/tắt trạng thái kinh doanh của sản phẩm rượu (Active <-> Inactive).
      */
     com.urbanwine.sell_wine_express.dto.respone.WineAdminResponse toggleWineStatus(Long wineId);
+
+    // =========================================================================
+    // UC_2.1.3 VIEW STOCK ALERT (DÀNH CHO ADMIN)
+    // =========================================================================
+
+    /**
+     * Ngưỡng cảnh báo tồn kho thấp cố định cho toàn bộ hệ thống (<= 5 chai).
+     */
+    int LOW_STOCK_THRESHOLD = 5;
+
+    /**
+     * UC_2.1.3 View Stock Alert:
+     * Lấy danh sách sản phẩm rượu đang kinh doanh (isActive = true) có số lượng tồn kho <= 5 chai.
+     * Ngoại lệ E1: Trả về thông báo kho an toàn nếu không có sản phẩm nào thiếu rượu.
+     */
+    com.urbanwine.sell_wine_express.dto.respone.StockAlertResponse getStockAlerts(
+            String keyword, Integer categoryId, int page, int size);
 }
 

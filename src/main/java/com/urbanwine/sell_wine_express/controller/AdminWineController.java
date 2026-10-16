@@ -3,6 +3,7 @@ package com.urbanwine.sell_wine_express.controller;
 import com.urbanwine.sell_wine_express.dto.request.WineCreateRequest;
 import com.urbanwine.sell_wine_express.dto.request.WineUpdateRequest;
 import com.urbanwine.sell_wine_express.dto.respone.PageResponse;
+import com.urbanwine.sell_wine_express.dto.respone.StockAlertResponse;
 import com.urbanwine.sell_wine_express.dto.respone.WineAdminResponse;
 import com.urbanwine.sell_wine_express.service.WineService;
 import jakarta.validation.Valid;
@@ -38,6 +39,24 @@ public class AdminWineController {
             @RequestParam(defaultValue = "10") int size
     ) {
         PageResponse<WineAdminResponse> response = wineService.getAdminWineCatalog(keyword, categoryId, isActive, page, size);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * UC_2.1.3 View Stock Alert:
+     * Xem danh sách các sản phẩm rượu có lượng tồn kho chạm hoặc dưới ngưỡng cảnh báo (<= 5 chai).
+     * Chỉ áp dụng cho các sản phẩm đang kinh doanh (isActive = true).
+     * Hỗ trợ tìm kiếm theo keyword, categoryId và phân trang.
+     * Ngoại lệ E1: Trả về thông điệp kho an toàn nếu không có sản phẩm nào thiếu rượu.
+     */
+    @GetMapping("/stock-alerts")
+    public ResponseEntity<StockAlertResponse> getStockAlerts(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        StockAlertResponse response = wineService.getStockAlerts(keyword, categoryId, page, size);
         return ResponseEntity.ok(response);
     }
 

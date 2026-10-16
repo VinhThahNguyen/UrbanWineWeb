@@ -1,0 +1,83 @@
+### =========================================================================
+### KỊCH BẢN KIỂM THỬ: UC_2.1.3 VIEW STOCK ALERT (ADMIN)
+### =========================================================================
+@baseUrl = http://localhost:8080
+
+### -------------------------------------------------------------------------
+### 1. ĐĂNG NHẬP VỚI TÀI KHOẢN ADMIN ĐỂ LẤY JWT TOKEN (PRE-1, BR-05)
+### Tài khoản mặc định: admin@urbanwine.com / Admin@123
+### -------------------------------------------------------------------------
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@urbanwine.com",
+  "password": "Admin@123"
+}
+
+### Lưu token từ kết quả đăng nhập Admin
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+
+### -------------------------------------------------------------------------
+### 2. NORMAL FLOW - BƯỚC 1, 2 & 3: XEM TOÀN BỘ DANH SÁCH CẢNH BÁO TỒN KHO THẤP
+### Ngưỡng cố định <= 5 chai, chỉ lọc các sản phẩm đang kinh doanh (isActive = true).
+### - Nếu có sản phẩm: Trả về danh sách chi tiết kèm thông điệp "Có X sản phẩm đang thiếu rượu..."
+### - Nếu kho an toàn (E1): Trả về content [] kèm thông điệp "Tồn kho ổn định. Hiện tại không có sản phẩm nào cần nhập thêm."
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/wines/stock-alerts?page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 2.1 TÌM KIẾM THEO TỪ KHÓA TRONG DANH SÁCH CẢNH BÁO
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/wines/stock-alerts?keyword=Margaux&page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 2.2 LỌC THEO DANH MỤC TRONG DANH SÁCH CẢNH BÁO (Ví dụ: categoryId = 1)
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/wines/stock-alerts?categoryId=1&page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 3. ALTERNATIVE FLOW: ĐIỀU HƯỚNG SANG NHẬP HÀNG (CẬP NHẬT TỒN KHO)
+### Admin chọn một sản phẩm đang thiếu hàng (ví dụ: wineId = 1) để nhập thêm tồn kho.
+### Nhập thêm addedStockQuantity: 10 chai -> Tồn kho sẽ vượt ngưỡng 5 chai.
+### -------------------------------------------------------------------------
+PUT {{baseUrl}}/api/admin/wines/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "wineName": "Château Margaux 2015",
+  "wineryName": "Château Margaux",
+  "categoryId": 1,
+  "origin": "Bordeaux, France",
+  "grapeVariety": "Cabernet Sauvignon, Merlot",
+  "vintageYear": 2015,
+  "description": "Dòng vang đỏ cao cấp vùng Bordeaux với hương vị đậm đà thanh lịch.",
+  "price": 15000000.00,
+  "abv": 13.5,
+  "addedStockQuantity": 10,
+  "imageUrl": "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=500"
+}
+
+
+### -------------------------------------------------------------------------
+### 4. XÁC NHẬN SẢN PHẨM ĐÃ TỰ ĐỘNG BIẾN MẤT KHỎI DANH SÁCH CẢNH BÁO
+### Sau khi cộng dồn thêm 10 chai, tồn kho vượt ngưỡng 5 chai -> Sản phẩm không còn xuất hiện.
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/wines/stock-alerts
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 5. KIỂM THỬ BẢO MẬT: KHÔNG TRUYỀN TOKEN HOẶC TOKEN KHÔNG PHẢI ADMIN
+### Kỳ vọng: 401 Unauthorized hoặc 403 Forbidden
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/wines/stock-alerts

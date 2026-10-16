@@ -48,28 +48,54 @@ public class DataInitializer implements CommandLineRunner {
             log.info(" Password: Admin@123");
             log.info("==========================================================");
         }
+
+        // 1. Tài khoản Admin để đăng nhập quản trị
+        User admin = userRepository.findByEmail("admin@gmail.com")
+                .orElse(User.builder()
+                        .email("admin@gmail.com")
+                        .fullName("System Administrator")
+                        .phoneNumber("0900000000")
+                        .birthDate(LocalDate.of(1990, 1, 1))
+                        .role(Role.ROLE_ADMIN)
+                        .isOver18(true)
+                        .isActive(true)
+                        .build());
+
+        admin.setPasswordHash(passwordEncoder.encode("123456"));
+        admin.setRole(Role.ROLE_ADMIN);
+        admin.setIsActive(true);
+        userRepository.save(admin);
+
+        log.info("==========================================================");
+        log.info(" ĐÃ KHỞI TẠO TÀI KHOẢN ADMIN ĐĂNG NHẬP:");
+        log.info(" Email: admin@gmail.com");
+        log.info(" Password: {}", "123456");
+        log.info("==========================================================");
     }
 
     private void initializeCustomerUser() {
-        // Tự động khởi tạo tài khoản Customer mẫu để test nếu chưa tồn tại
-        if (userRepository.findByEmail("customer@urbanwine.com").isEmpty()) {
-            User customer = User.builder()
-                    .email("customer@urbanwine.com")
-                    .passwordHash(passwordEncoder.encode("Customer@123"))
-                    .fullName("Nguyễn Khách Hàng")
-                    .phoneNumber("0988888888")
-                    .birthDate(LocalDate.of(1998, 5, 20))
-                    .role(Role.ROLE_CUSTOMER)
-                    .isOver18(true)
-                    .isActive(true)
-                    .build();
+        // 2. Tài khoản Khách hàng mang email thật của bạn (Vnguyenthanh0805@gmail.com)
+        // để khi đăng nhập Customer thì mã OTP sẽ gửi thẳng về điện thoại/hộp thư của bạn!
+        User customer = userRepository.findByEmail("Vnguyenthanh0805@gmail.com")
+                .orElse(User.builder()
+                        .email("Vnguyenthanh0805@gmail.com")
+                        .fullName("Nguyễn Thành Vinh (Customer)")
+                        .phoneNumber("0988888888")
+                        .birthDate(LocalDate.of(1995, 1, 1))
+                        .role(Role.ROLE_CUSTOMER)
+                        .isOver18(true)
+                        .isActive(true)
+                        .build());
 
-            userRepository.save(customer);
-            log.info("==========================================================");
-            log.info(" ĐÃ KHỞI TẠO TÀI KHOẢN CUSTOMER MẪU THÀNH CÔNG:");
-            log.info(" Email: customer@urbanwine.com");
-            log.info(" Password: Customer@123");
-            log.info("==========================================================");
-        }
+        customer.setRole(Role.ROLE_CUSTOMER);
+        customer.setPasswordHash(passwordEncoder.encode("123456"));
+        customer.setIsActive(true);
+        userRepository.save(customer);
+
+        log.info("==========================================================");
+        log.info(" ĐÃ THIẾT LẬP TÀI KHOẢN CUSTOMER (NHẬN OTP VỀ GMAIL):");
+        log.info(" Email: Vnguyenthanh0805@gmail.com");
+        log.info(" Password: {}", "123456");
+        log.info("==========================================================");
     }
 }

@@ -56,4 +56,17 @@ public interface WineRepository extends JpaRepository<Wine, Long> {
             @Param("categoryId") Integer categoryId,
             @Param("isActive") Boolean isActive,
             Pageable pageable);
+
+    // UC_2.1.3 View Stock Alert: Lấy danh sách sản phẩm rượu đang kinh doanh (isActive = true) có tồn kho <= ngưỡng cảnh báo (<= 5 chai)
+    @Query("SELECT w FROM Wine w WHERE w.stockQuantity <= :threshold AND w.isActive = true AND " +
+           "(:categoryId IS NULL OR w.category.categoryId = :categoryId) AND " +
+           "(:keyword IS NULL OR :keyword = '' OR " +
+           " LOWER(w.wineName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           " LOWER(w.wineryName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           " LOWER(w.origin) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Wine> findLowStockWines(
+            @Param("threshold") int threshold,
+            @Param("keyword") String keyword,
+            @Param("categoryId") Integer categoryId,
+            Pageable pageable);
 }

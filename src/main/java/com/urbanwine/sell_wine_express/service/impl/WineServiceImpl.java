@@ -3,6 +3,7 @@ package com.urbanwine.sell_wine_express.service.impl;
 import com.urbanwine.sell_wine_express.dto.request.WineCreateRequest;
 import com.urbanwine.sell_wine_express.dto.request.WineUpdateRequest;
 import com.urbanwine.sell_wine_express.dto.respone.PageResponse;
+import com.urbanwine.sell_wine_express.dto.respone.StockAlertResponse;
 import com.urbanwine.sell_wine_express.dto.respone.WineAdminResponse;
 import com.urbanwine.sell_wine_express.dto.respone.WineDetailResponse;
 import com.urbanwine.sell_wine_express.dto.respone.WineSummaryResponse;
@@ -261,6 +262,48 @@ public class WineServiceImpl implements WineService {
                 .imageUrl(wine.getImageUrl())
                 .isActive(wine.getIsActive())
                 .isOutOfStock(outOfStock)
+                .build();
+    }
+
+    // =========================================================================
+    // UC_2.1.3 VIEW STOCK ALERT (DÀNH CHO ADMIN)
+    // =========================================================================
+
+    @Override
+    @Transactional(readOnly = true)
+    public StockAlertResponse getStockAlerts(String keyword, Integer categoryId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        String cleanKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+
+        Page<Wine> winePage = wineRepository.findLowStockWines(LOW_STOCK_THRESHOLD, cleanKeyword, categoryId, pageable);
+
+        List<WineAdminResponse> content = winePage.getContent().stream()
+                .map(this::mapToAdminResponse)
+                .toList();
+
+        PageResponse<WineAdminResponse> pageResponse = PageResponse.<WineAdminResponse>builder()
+                .content(content)
+                .pageNumber(winePage.getNumber())
+                .pageSize(winePage.getSize())
+                .totalElements(winePage.getTotalElements())
+                .totalPages(winePage.getTotalPages())
+                .isLast(winePage.isLast())
+                .build();
+
+        long totalAlerts = winePage.getTotalElements();
+        String alertMessage;
+        if (totalAlerts == 0) {
+            // Ngoại lệ E1: Không có sản phẩm nào chạm ngưỡng thiếu hàng
+            alertMessage = "Tồn kho ổn định. Hiện tại không có sản phẩm nào cần nhập thêm.";
+        } else {
+            alertMessage = "Có " + totalAlerts + " sản phẩm đang thiếu rượu (<= " + LOW_STOCK_THRESHOLD + " chai), cần nhập thêm hàng.";
+        }
+
+        return StockAlertResponse.builder()
+                .threshold(LOW_STOCK_THRESHOLD)
+                .totalAlerts(totalAlerts)
+                .alertMessage(alertMessage)
+                .wines(pageResponse)
                 .build();
     }
 }

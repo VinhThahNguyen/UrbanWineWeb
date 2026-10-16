@@ -166,6 +166,11 @@ public class OrderServiceImpl implements OrderService {
             wine.setStockQuantity(wine.getStockQuantity() - itemReq.getQuantity());
             wineRepository.save(wine);
 
+            // UC_2.1.3 BR-06: Tự động gửi email cảnh báo cho Admin khi tồn kho chạm hoặc dưới ngưỡng 5 chai
+            if (wine.getStockQuantity() <= 5 && Boolean.TRUE.equals(wine.getIsActive())) {
+                orderEmailService.sendLowStockAlertEmail(wine);
+            }
+
             preparedItems.add(new PreparedItem(wine, itemReq.getQuantity(), wine.getPrice(), lineTotal));
         }
 
@@ -525,6 +530,11 @@ public class OrderServiceImpl implements OrderService {
                 Wine wine = detail.getWine();
                 wine.setStockQuantity(wine.getStockQuantity() - detail.getQuantity());
                 wineRepository.save(wine);
+
+                // UC_2.1.3 BR-06: Tự động gửi email cảnh báo cho Admin khi tồn kho chạm hoặc dưới ngưỡng 5 chai
+                if (wine.getStockQuantity() <= 5 && Boolean.TRUE.equals(wine.getIsActive())) {
+                    orderEmailService.sendLowStockAlertEmail(wine);
+                }
             }
 
             // Khôi phục trạng thái đơn hàng sang PENDING

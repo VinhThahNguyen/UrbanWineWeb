@@ -309,26 +309,22 @@ public class VnPayServiceImpl implements VnPayService {
 
         // Gọi Merchant WebAPI VNPay Sandbox
         try {
-            String jsonPayload = String.format("""
-                    {
-                      "vnp_RequestId": "%s",
-                      "vnp_Version": "2.1.0",
-                      "vnp_Command": "refund",
-                      "vnp_TmnCode": "%s",
-                      "vnp_TransactionType": "02",
-                      "vnp_TxnRef": "%s",
-                      "vnp_Amount": %d,
-                      "vnp_OrderInfo": "%s",
-                      "vnp_TransactionNo": "%s",
-                      "vnp_TransactionDate": "%s",
-                      "vnp_CreateBy": "%s",
-                      "vnp_CreateDate": "%s",
-                      "vnp_IpAddr": "127.0.0.1",
-                      "vnp_SecureHash": "%s"
-                    }
-                    """,
-                    requestId, vnPayConfig.getTmnCode(), txnRef, amount, orderInfo,
-                    bankReceiptCode, transactionDate, userCreate, createDate, secureHash);
+            String jsonPayload = "{"
+                    + "\"vnp_RequestId\": \"" + requestId + "\","
+                    + "\"vnp_Version\": \"2.1.0\","
+                    + "\"vnp_Command\": \"refund\","
+                    + "\"vnp_TmnCode\": \"" + vnPayConfig.getTmnCode() + "\","
+                    + "\"vnp_TransactionType\": \"02\","
+                    + "\"vnp_TxnRef\": \"" + txnRef + "\","
+                    + "\"vnp_Amount\": " + amount + ","
+                    + "\"vnp_OrderInfo\": \"" + orderInfo + "\","
+                    + "\"vnp_TransactionNo\": \"" + bankReceiptCode + "\","
+                    + "\"vnp_TransactionDate\": \"" + transactionDate + "\","
+                    + "\"vnp_CreateBy\": \"" + userCreate + "\","
+                    + "\"vnp_CreateDate\": \"" + createDate + "\","
+                    + "\"vnp_IpAddr\": \"127.0.0.1\","
+                    + "\"vnp_SecureHash\": \"" + secureHash + "\""
+                    + "}";
 
             java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
             java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
