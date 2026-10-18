@@ -1,5 +1,7 @@
 package com.urbanwine.sell_wine_express.entity;
 
+import com.urbanwine.sell_wine_express.enums.CancelStatus;
+import com.urbanwine.sell_wine_express.enums.OrderChannel;
 import com.urbanwine.sell_wine_express.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -20,7 +22,7 @@ public class Order {
     private Long orderId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id", nullable = false)
+    @JoinColumn(name = "customer_id", nullable = true)
     private User customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -44,8 +46,12 @@ public class Order {
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "channel_type", length = 20)
+    private OrderChannel channelType = OrderChannel.ONLINE;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "cancel_status", length = 20)
-    private com.urbanwine.sell_wine_express.enums.CancelStatus cancelStatus = com.urbanwine.sell_wine_express.enums.CancelStatus.NONE;
+    private CancelStatus cancelStatus = CancelStatus.NONE;
 
     @Column(name = "cancellation_reason", length = 500)
     private String cancellationReason;

@@ -19,11 +19,14 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/admin/orders")
-@RequiredArgsConstructor
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class AdminOrderController {
 
     private final OrderService orderService;
+
+    public AdminOrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
 
     /**
      * UC_2.1.2 Normal Flow - Bước 1 & 2:
@@ -93,6 +96,49 @@ public class AdminOrderController {
             @Valid @RequestBody ReviewCancellationRequest request
     ) {
         OrderResponse response = orderService.reviewCancellationRequest(orderId, request.getApprove(), request.getAdminNote());
+        return ResponseEntity.ok(response);
+    }
+
+    // =========================================================================
+    // UC_2.1.5: CREATE OFFLINE ORDER (BÁN LẺ TẠI QUẦY)
+    // =========================================================================
+
+    /**
+     * UC_2.1.5 Normal & Alternative Flow:
+     * Nhân viên tạo đơn hàng bán lẻ tại quầy cho khách vãng lai.
+     * - CASH: Thu tiền mặt, tính tiền thừa, trừ kho ngay lập tức, chuyển COMPLETED/PAID, trả về hóa đơn.
+     * - VIETQR: Sinh mã VietQR động kèm số tiền và mã đơn, tạm giữ kho trong 5 phút.
+     */
+    @PostMapping("/offline")
+    public ResponseEntity<com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse> createOfflineOrder(
+            @Valid @RequestBody com.urbanwine.sell_wine_express.dto.request.CreateOfflineOrderRequest request
+    ) {
+        com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse response = orderService.createOfflineOrder(request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * UC_2.1.5 Exceptions E3 & E4:
+     * Hủy nhanh đơn hàng offline PENDING tại quầy (khách hủy/đổi ý/không chuyển khoản được).
+     * Hệ thống hoàn trả ngay lập tức toàn bộ số lượng rượu vào kho (0 giây).
+     */
+    @PostMapping("/offline/{orderId}/cancel")
+    public ResponseEntity<com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse> cancelOfflineOrder(
+            @PathVariable("orderId") Long orderId
+    ) {
+        com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse response = orderService.cancelOfflineOrder(orderId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * UC_2.1.5 Alternative Flow:
+     * Xem chi tiết / Polling kiểm tra trạng thái đơn hàng offline (dùng để màn hình POS kiểm tra xem khách đã quét QR thành công chưa).
+     */
+    @GetMapping("/offline/{orderId}")
+    public ResponseEntity<com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse> getOfflineOrderDetail(
+            @PathVariable("orderId") Long orderId
+    ) {
+        com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse response = orderService.getOfflineOrderDetail(orderId);
         return ResponseEntity.ok(response);
     }
 }

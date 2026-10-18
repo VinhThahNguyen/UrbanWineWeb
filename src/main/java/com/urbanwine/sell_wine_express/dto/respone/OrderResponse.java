@@ -1,5 +1,7 @@
 package com.urbanwine.sell_wine_express.dto.respone;
 
+import com.urbanwine.sell_wine_express.enums.CancelStatus;
+import com.urbanwine.sell_wine_express.enums.OrderChannel;
 import com.urbanwine.sell_wine_express.enums.OrderStatus;
 import com.urbanwine.sell_wine_express.enums.PaymentMethod;
 import com.urbanwine.sell_wine_express.enums.PaymentStatus;
@@ -19,6 +21,7 @@ import java.util.List;
 public class OrderResponse {
     private Long orderId;
     private String orderCode;
+    private OrderChannel channelType;
     private String recipientName;
     private String recipientPhone;
     private String deliveryAddress;
@@ -27,7 +30,7 @@ public class OrderResponse {
     private BigDecimal shippingFee;
     private BigDecimal totalAmount;
     private OrderStatus orderStatus;
-    private com.urbanwine.sell_wine_express.enums.CancelStatus cancelStatus;
+    private CancelStatus cancelStatus;
     private String cancellationReason;
     private LocalDateTime cancelRequestedAt;
     private LocalDateTime approvedAt;
@@ -38,4 +41,3 @@ public class OrderResponse {
     private LocalDateTime createdAt;
     private List<OrderItemResponse> items;
 }
-

@@ -25,13 +25,20 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class VnPayServiceImpl implements VnPayService {
 
     private final VnPayConfig vnPayConfig;
     private final OrderRepository orderRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
+
+    public VnPayServiceImpl(VnPayConfig vnPayConfig,
+                            OrderRepository orderRepository,
+                            PaymentTransactionRepository paymentTransactionRepository) {
+        this.vnPayConfig = vnPayConfig;
+        this.orderRepository = orderRepository;
+        this.paymentTransactionRepository = paymentTransactionRepository;
+    }
 
     @Override
     public String createPaymentUrl(Order order, HttpServletRequest request) {

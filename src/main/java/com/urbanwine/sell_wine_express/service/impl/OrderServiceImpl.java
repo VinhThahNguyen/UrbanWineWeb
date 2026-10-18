@@ -43,8 +43,17 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.urbanwine.sell_wine_express.dto.request.CreateOfflineOrderRequest;
+import com.urbanwine.sell_wine_express.dto.request.VietQrWebhookRequest;
+import com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse;
+import com.urbanwine.sell_wine_express.enums.OrderChannel;
+import com.urbanwine.sell_wine_express.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
+
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class OrderServiceImpl implements OrderService {
 
@@ -55,6 +64,34 @@ public class OrderServiceImpl implements OrderService {
     private final CartService cartService;
     private final VnPayService vnPayService;
     private final OrderEmailService orderEmailService;
+    private final UserRepository userRepository;
+
+    public OrderServiceImpl(WineRepository wineRepository,
+                            OrderRepository orderRepository,
+                            OrderDetailRepository orderDetailRepository,
+                            PaymentTransactionRepository paymentTransactionRepository,
+                            CartService cartService,
+                            VnPayService vnPayService,
+                            OrderEmailService orderEmailService,
+                            UserRepository userRepository) {
+        this.wineRepository = wineRepository;
+        this.orderRepository = orderRepository;
+        this.orderDetailRepository = orderDetailRepository;
+        this.paymentTransactionRepository = paymentTransactionRepository;
+        this.cartService = cartService;
+        this.vnPayService = vnPayService;
+        this.orderEmailService = orderEmailService;
+        this.userRepository = userRepository;
+    }
+
+    @Value("${vietqr.bank-id:MB}")
+    private String vietQrBankId;
+
+    @Value("${vietqr.account-no:0987654321}")
+    private String vietQrAccountNo;
+
+    @Value("${vietqr.account-name:URBAN WINE STORE}")
+    private String vietQrAccountName;
 
     // Phí ship nội thành cố định 30.000 VNĐ
     public static final BigDecimal SHIPPING_FEE = new BigDecimal("30000");
@@ -232,6 +269,7 @@ public class OrderServiceImpl implements OrderService {
         return OrderResponse.builder()
                 .orderId(savedOrder.getOrderId())
                 .orderCode(String.format("ORD-%06d", savedOrder.getOrderId()))
+                .channelType(OrderChannel.ONLINE)
                 .recipientName(savedOrder.getRecipientName())
                 .recipientPhone(savedOrder.getRecipientPhone())
                 .deliveryAddress(savedOrder.getDeliveryAddress())
@@ -351,12 +389,13 @@ public class OrderServiceImpl implements OrderService {
         return OrderResponse.builder()
                 .orderId(order.getOrderId())
                 .orderCode(orderCode)
+                .channelType(order.getChannelType() != null ? order.getChannelType() : OrderChannel.ONLINE)
                 .recipientName(order.getRecipientName())
                 .recipientPhone(order.getRecipientPhone())
                 .deliveryAddress(order.getDeliveryAddress())
                 .merchandiseSubtotal(merchandiseSubtotal)
                 .vatAmount(vatAmount)
-                .shippingFee(SHIPPING_FEE)
+                .shippingFee(order.getChannelType() == OrderChannel.OFFLINE ? BigDecimal.ZERO : SHIPPING_FEE)
                 .totalAmount(order.getTotalAmount())
                 .orderStatus(order.getOrderStatus())
                 .cancelStatus(order.getCancelStatus())
@@ -388,18 +427,25 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void cancelExpiredPendingOrders() {
-        // Mốc thời gian 15 phút trước
-        LocalDateTime threshold = LocalDateTime.now().minusMinutes(15);
-        List<Order> expiredOrders = orderRepository.findByOrderStatusAndCreatedAtBefore(OrderStatus.PENDING, threshold);
+        // Mốc thời gian 15 phút trước cho đơn Online
+        LocalDateTime onlineThreshold = LocalDateTime.now().minusMinutes(15);
+        // Mốc thời gian 5 phút trước cho đơn Offline POS tại quầy
+        LocalDateTime offlineThreshold = LocalDateTime.now().minusMinutes(5);
 
-        if (expiredOrders.isEmpty()) {
+        // Lấy tất cả các đơn PENDING tạo trước mốc 5 phút
+        List<Order> candidateOrders = orderRepository.findByOrderStatusAndCreatedAtBefore(OrderStatus.PENDING, offlineThreshold);
+
+        if (candidateOrders.isEmpty()) {
             return;
         }
 
-        log.info("Tìm thấy {} đơn hàng PENDING quá hạn 15 phút cần hủy và hoàn kho.", expiredOrders.size());
+        for (Order order : candidateOrders) {
+            boolean isOffline = (order.getChannelType() == OrderChannel.OFFLINE);
+            // Nếu là đơn ONLINE nhưng chưa quá 15 phút thì bỏ qua
+            if (!isOffline && order.getCreatedAt().isAfter(onlineThreshold)) {
+                continue;
+            }
 
-        for (Order order : expiredOrders) {
-            // 1. Kiểm tra trạng thái thanh toán và phương thức
             PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
             PaymentStatus paymentStatus = (paymentTx != null) ? paymentTx.getPaymentStatus() : PaymentStatus.UNPAID;
 
@@ -407,22 +453,26 @@ public class OrderServiceImpl implements OrderService {
                 continue;
             }
 
-            // Chỉ tự động hủy đối với đơn thanh toán online (VNPAY), không tự động hủy đơn COD
+            // Chỉ tự động hủy đối với đơn thanh toán online (VNPAY) hoặc đơn tại quầy (VIETQR), không tự động hủy đơn COD
             if (paymentTx != null && PaymentMethod.COD.name().equalsIgnoreCase(paymentTx.getPaymentMethod())) {
                 continue;
             }
 
-            // 2. Hoàn trả số lượng tồn kho (restock) cho từng chai rượu trong đơn
+            // Hoàn trả số lượng tồn kho (restock) cho từng chai rượu trong đơn
             restockOrderItems(order);
 
-            // 3. Chuyển trạng thái đơn sang CANCELLED và cập nhật cancelStatus
+            // Chuyển trạng thái đơn sang CANCELLED và cập nhật cancelStatus
             order.setOrderStatus(OrderStatus.CANCELLED);
             order.setCancelStatus(CancelStatus.APPROVED);
-            order.setCancellationReason("Hệ thống tự động hủy do quá hạn thanh toán 15 phút");
+            if (isOffline) {
+                order.setCancellationReason("Hệ thống tự động hủy đơn tại quầy do quá hạn thanh toán VietQR 5 phút");
+            } else {
+                order.setCancellationReason("Hệ thống tự động hủy do quá hạn thanh toán 15 phút");
+            }
             order.setCancelRequestedAt(LocalDateTime.now());
             orderRepository.save(order);
 
-            log.info("Đơn hàng #{} đã tự động HỦY do quá hạn 15 phút chưa thanh toán.", order.getOrderId());
+            log.info("Đơn hàng #{} (Kênh: {}) đã tự động HỦY do quá hạn thanh toán.", order.getOrderId(), order.getChannelType());
         }
     }
 
@@ -728,6 +778,370 @@ public class OrderServiceImpl implements OrderService {
         orderEmailService.sendOrderRejectedEmail(order, reason, isPrepaid);
 
         return mapToOrderResponse(order);
+    }
+
+    // =========================================================================
+    // UC_2.1.5: CREATE OFFLINE ORDER (BÁN LẺ TẠI QUẦY CHO KHÁCH VÃNG LAI)
+    // =========================================================================
+
+    @Override
+    @Transactional
+    public OfflineOrderResponse createOfflineOrder(CreateOfflineOrderRequest request) {
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Đơn hàng phải có ít nhất 1 sản phẩm rượu");
+        }
+
+        if (request.getPaymentMethod() != PaymentMethod.CASH && request.getPaymentMethod() != PaymentMethod.VIETQR) {
+            throw new IllegalArgumentException("Phương thức thanh toán tại quầy chỉ hỗ trợ TIỀN MẶT (CASH) hoặc CHUYỂN KHOẢN (VIETQR)");
+        }
+
+        // 1. Kiểm tra tồn kho thời gian thực (E1) và trừ kho ngay lập tức
+        BigDecimal merchandiseSubtotal = BigDecimal.ZERO;
+        List<OrderItemResponse> itemResponses = new ArrayList<>();
+        List<PreparedItem> preparedItems = new ArrayList<>();
+
+        for (OrderItemRequest itemReq : request.getItems()) {
+            Wine wine = wineRepository.findById(itemReq.getWineId())
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm rượu với ID: " + itemReq.getWineId()));
+
+            if (!Boolean.TRUE.equals(wine.getIsActive())) {
+                throw new IllegalArgumentException("Sản phẩm '" + wine.getWineName() + "' hiện không còn kinh doanh");
+            }
+
+            // E1: Kiểm tra đủ tồn kho
+            if (wine.getStockQuantity() < itemReq.getQuantity()) {
+                throw new IllegalArgumentException("Sản phẩm '" + wine.getWineName() + "' không đủ tồn kho để bán tại quầy. Hiện còn: " + wine.getStockQuantity());
+            }
+
+            BigDecimal lineTotal = wine.getPrice().multiply(BigDecimal.valueOf(itemReq.getQuantity()));
+            merchandiseSubtotal = merchandiseSubtotal.add(lineTotal);
+
+            // POST-2: Trừ số lượng tồn kho ngay lập tức
+            wine.setStockQuantity(wine.getStockQuantity() - itemReq.getQuantity());
+            wineRepository.save(wine);
+
+            // Cảnh báo tồn kho nếu thấp hơn hoặc bằng 5
+            if (wine.getStockQuantity() <= 5 && Boolean.TRUE.equals(wine.getIsActive())) {
+                orderEmailService.sendLowStockAlertEmail(wine);
+            }
+
+            preparedItems.add(new PreparedItem(wine, itemReq.getQuantity(), wine.getPrice(), lineTotal));
+        }
+
+        // Tính thuế VAT 10%, phí giao hàng = 0 (BR-03)
+        BigDecimal vatAmount = merchandiseSubtotal.multiply(VAT_RATE).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal totalAmount = merchandiseSubtotal.add(vatAmount);
+
+        // 2. Xử lý thanh toán Tiền mặt (E2)
+        BigDecimal changeAmount = BigDecimal.ZERO;
+        if (request.getPaymentMethod() == PaymentMethod.CASH) {
+            if (request.getAmountTendered() == null) {
+                // Mặc định nhận vừa đủ tiền nếu không nhập số tiền cụ thể
+                request.setAmountTendered(totalAmount);
+            } else if (request.getAmountTendered().compareTo(totalAmount) < 0) {
+                // E2: Tiền khách đưa ít hơn tổng tiền đơn hàng
+                throw new IllegalArgumentException("Số tiền khách đưa (" + request.getAmountTendered() + " VNĐ) ít hơn tổng tiền phải trả (" + totalAmount + " VNĐ)");
+            }
+            changeAmount = request.getAmountTendered().subtract(totalAmount);
+        }
+
+        // 3. Khởi tạo đơn hàng OFFLINE cho khách vãng lai
+        User guestCustomer = userRepository.findByEmail("guest@urbanwine.com").orElse(null);
+
+        Order order = new Order();
+        order.setCustomer(guestCustomer);
+        order.setRecipientName("Khách mua tại quầy");
+        order.setRecipientPhone("N/A");
+        order.setDeliveryAddress("Mua trực tiếp tại quầy Urban Wine");
+        order.setTotalAmount(totalAmount);
+        order.setChannelType(OrderChannel.OFFLINE);
+        order.setAdminNote(request.getNote());
+        order.setCreatedAt(LocalDateTime.now());
+
+        if (request.getPaymentMethod() == PaymentMethod.CASH) {
+            // POST-1: Thanh toán tiền mặt -> Hoàn tất ngay
+            order.setOrderStatus(OrderStatus.COMPLETED);
+        } else {
+            // Thanh toán VietQR -> Chờ khách quét mã
+            order.setOrderStatus(OrderStatus.PENDING);
+        }
+        Order savedOrder = orderRepository.save(order);
+
+        // 4. Lưu chi tiết OrderDetail
+        for (PreparedItem prep : preparedItems) {
+            OrderDetail orderDetail = new OrderDetail();
+            orderDetail.setOrder(savedOrder);
+            orderDetail.setWine(prep.wine);
+            orderDetail.setQuantity(prep.quantity);
+            orderDetail.setUnitPrice(prep.unitPrice);
+            orderDetailRepository.save(orderDetail);
+
+            itemResponses.add(OrderItemResponse.builder()
+                    .wineId(prep.wine.getWineId())
+                    .wineName(prep.wine.getWineName())
+                    .imageUrl(prep.wine.getImageUrl())
+                    .unitPrice(prep.unitPrice)
+                    .quantity(prep.quantity)
+                    .subtotal(prep.lineTotal)
+                    .build());
+        }
+
+        // 5. Lưu PaymentTransaction
+        PaymentTransaction paymentTx = new PaymentTransaction();
+        paymentTx.setOrder(savedOrder);
+        paymentTx.setPaymentMethod(request.getPaymentMethod().name());
+        if (request.getPaymentMethod() == PaymentMethod.CASH) {
+            paymentTx.setPaymentStatus(PaymentStatus.PAID);
+        } else {
+            paymentTx.setPaymentStatus(PaymentStatus.UNPAID);
+        }
+        paymentTx.setCreatedAt(LocalDateTime.now());
+        paymentTransactionRepository.save(paymentTx);
+
+        // 6. Sinh mã VietQR nếu là phương thức VIETQR (Alternative Flow)
+        String qrCodeUrl = null;
+        Integer qrExpiresInSeconds = null;
+        if (request.getPaymentMethod() == PaymentMethod.VIETQR) {
+            qrCodeUrl = generateVietQrUrl(savedOrder.getOrderId(), totalAmount);
+            qrExpiresInSeconds = 300; // 5 phút đếm ngược
+        }
+
+        // 7. Tạo nội dung biên lai bán lẻ (Receipt) sẵn sàng in
+        String receiptContent = generateReceiptContent(
+                savedOrder, itemResponses, merchandiseSubtotal, vatAmount, totalAmount,
+                request.getAmountTendered(), changeAmount, request.getPaymentMethod()
+        );
+
+        log.info("Tạo đơn hàng tại quầy thành công! ID: #{}, Kênh: OFFLINE, Phương thức: {}, Trạng thái: {}, Tổng tiền: {} VNĐ",
+                savedOrder.getOrderId(), request.getPaymentMethod(), savedOrder.getOrderStatus(), totalAmount);
+
+        return OfflineOrderResponse.builder()
+                .orderId(savedOrder.getOrderId())
+                .orderCode("OFFLINE_" + savedOrder.getOrderId())
+                .channelType(OrderChannel.OFFLINE)
+                .orderStatus(savedOrder.getOrderStatus())
+                .paymentStatus(paymentTx.getPaymentStatus())
+                .paymentMethod(request.getPaymentMethod())
+                .merchandiseSubtotal(merchandiseSubtotal)
+                .vatAmount(vatAmount)
+                .shippingFee(BigDecimal.ZERO)
+                .totalAmount(totalAmount)
+                .amountTendered(request.getAmountTendered())
+                .changeAmount(changeAmount)
+                .qrCodeUrl(qrCodeUrl)
+                .qrExpiresInSeconds(qrExpiresInSeconds)
+                .createdAt(savedOrder.getCreatedAt())
+                .items(itemResponses)
+                .receiptContent(receiptContent)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public OfflineOrderResponse cancelOfflineOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        if (order.getChannelType() != OrderChannel.OFFLINE) {
+            throw new IllegalArgumentException("Chức năng hủy nhanh tại quầy chỉ áp dụng cho đơn hàng OFFLINE");
+        }
+
+        if (order.getOrderStatus() == OrderStatus.COMPLETED) {
+            throw new IllegalArgumentException("Đơn hàng đã hoàn tất thanh toán, không thể hủy nhanh tại quầy");
+        }
+
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalArgumentException("Đơn hàng này đã được hủy trước đó");
+        }
+
+        // Hoàn trả kho ngay lập tức (0s)
+        restockOrderItems(order);
+
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        order.setCancelStatus(CancelStatus.APPROVED);
+        order.setCancellationReason("Nhân viên hủy đơn tại quầy do khách đổi ý hoặc không thể thanh toán");
+        order.setCancelRequestedAt(LocalDateTime.now());
+        orderRepository.save(order);
+
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        if (paymentTx != null && paymentTx.getPaymentStatus() == PaymentStatus.UNPAID) {
+            paymentTx.setPaymentStatus(PaymentStatus.FAILED);
+            paymentTransactionRepository.save(paymentTx);
+        }
+
+        log.info("Đã hủy đơn hàng tại quầy #{} và hoàn trả toàn bộ tồn kho thành công.", order.getOrderId());
+        return mapToOfflineOrderResponse(order, paymentTx, null, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OfflineOrderResponse getOfflineOrderDetail(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        if (order.getChannelType() != OrderChannel.OFFLINE) {
+            throw new IllegalArgumentException("Đơn hàng #" + orderId + " không phải đơn hàng bán lẻ tại quầy (OFFLINE)");
+        }
+
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        return mapToOfflineOrderResponse(order, paymentTx, null, null);
+    }
+
+    @Override
+    @Transactional
+    public OfflineOrderResponse processVietQrWebhook(VietQrWebhookRequest request) {
+        Long resolvedOrderId = request.getOrderId();
+        if (resolvedOrderId == null && request.getOrderCode() != null) {
+            String cleaned = request.getOrderCode().replaceAll("[^0-9]", "");
+            if (!cleaned.isEmpty()) {
+                resolvedOrderId = Long.parseLong(cleaned);
+            }
+        }
+
+        if (resolvedOrderId == null) {
+            throw new IllegalArgumentException("Không xác định được ID đơn hàng từ thông tin webhook");
+        }
+
+        final Long targetOrderId = resolvedOrderId;
+        Order order = orderRepository.findById(targetOrderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + targetOrderId));
+
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalArgumentException("Đơn hàng #" + targetOrderId + " đã bị hủy trước đó do quá hạn hoặc nhân viên đã hủy");
+        }
+
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order)
+                .orElseGet(() -> {
+                    PaymentTransaction tx = new PaymentTransaction();
+                    tx.setOrder(order);
+                    tx.setPaymentMethod(PaymentMethod.VIETQR.name());
+                    tx.setCreatedAt(LocalDateTime.now());
+                    return tx;
+                });
+
+        // Cập nhật trạng thái sang COMPLETED và PAID
+        order.setOrderStatus(OrderStatus.COMPLETED);
+        orderRepository.save(order);
+
+        paymentTx.setPaymentStatus(PaymentStatus.PAID);
+        if (request.getReferenceCode() != null) {
+            paymentTx.setBankReceiptCode(request.getReferenceCode());
+        }
+        paymentTransactionRepository.save(paymentTx);
+
+        log.info("Webhook VietQR: Đơn hàng tại quầy #{} đã xác nhận thanh toán thành công qua chuyển khoản ngân hàng!", order.getOrderId());
+        return mapToOfflineOrderResponse(order, paymentTx, null, null);
+    }
+
+    private String generateVietQrUrl(Long orderId, BigDecimal amount) {
+        String memo = "WINE" + orderId;
+        String encodedAccountName = URLEncoder.encode(vietQrAccountName, StandardCharsets.UTF_8);
+        return String.format("https://img.vietqr.io/image/%s-%s-compact2.png?amount=%s&addInfo=%s&accountName=%s",
+                vietQrBankId, vietQrAccountNo, amount.toBigInteger().toString(), memo, encodedAccountName);
+    }
+
+    private String generateReceiptContent(Order order, List<OrderItemResponse> items,
+                                          BigDecimal subtotal, BigDecimal vat, BigDecimal total,
+                                          BigDecimal tendered, BigDecimal change, PaymentMethod method) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        StringBuilder sb = new StringBuilder();
+        sb.append("==================================================\n");
+        sb.append("                 URBAN WINE STORE                 \n");
+        sb.append("          HÓA ĐƠN BÁN LẺ (RETAIL RECEIPT)         \n");
+        sb.append("==================================================\n");
+        sb.append(String.format("Mã hóa đơn: #OFFLINE-%d\n", order.getOrderId()));
+        sb.append("Kênh bán: Bán trực tiếp tại quầy (Takeaway)\n");
+        sb.append(String.format("Thời gian: %s\n", order.getCreatedAt() != null ? order.getCreatedAt().format(formatter) : ""));
+        sb.append("Khách hàng: Khách vãng lai\n");
+        sb.append("--------------------------------------------------\n");
+        sb.append(String.format("%-24s %3s %10s %10s\n", "Tên rượu", "SL", "Đơn giá", "Thành tiền"));
+        sb.append("--------------------------------------------------\n");
+
+        int index = 1;
+        for (OrderItemResponse item : items) {
+            String name = item.getWineName();
+            if (name.length() > 22) {
+                name = name.substring(0, 21) + "..";
+            }
+            sb.append(String.format("%d. %-21s %3d %,10.0f %,10.0f\n",
+                    index++, name, item.getQuantity(), item.getUnitPrice(), item.getSubtotal()));
+        }
+
+        sb.append("--------------------------------------------------\n");
+        sb.append(String.format("Tiền hàng (Subtotal):               %,14.0f VNĐ\n", subtotal));
+        sb.append(String.format("Thuế VAT (10%%):                     %,14.0f VNĐ\n", vat));
+        sb.append("Phí vận chuyển:                                  0 VNĐ\n");
+        sb.append("--------------------------------------------------\n");
+        sb.append(String.format("TỔNG TIỀN THANH TOÁN:               %,14.0f VNĐ\n", total));
+        sb.append(String.format("Phương thức: %s\n", method == PaymentMethod.CASH ? "TIỀN MẶT (CASH)" : "CHUYỂN KHOẢN (VIETQR)"));
+        if (method == PaymentMethod.CASH && tendered != null) {
+            sb.append(String.format("Tiền khách đưa:                     %,14.0f VNĐ\n", tendered));
+            sb.append(String.format("Tiền thừa thối lại:                 %,14.0f VNĐ\n", change != null ? change : BigDecimal.ZERO));
+        }
+        sb.append(String.format("Trạng thái: %s\n", order.getOrderStatus() == OrderStatus.COMPLETED ? "ĐÃ THANH TOÁN" : "CHỜ THANH TOÁN"));
+        sb.append("==================================================\n");
+        sb.append("  Cảm ơn quý khách! Chúc quý khách ngon miệng!   \n");
+        sb.append("==================================================\n");
+        return sb.toString();
+    }
+
+    private OfflineOrderResponse mapToOfflineOrderResponse(Order order, PaymentTransaction paymentTx, BigDecimal tendered, BigDecimal change) {
+        List<OrderDetail> details = orderDetailRepository.findByOrder(order);
+        List<OrderItemResponse> itemResponses = new ArrayList<>();
+        BigDecimal subtotal = BigDecimal.ZERO;
+
+        for (OrderDetail detail : details) {
+            Wine wine = detail.getWine();
+            BigDecimal lineTotal = detail.getUnitPrice().multiply(BigDecimal.valueOf(detail.getQuantity()));
+            subtotal = subtotal.add(lineTotal);
+
+            itemResponses.add(OrderItemResponse.builder()
+                    .wineId(wine.getWineId())
+                    .wineName(wine.getWineName())
+                    .imageUrl(wine.getImageUrl())
+                    .unitPrice(detail.getUnitPrice())
+                    .quantity(detail.getQuantity())
+                    .subtotal(lineTotal)
+                    .build());
+        }
+
+        BigDecimal vatAmount = subtotal.multiply(VAT_RATE).setScale(0, RoundingMode.HALF_UP);
+        PaymentStatus paymentStatus = (paymentTx != null) ? paymentTx.getPaymentStatus() : PaymentStatus.UNPAID;
+        PaymentMethod method = PaymentMethod.CASH;
+        if (paymentTx != null && paymentTx.getPaymentMethod() != null) {
+            try {
+                method = PaymentMethod.valueOf(paymentTx.getPaymentMethod());
+            } catch (Exception ignored) {}
+        }
+
+        String qrUrl = null;
+        Integer qrExpires = null;
+        if (method == PaymentMethod.VIETQR && order.getOrderStatus() == OrderStatus.PENDING) {
+            qrUrl = generateVietQrUrl(order.getOrderId(), order.getTotalAmount());
+            qrExpires = 300;
+        }
+
+        String receipt = generateReceiptContent(order, itemResponses, subtotal, vatAmount, order.getTotalAmount(), tendered, change, method);
+
+        return OfflineOrderResponse.builder()
+                .orderId(order.getOrderId())
+                .orderCode("OFFLINE_" + order.getOrderId())
+                .channelType(OrderChannel.OFFLINE)
+                .orderStatus(order.getOrderStatus())
+                .paymentStatus(paymentStatus)
+                .paymentMethod(method)
+                .merchandiseSubtotal(subtotal)
+                .vatAmount(vatAmount)
+                .shippingFee(BigDecimal.ZERO)
+                .totalAmount(order.getTotalAmount())
+                .amountTendered(tendered)
+                .changeAmount(change)
+                .qrCodeUrl(qrUrl)
+                .qrExpiresInSeconds(qrExpires)
+                .createdAt(order.getCreatedAt())
+                .items(itemResponses)
+                .receiptContent(receipt)
+                .build();
     }
 
     private record PreparedItem(Wine wine, Integer quantity, BigDecimal unitPrice, BigDecimal lineTotal) {}

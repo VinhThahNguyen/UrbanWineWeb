@@ -1,0 +1,170 @@
+### =========================================================================
+### USE CASE UC_2.1.5: CREATE OFFLINE ORDER (BÁN LẺ TẠI QUẦY CHO KHÁCH VÃNG LAI)
+### =========================================================================
+@baseUrl = http://localhost:8080
+
+### -------------------------------------------------------------------------
+### 1. ĐĂNG NHẬP ADMIN / NHÂN VIÊN THU NGÂN (PRE-1, BR-05)
+### Tài khoản: admin@urbanwine.com / Admin@123
+### -------------------------------------------------------------------------
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@urbanwine.com",
+  "password": "Admin@123"
+}
+
+### Lưu token Admin
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+
+### -------------------------------------------------------------------------
+### 2. NORMAL FLOW: BÁN TẠI QUẦY & THANH TOÁN TIỀN MẶT (CASH)
+### - Khách mua tại quầy không cần tài khoản, sđt, địa chỉ nhận hàng
+### - Hệ thống tính VAT 10%, phí ship 0đ (BR-03)
+### - Tính tiền thối lại cho khách: amountTendered - totalAmount
+### - Trừ kho ngay lập tức, trạng thái COMPLETED, thanh toán PAID (POST-1, POST-2)
+### - Trả về dữ liệu in hóa đơn bán lẻ (POST-3)
+### -------------------------------------------------------------------------
+# @name createCashOrder
+POST {{baseUrl}}/api/admin/orders/offline
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "paymentMethod": "CASH",
+  "amountTendered": 3000000,
+  "note": "Khách mua mang về 2 chai",
+  "items": [
+    {
+      "wineId": 1,
+      "quantity": 2
+    }
+  ]
+}
+
+
+### -------------------------------------------------------------------------
+### 3. ALTERNATIVE FLOW: THANH TOÁN CHUYỂN KHOẢN VIETQR ĐỘNG
+### - Tạo đơn trạng thái PENDING, UNPAID, tạm trừ tồn kho
+### - Trả về URL ảnh dynamic VietQR theo chuẩn Napas 247 và thời gian hết hạn 300s (5 phút)
+### -------------------------------------------------------------------------
+# @name createVietQrOrder
+POST {{baseUrl}}/api/admin/orders/offline
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "paymentMethod": "VIETQR",
+  "note": "Khách yêu cầu quét mã QR ngân hàng tại quầy",
+  "items": [
+    {
+      "wineId": 1,
+      "quantity": 1
+    }
+  ]
+}
+
+### Lưu Order ID từ đơn VietQR vừa tạo để test tiếp các bước sau
+@qrOrderId = {{createVietQrOrder.response.body.orderId}}
+
+
+### -------------------------------------------------------------------------
+### 4. ALTERNATIVE FLOW - BƯỚC 5 & 6: POLLING KIỂM TRA TRẠNG THÁI ĐƠN HÀNG TẠI QUẦY
+### Màn hình POS gọi định kỳ để theo dõi xem khách đã chuyển khoản thành công chưa
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/orders/offline/{{qrOrderId}}
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 5. ALTERNATIVE FLOW - BƯỚC 7 & 8: WEBHOOK IPN TỪ CỔNG THANH TOÁN / NGÂN HÀNG
+### Cổng thanh toán (PayOS / VietQR) bắn webhook xác nhận khách đã chuyển khoản xong
+### Hệ thống chuyển đơn sang COMPLETED, paymentStatus PAID, in hóa đơn giao rượu
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/payment/vietqr-webhook
+Content-Type: application/json
+
+{
+  "orderId": {{qrOrderId}},
+  "orderCode": "OFFLINE_{{qrOrderId}}",
+  "amount": 1000000,
+  "referenceCode": "MBVCB_FT2610188899",
+  "description": "WINE{{qrOrderId}} Chuyen tien mua ruou vang"
+}
+
+
+### -------------------------------------------------------------------------
+### 6. KIỂM TRA LẠI ĐƠN HÀNG SAU KHI WEBHOOK BẮN VỀ
+### Trạng thái đã chuyển thành COMPLETED, paymentStatus PAID
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/orders/offline/{{qrOrderId}}
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 7. NGOẠI LỆ E3 & E4: HỦY NHANH ĐƠN HÀNG TẠI QUẦY (KHÁCH ĐỔI Ý HOẶC LỖI QR)
+### Khách đứng ở quầy không chuyển được hoặc đổi ý không mua nữa
+### Thu ngân bấm nút 'Hủy đơn' -> Hoàn trả tồn kho ngay lập tức (0 giây)
+### -------------------------------------------------------------------------
+# @name createOrderToCancel
+POST {{baseUrl}}/api/admin/orders/offline
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "paymentMethod": "VIETQR",
+  "items": [
+    {
+      "wineId": 1,
+      "quantity": 1
+    }
+  ]
+}
+
+@cancelOrderId = {{createOrderToCancel.response.body.orderId}}
+
+### Thực hiện hủy nhanh đơn hàng tại quầy và hoàn kho
+POST {{baseUrl}}/api/admin/orders/offline/{{cancelOrderId}}/cancel
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 8. NGOẠI LỆ E1: KHÔNG ĐỦ TỒN KHO TẠI QUẦY
+### Hệ thống từ chối tạo đơn nếu số lượng tồn kho thực tế nhỏ hơn yêu cầu
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/orders/offline
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "paymentMethod": "CASH",
+  "items": [
+    {
+      "wineId": 1,
+      "quantity": 99999
+    }
+  ]
+}
+
+
+### -------------------------------------------------------------------------
+### 9. NGOẠI LỆ E2: SỐ TIỀN MẶT KHÁCH ĐƯA ÍT HƠN TỔNG TIỀN PHẢI TRẢ
+### Hệ thống từ chối hoàn tất đơn hàng và thông báo số tiền còn thiếu
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/orders/offline
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "paymentMethod": "CASH",
+  "amountTendered": 50000,
+  "items": [
+    {
+      "wineId": 1,
+      "quantity": 1
+    }
+  ]
+}

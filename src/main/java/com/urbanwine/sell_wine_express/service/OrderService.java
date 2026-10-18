@@ -48,4 +48,19 @@ public interface OrderService {
 
     // UC_2.1.2 Process Order: Admin từ chối đơn PENDING kèm lý do (E2, POST-2, POST-3)
     OrderResponse rejectOrder(Long orderId, RejectOrderRequest request);
+
+    // =========================================================================
+    // UC_2.1.5: CREATE OFFLINE ORDER (BÁN LẺ TẠI QUẦY CHO KHÁCH VÃNG LAI)
+    // =========================================================================
+    // 1. Tạo đơn hàng offline và xử lý thanh toán (CASH hoàn tất ngay, VIETQR sinh dynamic QR)
+    com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse createOfflineOrder(com.urbanwine.sell_wine_express.dto.request.CreateOfflineOrderRequest request);
+
+    // 2. Hủy nhanh đơn hàng offline PENDING tại quầy (khách đổi ý) -> hoàn kho ngay lập tức
+    com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse cancelOfflineOrder(Long orderId);
+
+    // 3. Xem chi tiết / Polling trạng thái đơn hàng offline tại quầy
+    com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse getOfflineOrderDetail(Long orderId);
+
+    // 4. Nhận Webhook IPN từ cổng thanh toán / ngân hàng xác nhận khách quét VietQR thành công
+    com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse processVietQrWebhook(com.urbanwine.sell_wine_express.dto.request.VietQrWebhookRequest request);
 }
