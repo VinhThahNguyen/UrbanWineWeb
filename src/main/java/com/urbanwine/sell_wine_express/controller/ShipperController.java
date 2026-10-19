@@ -85,4 +85,36 @@ public class ShipperController {
         OrderResponse response = orderService.requestShipperRejectOrder(currentShipper, orderId, request);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * UC_2.3.2 Normal Flow:
+     * Shipper xác nhận giao hàng thành công đến tay khách hàng (POST-1).
+     * Tự động quyết toán thanh toán COD sang PAID (BR-09), chuyển trạng thái sang COMPLETED,
+     * ghi nhận completedAt, gửi email cho khách và thông báo chuông cho Quản lý & Shipper.
+     */
+    @PostMapping("/orders/{orderId}/complete")
+    public ResponseEntity<OrderResponse> completeDelivery(
+            @AuthenticationPrincipal User currentShipper,
+            @PathVariable("orderId") Long orderId
+    ) {
+        OrderResponse response = orderService.completeDelivery(currentShipper, orderId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * UC_2.3.2 Alternative Flow:
+     * Shipper báo cáo giao hàng không thành công (khách không nghe máy, từ chối nhận...).
+     * Bắt buộc nhập lý do (E2), chuyển trạng thái sang CANCELLED, tự động hoàn trả số lượng vào kho (BR-04, POST-2),
+     * kích hoạt hoàn tiền nếu trả trước online và gửi thông báo cho Quản lý, Khách hàng & Shipper.
+     */
+    @PostMapping("/orders/{orderId}/fail")
+    public ResponseEntity<OrderResponse> failDelivery(
+            @AuthenticationPrincipal User currentShipper,
+            @PathVariable("orderId") Long orderId,
+            @jakarta.validation.Valid @RequestBody com.urbanwine.sell_wine_express.dto.request.FailDeliveryRequest request
+    ) {
+        OrderResponse response = orderService.failDelivery(currentShipper, orderId, request);
+        return ResponseEntity.ok(response);
+    }
 }
+

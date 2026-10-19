@@ -247,3 +247,68 @@ Content-Type: application/json
   "note": "Đơn hỗ trợ nhận thay cho Shipper 1 gặp sự cố xe"
 }
 
+
+### =========================================================================
+### USE CASE UC_2.3.2: UPDATE DELIVERY STATUS (CẬP NHẬT TRẠNG THÁI GIAO HÀNG)
+### =========================================================================
+
+### -------------------------------------------------------------------------
+### 22. NORMAL FLOW: SHIPPER 2 XÁC NHẬN GIAO HÀNG THÀNH CÔNG (POST-1, BR-09)
+### POST /api/shipper/orders/{orderId}/complete
+### Kỳ vọng:
+### - orderStatus chuyển sang: COMPLETED
+### - Ghi nhận completedAt thời điểm giao hàng
+### - Đơn COD: Tự động cập nhật paymentStatus = PAID (BR-09)
+### - Tồn kho sản phẩm không đổi
+### - Gửi chuông thông báo cho Quản lý & Shipper, gửi email xác nhận cho Khách hàng
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/shipper/orders/1/complete
+Authorization: Bearer {{shipper2Token}}
+
+
+### -------------------------------------------------------------------------
+### 23. ADMIN & SHIPPER XEM THÔNG BÁO GIAO HÀNG THÀNH CÔNG
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/shipper/notifications
+Authorization: Bearer {{shipper2Token}}
+
+
+### -------------------------------------------------------------------------
+### 24. NGOẠI LỆ E2: BÁO GIAO THẤT BẠI NHƯNG BỎ TRỐNG LÝ DO (Kỳ vọng lỗi 400)
+### POST /api/shipper/orders/{orderId}/fail
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/shipper/orders/1/fail
+Authorization: Bearer {{shipper2Token}}
+Content-Type: application/json
+
+{
+  "reason": ""
+}
+
+
+### -------------------------------------------------------------------------
+### 25. ALTERNATIVE FLOW: BÁO CÁO GIAO HÀNG THẤT BẠI (POST-2, BR-04)
+### POST /api/shipper/orders/{orderId}/fail
+### Kỳ vọng:
+### - orderStatus chuyển sang: CANCELLED
+### - Ghi nhận cancellationReason
+### - Tự động hoàn trả toàn bộ số lượng rượu vào tồn kho (restock)
+### - Nếu đã thanh toán online (VNPAY): tự động hoàn tiền
+### - Gửi email thông báo cho Khách hàng, gửi chuông cho Quản lý & Shipper
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/shipper/orders/2/fail
+Authorization: Bearer {{shipper2Token}}
+Content-Type: application/json
+
+{
+  "reason": "Khách hàng không nghe máy sau 3 lần gọi (10h15, 10h30, 10h45), địa chỉ đóng cửa không có người nhận"
+}
+
+
+### -------------------------------------------------------------------------
+### 26. SHIPPER & ADMIN XEM THÔNG BÁO GIAO HÀNG THẤT BẠI & HOÀN KHO
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/shipper/notifications
+Authorization: Bearer {{shipper2Token}}
+
+

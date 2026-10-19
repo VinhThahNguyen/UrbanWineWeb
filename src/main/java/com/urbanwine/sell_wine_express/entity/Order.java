@@ -78,6 +78,9 @@ public class Order {
     @Column(name = "admin_note", length = 500)
     private String adminNote;
 
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 }

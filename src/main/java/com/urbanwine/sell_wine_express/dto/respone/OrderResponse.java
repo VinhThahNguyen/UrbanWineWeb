@@ -45,6 +45,8 @@ public class OrderResponse {
     private PaymentStatus paymentStatus;
     private PaymentMethod paymentMethod;
     private String paymentUrl;
+    private LocalDateTime completedAt;
     private LocalDateTime createdAt;
     private List<OrderItemResponse> items;
 }
+

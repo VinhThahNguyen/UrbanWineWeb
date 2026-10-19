@@ -93,4 +93,14 @@ public interface OrderService {
 
     // 3. Admin xét duyệt yêu cầu từ chối của shipper (approve = true: rút đơn; approve = false: shipper giao tiếp)
     OrderResponse reviewShipperRejectOrder(Long orderId, com.urbanwine.sell_wine_express.dto.request.ReviewShipperRejectRequest request);
+
+    // =========================================================================
+    // UC_2.3.2: UPDATE DELIVERY STATUS (CẬP NHẬT TRẠNG THÁI GIAO HÀNG CỦA SHIPPER)
+    // =========================================================================
+    // 1. Shipper xác nhận giao hàng thành công (POST-1, BR-08, BR-09)
+    OrderResponse completeDelivery(User shipper, Long orderId);
+
+    // 2. Shipper báo cáo giao hàng thất bại kèm lý do (POST-2, BR-04, BR-08, E2)
+    OrderResponse failDelivery(User shipper, Long orderId, com.urbanwine.sell_wine_express.dto.request.FailDeliveryRequest request);
 }
+

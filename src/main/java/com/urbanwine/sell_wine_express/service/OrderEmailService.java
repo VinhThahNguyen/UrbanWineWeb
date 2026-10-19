@@ -129,6 +129,55 @@ public class OrderEmailService {
         sendEmail(recipient, subject, content);
     }
 
+    /**
+     * Gửi email thông báo khi đơn hàng được giao thành công cho khách hàng
+     */
+    public void sendDeliverySuccessEmail(Order order) {
+        if (order.getCustomer() == null || order.getCustomer().getEmail() == null) {
+            return;
+        }
+        String toEmail = order.getCustomer().getEmail();
+        String orderCode = String.format("ORD-%06d", order.getOrderId());
+        String subject = String.format("[Urban Wine Express] Đơn hàng #%s đã được giao thành công", orderCode);
+        String recipientName = order.getCustomer().getFullName() != null ? order.getCustomer().getFullName() : order.getRecipientName();
+
+        String content = "Kính gửi quý khách " + recipientName + ",\n\n"
+                + "Đơn hàng #" + orderCode + " của quý khách đã được nhân viên giao hàng (Shipper) giao thành công!\n\n"
+                + "- Người nhận: " + order.getRecipientName() + " (" + order.getRecipientPhone() + ")\n"
+                + "- Địa chỉ nhận: " + order.getDeliveryAddress() + "\n"
+                + "- Tổng tiền đơn hàng: " + String.format("%,d VNĐ", order.getTotalAmount().longValue()) + "\n\n"
+                + "Urban Wine Express chân thành cảm ơn quý khách đã tin tưởng và ủng hộ chúng tôi. Chúc quý khách có những trải nghiệm tuyệt vời khi thưởng thức sản phẩm!\n";
+
+        sendEmail(toEmail, subject, content);
+    }
+
+    /**
+     * Gửi email thông báo khi đơn hàng giao thất bại và bị hủy
+     */
+    public void sendDeliveryFailedEmail(Order order, String reason, boolean isPrepaid) {
+        if (order.getCustomer() == null || order.getCustomer().getEmail() == null) {
+            return;
+        }
+        String toEmail = order.getCustomer().getEmail();
+        String orderCode = String.format("ORD-%06d", order.getOrderId());
+        String subject = String.format("[Urban Wine Express] Thông báo giao hàng không thành công cho đơn hàng #%s", orderCode);
+        String recipientName = order.getCustomer().getFullName() != null ? order.getCustomer().getFullName() : order.getRecipientName();
+
+        String refundNotice = isPrepaid
+                ? "\n* LƯU Ý HOÀN TIỀN: Vì đơn hàng đã được thanh toán online trước qua VNPay, hệ thống đã tự động kích hoạt quy trình hoàn tiền về tài khoản ngân hàng của quý khách."
+                : "";
+
+        String content = "Kính gửi quý khách " + recipientName + ",\n\n"
+                + "Rất tiếc, đơn hàng #" + orderCode + " của quý khách không thể hoàn tất giao hàng và đã được chuyển sang trạng thái HỦY.\n\n"
+                + "- Lý do không giao được: " + reason + "\n"
+                + "- Tổng tiền đơn hàng: " + String.format("%,d VNĐ", order.getTotalAmount().longValue()) + refundNotice + "\n\n"
+                + "Nếu quý khách vẫn muốn nhận đơn hàng này hoặc cần hỗ trợ thêm, vui lòng liên hệ ngay với tổng đài CSKH của Urban Wine Express.\n\n"
+                + "Trân trọng,\n"
+                + "Urban Wine Express Team\n";
+
+        sendEmail(toEmail, subject, content);
+    }
+
     private void sendEmail(String toEmail, String subject, String content) {
         if (mailSender != null) {
             try {

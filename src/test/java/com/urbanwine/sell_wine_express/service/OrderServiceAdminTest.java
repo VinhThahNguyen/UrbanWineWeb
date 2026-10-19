@@ -671,4 +671,152 @@ class OrderServiceAdminTest {
                 eq(602L)
         );
     }
+
+    // =========================================================================
+    // UC_2.3.2 UPDATE DELIVERY STATUS TESTS
+    // =========================================================================
+
+    @Test
+    @DisplayName("UC_2.3.2 Normal Flow: Shipper xác nhận giao thành công đơn COD -> COMPLETED, PAID, lưu completedAt, gửi thông báo & email")
+    void completeDelivery_Success_COD() {
+        User currentShipper = User.builder().userId(10L).fullName("Nguyễn Văn Giao").role(Role.ROLE_SHIPPER).build();
+        User adminUser = User.builder().userId(1L).fullName("Admin Manager").role(Role.ROLE_ADMIN).build();
+
+        Order order = new Order();
+        order.setOrderId(701L);
+        order.setShipper(currentShipper);
+        order.setOrderStatus(OrderStatus.SHIPPING);
+        order.setCustomer(testCustomer);
+        order.setTotalAmount(new BigDecimal("250000"));
+
+        PaymentTransaction codTx = new PaymentTransaction();
+        codTx.setOrder(order);
+        codTx.setPaymentMethod(PaymentMethod.COD.name());
+        codTx.setPaymentStatus(PaymentStatus.UNPAID);
+
+        when(orderRepository.findById(701L)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArgument(0));
+        when(paymentTransactionRepository.findByOrder(order)).thenReturn(Optional.of(codTx));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+        when(orderDetailRepository.findByOrder(order)).thenReturn(List.of());
+        when(userRepository.findByRole(Role.ROLE_ADMIN)).thenReturn(List.of(adminUser));
+
+        OrderResponse res = orderService.completeDelivery(currentShipper, 701L);
+
+        assertNotNull(res);
+        assertEquals(OrderStatus.COMPLETED, res.getOrderStatus());
+        assertNotNull(res.getCompletedAt());
+        assertEquals(PaymentStatus.PAID, codTx.getPaymentStatus());
+
+        // Kiểm tra thông báo bắn cho Admin và Shipper
+        verify(notificationService).sendNotification(
+                eq(adminUser),
+                contains("giao thành công"),
+                anyString(),
+                eq(NotificationType.DELIVERY_COMPLETED),
+                eq(701L)
+        );
+        verify(notificationService).sendNotification(
+                eq(currentShipper),
+                contains("Giao hàng thành công"),
+                anyString(),
+                eq(NotificationType.DELIVERY_COMPLETED),
+                eq(701L)
+        );
+
+        // Kiểm tra email xác nhận cho khách hàng
+        verify(orderEmailService).sendDeliverySuccessEmail(order);
+    }
+
+    @Test
+    @DisplayName("UC_2.3.2 Exception E1 / BR-08: Shipper khác cố gắng xác nhận hoàn thành đơn không thuộc về mình -> Bị chặn")
+    void completeDelivery_Exception_NotAssignedShipper() {
+        User shipper1 = User.builder().userId(10L).fullName("Shipper 1").role(Role.ROLE_SHIPPER).build();
+        User shipper2 = User.builder().userId(20L).fullName("Shipper 2").role(Role.ROLE_SHIPPER).build();
+
+        Order order = new Order();
+        order.setOrderId(702L);
+        order.setShipper(shipper1);
+        order.setOrderStatus(OrderStatus.SHIPPING);
+
+        when(orderRepository.findById(702L)).thenReturn(Optional.of(order));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                orderService.completeDelivery(shipper2, 702L));
+
+        assertTrue(ex.getMessage().contains("Quy tắc BR-08"));
+    }
+
+    @Test
+    @DisplayName("UC_2.3.2 Alternative Flow: Báo giao thất bại -> CANCELLED, hoàn kho, lưu lý do và thông báo")
+    void failDelivery_Success_RestockAndCancel() {
+        User currentShipper = User.builder().userId(10L).fullName("Nguyễn Văn Giao").role(Role.ROLE_SHIPPER).build();
+        User adminUser = User.builder().userId(1L).fullName("Admin Manager").role(Role.ROLE_ADMIN).build();
+
+        Wine wine = new Wine();
+        wine.setWineId(1L);
+        wine.setWineName("Vang Đỏ");
+        wine.setStockQuantity(10);
+
+        Order order = new Order();
+        order.setOrderId(703L);
+        order.setShipper(currentShipper);
+        order.setOrderStatus(OrderStatus.SHIPPING);
+        order.setCustomer(testCustomer);
+        order.setTotalAmount(new BigDecimal("500000"));
+
+        OrderDetail detail = new OrderDetail();
+        detail.setOrder(order);
+        detail.setWine(wine);
+        detail.setQuantity(2);
+        detail.setUnitPrice(new BigDecimal("250000"));
+
+        when(orderRepository.findById(703L)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArgument(0));
+        when(orderDetailRepository.findByOrder(order)).thenReturn(List.of(detail));
+        when(wineRepository.save(any(Wine.class))).thenAnswer(i -> i.getArgument(0));
+        when(paymentTransactionRepository.findByOrder(order)).thenReturn(Optional.empty());
+        when(userRepository.findByRole(Role.ROLE_ADMIN)).thenReturn(List.of(adminUser));
+
+        com.urbanwine.sell_wine_express.dto.request.FailDeliveryRequest req =
+                com.urbanwine.sell_wine_express.dto.request.FailDeliveryRequest.builder()
+                        .reason("Khách không nghe máy sau 3 lần gọi")
+                        .build();
+
+        OrderResponse res = orderService.failDelivery(currentShipper, 703L, req);
+
+        assertNotNull(res);
+        assertEquals(OrderStatus.CANCELLED, res.getOrderStatus());
+        assertTrue(res.getCancellationReason().contains("Khách không nghe máy"));
+        assertEquals(12, wine.getStockQuantity()); // Hoàn kho 10 + 2 = 12
+
+        // Kiểm tra thông báo bắn cho Admin và Shipper
+        verify(notificationService).sendNotification(
+                eq(adminUser),
+                contains("Giao thất bại"),
+                anyString(),
+                eq(NotificationType.DELIVERY_FAILED),
+                eq(703L)
+        );
+
+        // Kiểm tra gửi email cho khách
+        verify(orderEmailService).sendDeliveryFailedEmail(eq(order), eq("Khách không nghe máy sau 3 lần gọi"), eq(false));
+    }
+
+    @Test
+    @DisplayName("UC_2.3.2 Exception E2: Báo giao thất bại nhưng bỏ trống lý do -> Bị chặn")
+    void failDelivery_Exception_MissingReason() {
+        User currentShipper = User.builder().userId(10L).fullName("Nguyễn Văn Giao").role(Role.ROLE_SHIPPER).build();
+
+        com.urbanwine.sell_wine_express.dto.request.FailDeliveryRequest req =
+                com.urbanwine.sell_wine_express.dto.request.FailDeliveryRequest.builder()
+                        .reason("   ") // Trống
+                        .build();
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                orderService.failDelivery(currentShipper, 704L, req));
+
+        assertTrue(ex.getMessage().contains("Quy tắc E2"));
+    }
 }
+

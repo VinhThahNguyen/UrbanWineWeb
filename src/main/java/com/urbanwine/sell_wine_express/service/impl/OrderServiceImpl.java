@@ -425,6 +425,7 @@ public class OrderServiceImpl implements OrderService {
                 .shipperRejectRequestedAt(order.getShipperRejectRequestedAt())
                 .paymentStatus(paymentStatus)
                 .paymentMethod(paymentMethod)
+                .completedAt(order.getCompletedAt())
                 .createdAt(order.getCreatedAt())
                 .items(itemResponses)
                 .build();
@@ -1472,4 +1473,130 @@ public class OrderServiceImpl implements OrderService {
 
         return mapToOrderResponse(order);
     }
+
+    // =========================================================================
+    // UC_2.3.2: UPDATE DELIVERY STATUS (CẬP NHẬT TRẠNG THÁI GIAO HÀNG CỦA SHIPPER)
+    // =========================================================================
+
+    @Override
+    @Transactional
+    public OrderResponse completeDelivery(User shipper, Long orderId) {
+        if (shipper == null) {
+            throw new IllegalArgumentException("Thông tin nhân viên giao hàng không hợp lệ");
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId));
+
+        // BR-08 & E1: Chỉ shipper được chính thức phân công mới có quyền cập nhật
+        if (order.getShipper() == null || !order.getShipper().getUserId().equals(shipper.getUserId())) {
+            throw new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId + " được phân công cho tài khoản của bạn (Quy tắc BR-08)");
+        }
+
+        // PRE-2: Đơn hàng phải ở trạng thái SHIPPING
+        if (order.getOrderStatus() != OrderStatus.SHIPPING) {
+            throw new IllegalArgumentException("Chỉ có thể xác nhận hoàn thành cho đơn hàng đang ở trạng thái Đang giao (SHIPPING). Trạng thái hiện tại: " + order.getOrderStatus());
+        }
+
+        // BR-09: Tự động quyết toán thanh toán COD -> PAID
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        if (paymentTx != null && PaymentMethod.COD.name().equalsIgnoreCase(paymentTx.getPaymentMethod())) {
+            if (paymentTx.getPaymentStatus() == PaymentStatus.UNPAID) {
+                paymentTx.setPaymentStatus(PaymentStatus.PAID);
+                paymentTransactionRepository.save(paymentTx);
+                log.info("Đơn hàng COD #{} đã được Shipper '{}' thu tiền và cập nhật trạng thái thanh toán sang PAID (BR-09)",
+                        orderId, shipper.getFullName());
+            }
+        }
+
+        // POST-1: Cập nhật orderStatus = COMPLETED, ghi nhận completedAt, tồn kho không đổi
+        order.setOrderStatus(OrderStatus.COMPLETED);
+        order.setCompletedAt(LocalDateTime.now());
+        orderRepository.save(order);
+
+        log.info("Shipper '{}' (ID: {}) đã hoàn thành giao đơn hàng #{}.",
+                shipper.getFullName(), shipper.getUserId(), orderId);
+
+        // Gửi thông báo cho Store Manager / Admin
+        List<User> admins = userRepository.findByRole(Role.ROLE_ADMIN);
+        String adminNotifMsg = String.format("Đơn hàng #%d đã được Shipper %s giao thành công cho khách hàng.",
+                orderId, shipper.getFullName());
+        for (User admin : admins) {
+            notificationService.sendNotification(admin, "Đơn hàng #" + orderId + " giao thành công", adminNotifMsg, NotificationType.DELIVERY_COMPLETED, orderId);
+        }
+
+        // Gửi thông báo cho Shipper
+        notificationService.sendNotification(shipper, "Giao hàng thành công #" + orderId,
+                "Bạn đã hoàn thành giao đơn hàng #" + orderId + ". Cảm ơn bạn!", NotificationType.DELIVERY_COMPLETED, orderId);
+
+        // Gửi email cho khách hàng
+        orderEmailService.sendDeliverySuccessEmail(order);
+
+        return mapToOrderResponse(order);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse failDelivery(User shipper, Long orderId, com.urbanwine.sell_wine_express.dto.request.FailDeliveryRequest request) {
+        if (shipper == null) {
+            throw new IllegalArgumentException("Thông tin nhân viên giao hàng không hợp lệ");
+        }
+
+        if (request == null || request.getReason() == null || request.getReason().trim().isEmpty()) {
+            throw new IllegalArgumentException("Lý do giao hàng thất bại không được để trống (Quy tắc E2)");
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId));
+
+        // BR-08 & E1: Chỉ shipper được chính thức phân công mới có quyền cập nhật
+        if (order.getShipper() == null || !order.getShipper().getUserId().equals(shipper.getUserId())) {
+            throw new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId + " được phân công cho tài khoản của bạn (Quy tắc BR-08)");
+        }
+
+        // PRE-2: Đơn hàng phải ở trạng thái SHIPPING
+        if (order.getOrderStatus() != OrderStatus.SHIPPING) {
+            throw new IllegalArgumentException("Chỉ có thể báo giao thất bại cho đơn hàng đang ở trạng thái Đang giao (SHIPPING). Trạng thái hiện tại: " + order.getOrderStatus());
+        }
+
+        // BR-04 & POST-2: Cập nhật orderStatus = CANCELLED, lưu lý do thất bại
+        String reason = request.getReason().trim();
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        order.setCancellationReason("Giao hàng thất bại: " + reason);
+        order.setCancelStatus(CancelStatus.APPROVED);
+        order.setCancelRequestedAt(LocalDateTime.now());
+        orderRepository.save(order);
+
+        // POST-2: Tự động hoàn trả sản phẩm về kho (restock)
+        restockOrderItems(order);
+
+        // POST-2 & Alt Flow 5: Kiểm tra hoàn tiền nếu là đơn trả trước online
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        boolean isPrepaid = (paymentTx != null && paymentTx.getPaymentStatus() == PaymentStatus.PAID);
+        if (isPrepaid) {
+            vnPayService.refundTransaction(order, "Giao hàng thất bại: " + reason, "Shipper: " + shipper.getFullName());
+            log.info("Kích hoạt hoàn tiền VNPAY cho đơn hàng #{} bị giao thất bại", orderId);
+        }
+
+        log.warn("Shipper '{}' (ID: {}) báo GIAO THẤT BẠI đơn hàng #{}. Lý do: '{}'. Đã hủy đơn và hoàn kho.",
+                shipper.getFullName(), shipper.getUserId(), orderId, reason);
+
+        // Gửi thông báo cho Store Manager / Admin
+        List<User> admins = userRepository.findByRole(Role.ROLE_ADMIN);
+        String adminNotifMsg = String.format("Shipper %s báo giao hàng thất bại đơn hàng #%d. Lý do: %s. Hàng đã được tự động hoàn kho.",
+                shipper.getFullName(), orderId, reason);
+        for (User admin : admins) {
+            notificationService.sendNotification(admin, "Giao thất bại đơn hàng #" + orderId, adminNotifMsg, NotificationType.DELIVERY_FAILED, orderId);
+        }
+
+        // Gửi thông báo cho Shipper
+        notificationService.sendNotification(shipper, "Đã ghi nhận giao thất bại #" + orderId,
+                "Đơn hàng #" + orderId + " đã được cập nhật giao thất bại và hoàn trả về kho.", NotificationType.DELIVERY_FAILED, orderId);
+
+        // Gửi email cho khách hàng
+        orderEmailService.sendDeliveryFailedEmail(order, reason, isPrepaid);
+
+        return mapToOrderResponse(order);
+    }
 }
+
