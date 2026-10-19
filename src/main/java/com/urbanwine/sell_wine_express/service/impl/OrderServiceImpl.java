@@ -49,9 +49,12 @@ import com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse;
 import com.urbanwine.sell_wine_express.enums.OrderChannel;
 import com.urbanwine.sell_wine_express.repository.UserRepository;
 import com.urbanwine.sell_wine_express.dto.request.AssignShipperRequest;
+import com.urbanwine.sell_wine_express.dto.request.ReviewShipperRejectRequest;
+import com.urbanwine.sell_wine_express.dto.request.ShipperRejectOrderRequest;
 import com.urbanwine.sell_wine_express.dto.respone.ShipperWorkloadResponse;
 import com.urbanwine.sell_wine_express.enums.NotificationType;
 import com.urbanwine.sell_wine_express.enums.Role;
+import com.urbanwine.sell_wine_express.enums.ShipperRejectStatus;
 import com.urbanwine.sell_wine_express.service.NotificationService;
 import org.springframework.beans.factory.annotation.Value;
 import java.net.URLEncoder;
@@ -417,6 +420,9 @@ public class OrderServiceImpl implements OrderService {
                 .shipperName(order.getShipper() != null ? order.getShipper().getFullName() : null)
                 .shipperPhone(order.getShipper() != null ? order.getShipper().getPhoneNumber() : null)
                 .assignedAt(order.getAssignedAt())
+                .shipperRejectStatus(order.getShipperRejectStatus())
+                .shipperRejectReason(order.getShipperRejectReason())
+                .shipperRejectRequestedAt(order.getShipperRejectRequestedAt())
                 .paymentStatus(paymentStatus)
                 .paymentMethod(paymentMethod)
                 .createdAt(order.getCreatedAt())
@@ -1356,6 +1362,113 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = orderRepository.findByOrderIdAndShipper(orderId, shipper)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId + " được phân công cho tài khoản của bạn (Quy tắc BR-08)"));
+
+        return mapToOrderResponse(order);
+    }
+
+    // =========================================================================
+    // SHIPPER REJECT DELIVERY FLOW (SHIPPER TỪ CHỐI NHẬN ĐƠN / BÁO SỰ CỐ)
+    // =========================================================================
+
+    /**
+     * 1. Shipper gửi yêu cầu từ chối nhận đơn lên Admin (kèm lý do hỏng xe, sự cố...).
+     * - Chỉ áp dụng cho đơn SHIPPING được gán cho chính shipper đó (BR-08).
+     * - Đơn chuyển trạng thái shipperRejectStatus = REQUESTED.
+     */
+    @Override
+    @Transactional
+    public OrderResponse requestShipperRejectOrder(User shipper, Long orderId, ShipperRejectOrderRequest request) {
+        if (request == null || request.getReason() == null || request.getReason().trim().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng cung cấp lý do từ chối nhận đơn hàng");
+        }
+
+        Order order = orderRepository.findByOrderIdAndShipper(orderId, shipper)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId + " được phân công cho tài khoản của bạn (Quy tắc BR-08)"));
+
+        if (order.getOrderStatus() != OrderStatus.SHIPPING) {
+            throw new IllegalArgumentException("Chỉ có thể gửi yêu cầu từ chối giao cho đơn hàng đang trong trạng thái SHIPPING. Trạng thái hiện tại: " + order.getOrderStatus());
+        }
+
+        if (order.getShipperRejectStatus() == ShipperRejectStatus.REQUESTED) {
+            throw new IllegalArgumentException("Đơn hàng này đã có yêu cầu từ chối đang chờ Admin xét duyệt");
+        }
+
+        order.setShipperRejectStatus(ShipperRejectStatus.REQUESTED);
+        order.setShipperRejectReason(request.getReason().trim());
+        order.setShipperRejectRequestedAt(LocalDateTime.now());
+        orderRepository.save(order);
+
+        log.info("Shipper {} đã gửi yêu cầu từ chối giao đơn hàng #{} với lý do: '{}'",
+                shipper.getFullName(), orderId, request.getReason().trim());
+
+        return mapToOrderResponse(order);
+    }
+
+    /**
+     * 2. Admin xem danh sách các đơn hàng shipper đang xin từ chối để xử lý khẩn cấp.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getPendingShipperRejectOrders() {
+        List<Order> orders = orderRepository.findByShipperRejectStatusOrderByShipperRejectRequestedAtDesc(ShipperRejectStatus.REQUESTED);
+        return orders.stream().map(this::mapToOrderResponse).toList();
+    }
+
+    /**
+     * 3. Admin xét duyệt yêu cầu từ chối nhận đơn của Shipper:
+     * - TH1 (approved = true): Đồng ý cho rút đơn -> Đơn quay về PROCESSING, gỡ shipper cũ, sẵn sàng gán cho shipper khác.
+     *                          Gửi thông báo chấp thuận tới shipper cũ.
+     * - TH2 (approved = false): Từ chối yêu cầu -> Đơn giữ nguyên SHIPPING, shipper cũ phải tiếp tục giao.
+     *                           Gửi thông báo từ chối kèm lời nhắn tới shipper.
+     */
+    @Override
+    @Transactional
+    public OrderResponse reviewShipperRejectOrder(Long orderId, ReviewShipperRejectRequest request) {
+        if (request == null || request.getApproved() == null) {
+            throw new IllegalArgumentException("Vui lòng xác định quyết định phê duyệt (true: đồng ý rút đơn, false: từ chối)");
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        if (order.getShipperRejectStatus() != ShipperRejectStatus.REQUESTED) {
+            throw new IllegalArgumentException("Đơn hàng #" + orderId + " hiện không có yêu cầu từ chối nhận đơn nào đang chờ duyệt");
+        }
+
+        User currentShipper = order.getShipper();
+        String adminNote = (request.getAdminNote() != null) ? request.getAdminNote().trim() : "";
+
+        if (Boolean.TRUE.equals(request.getApproved())) {
+            // TH1: Admin đồng ý cho rút đơn
+            order.setOrderStatus(OrderStatus.PROCESSING);
+            order.setShipper(null);
+            order.setShipperRejectStatus(ShipperRejectStatus.APPROVED);
+            order.setAdminNote(adminNote.isEmpty() ? "Admin đã chấp thuận yêu cầu rút đơn của shipper" : adminNote);
+            orderRepository.save(order);
+
+            log.info("Admin đã CHẤP THUẬN yêu cầu từ chối giao đơn #{} của Shipper {}",
+                    orderId, currentShipper != null ? currentShipper.getFullName() : "N/A");
+
+            // Gửi thông báo đến Shipper
+            if (currentShipper != null) {
+                String msg = "Admin đã chấp thuận yêu cầu không nhận đơn hàng #" + orderId + " của bạn. Đơn hàng đã được rút lại thành công.";
+                notificationService.sendNotification(currentShipper, "Yêu cầu từ chối đơn hàng #" + orderId + " được chấp thuận", msg, NotificationType.ORDER_REASSIGNED, orderId);
+            }
+        } else {
+            // TH2: Admin từ chối yêu cầu, shipper phải tiếp tục giao đơn
+            order.setShipperRejectStatus(ShipperRejectStatus.REJECTED);
+            order.setAdminNote(adminNote.isEmpty() ? "Admin yêu cầu tiếp tục giao đơn hàng này" : adminNote);
+            orderRepository.save(order);
+
+            log.info("Admin đã TỪ CHỐI yêu cầu rút đơn #{} của Shipper {}",
+                    orderId, currentShipper != null ? currentShipper.getFullName() : "N/A");
+
+            // Gửi thông báo đến Shipper yêu cầu giao tiếp
+            if (currentShipper != null) {
+                String msg = "Admin đã từ chối yêu cầu hủy đơn hàng #" + orderId + " của bạn. " + (adminNote.isEmpty() ? "" : "Ghi chú: " + adminNote + ". ") + "Vui lòng tiếp tục giao đơn hàng này.";
+                notificationService.sendNotification(currentShipper, "Yêu cầu từ chối đơn hàng #" + orderId + " không được chấp thuận", msg, NotificationType.SYSTEM, orderId);
+            }
+        }
 
         return mapToOrderResponse(order);
     }

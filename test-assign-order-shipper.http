@@ -16,7 +16,7 @@ Content-Type: application/json
 }
 
 ### Lưu Token Admin
-@adminToken = {{loginAdmin.response.body.accessToken}}
+@adminToken = {{loginAdmin.response.body.token}}
 
 
 ### -------------------------------------------------------------------------
@@ -168,3 +168,82 @@ Authorization: Bearer {{shipper1Token}}
 ### -------------------------------------------------------------------------
 GET {{baseUrl}}/api/admin/orders/shippers/available
 Authorization: Bearer {{adminToken}}
+
+
+### =========================================================================
+### TÍNH NĂNG MỚI: SHIPPER GỬI YÊU CẦU TỪ CHỐI ĐƠN & ADMIN DUYỆT / TỪ CHỐI
+### =========================================================================
+
+### -------------------------------------------------------------------------
+### 17. SHIPPER 1 GỬI YÊU CẦU TỪ CHỐI ĐƠN (DO SỰ CỐ XE HỎNG, TAI NẠN,...)
+### POST /api/shipper/orders/{orderId}/request-reject
+### Kỳ vọng: shipperRejectStatus chuyển sang REQUESTED, lưu shipperRejectReason
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/shipper/orders/1/request-reject
+Authorization: Bearer {{shipper1Token}}
+Content-Type: application/json
+
+{
+  "reason": "Xe bị thủng xăm / hỏng giữa đường lúc đang giao đơn, không thể hoàn thành kịp thời gian cam kết"
+}
+
+
+### -------------------------------------------------------------------------
+### 18. ADMIN XEM DANH SÁCH CÁC ĐƠN HÀNG SHIPPER YÊU CẦU TỪ CHỐI ĐANG CHỜ DUYỆT
+### GET /api/admin/orders/shipper-reject-requests
+### Kỳ vọng: Trả về danh sách đơn có shipperRejectStatus = REQUESTED
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/orders/shipper-reject-requests
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 19. TRƯỜNG HỢP 2 (TH2): ADMIN TỪ CHỐI YÊU CẦU TỪ CHỐI (approved = false)
+### POST /api/admin/orders/{orderId}/review-shipper-reject
+### Kỳ vọng:
+### - Order vẫn giữ nguyên trạng thái SHIPPING và vẫn gán cho Shipper 1
+### - shipperRejectStatus = REJECTED
+### - Bắn Notification cho Shipper 1 thông báo yêu cầu bị từ chối kèm lý do
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/orders/1/review-shipper-reject
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "approved": false,
+  "adminNote": "Khu vực giao chỉ cách bạn 500m, đã có tiệm sửa xe ngay đầu phố, vui lòng khắc phục và tiếp tục giao đơn"
+}
+
+
+### -------------------------------------------------------------------------
+### 20. TRƯỜNG HỢP 1 (TH1): ADMIN ĐỒNG Ý YÊU CẦU TỪ CHỐI (approved = true)
+### POST /api/admin/orders/{orderId}/review-shipper-reject
+### Kỳ vọng:
+### - Đơn hàng rút khỏi Shipper 1 (shipper = null)
+### - orderStatus chuyển về PROCESSING (sẵn sàng gán cho shipper khác)
+### - shipperRejectStatus = APPROVED
+### - Bắn Notification cho Shipper 1 thông báo đã duyệt rút đơn
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/orders/1/review-shipper-reject
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "approved": true,
+  "adminNote": "Đã xác nhận sự cố hỏng xe nặng, rút đơn hàng để phân công cho shipper khác kịp giờ"
+}
+
+
+### -------------------------------------------------------------------------
+### 21. ADMIN GÁN LẠI ĐƠN HÀNG VỪA RÚT CHO SHIPPER 2
+### POST /api/admin/orders/{orderId}/assign-shipper
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/orders/1/assign-shipper
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "shipperId": {{shipper2Id}},
+  "note": "Đơn hỗ trợ nhận thay cho Shipper 1 gặp sự cố xe"
+}
+

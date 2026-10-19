@@ -72,4 +72,17 @@ public class ShipperController {
         notificationService.markAsRead(currentShipper, notificationId);
         return ResponseEntity.ok(Map.of("message", "Đã đánh dấu thông báo là đã đọc"));
     }
+
+    /**
+     * Shipper gặp sự cố (hỏng xe, bất khả kháng) gửi yêu cầu xin từ chối giao đơn hàng lên Admin duyệt.
+     */
+    @PostMapping("/orders/{orderId}/request-reject")
+    public ResponseEntity<OrderResponse> requestRejectOrder(
+            @AuthenticationPrincipal User currentShipper,
+            @PathVariable("orderId") Long orderId,
+            @jakarta.validation.Valid @RequestBody com.urbanwine.sell_wine_express.dto.request.ShipperRejectOrderRequest request
+    ) {
+        OrderResponse response = orderService.requestShipperRejectOrder(currentShipper, orderId, request);
+        return ResponseEntity.ok(response);
+    }
 }

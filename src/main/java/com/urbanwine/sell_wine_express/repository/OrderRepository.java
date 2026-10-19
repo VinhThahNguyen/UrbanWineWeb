@@ -36,4 +36,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByShipperOrderByCreatedAtDesc(User shipper);
 
     java.util.Optional<Order> findByOrderIdAndShipper(Long orderId, User shipper);
+
+    List<Order> findByShipperRejectStatusOrderByShipperRejectRequestedAtDesc(com.urbanwine.sell_wine_express.enums.ShipperRejectStatus status);
 }

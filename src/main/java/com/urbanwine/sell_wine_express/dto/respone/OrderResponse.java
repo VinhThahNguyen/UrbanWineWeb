@@ -39,6 +39,9 @@ public class OrderResponse {
     private String shipperName;
     private String shipperPhone;
     private LocalDateTime assignedAt;
+    private com.urbanwine.sell_wine_express.enums.ShipperRejectStatus shipperRejectStatus;
+    private String shipperRejectReason;
+    private LocalDateTime shipperRejectRequestedAt;
     private PaymentStatus paymentStatus;
     private PaymentMethod paymentMethod;
     private String paymentUrl;

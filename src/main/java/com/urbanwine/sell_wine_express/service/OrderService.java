@@ -81,4 +81,16 @@ public interface OrderService {
 
     // 5. Shipper xem chi tiết đơn hàng được gán cho mình (BR-08)
     OrderResponse getShipperOrderDetail(User shipper, Long orderId);
+
+    // =========================================================================
+    // SHIPPER REJECT DELIVERY FLOW (SHIPPER TỪ CHỐI NHẬN ĐƠN / BÁO SỰ CỐ)
+    // =========================================================================
+    // 1. Shipper gửi yêu cầu xin từ chối giao đơn hàng kèm lý do sự cố (hỏng xe, ngập lụt...)
+    OrderResponse requestShipperRejectOrder(User shipper, Long orderId, com.urbanwine.sell_wine_express.dto.request.ShipperRejectOrderRequest request);
+
+    // 2. Admin xem danh sách các đơn hàng shipper đang xin từ chối nhận
+    List<OrderResponse> getPendingShipperRejectOrders();
+
+    // 3. Admin xét duyệt yêu cầu từ chối của shipper (approve = true: rút đơn; approve = false: shipper giao tiếp)
+    OrderResponse reviewShipperRejectOrder(Long orderId, com.urbanwine.sell_wine_express.dto.request.ReviewShipperRejectRequest request);
 }

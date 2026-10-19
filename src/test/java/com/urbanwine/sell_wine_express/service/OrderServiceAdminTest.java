@@ -2,10 +2,13 @@ package com.urbanwine.sell_wine_express.service;
 
 import com.urbanwine.sell_wine_express.dto.request.AssignShipperRequest;
 import com.urbanwine.sell_wine_express.dto.request.RejectOrderRequest;
+import com.urbanwine.sell_wine_express.dto.request.ReviewShipperRejectRequest;
+import com.urbanwine.sell_wine_express.dto.request.ShipperRejectOrderRequest;
 import com.urbanwine.sell_wine_express.dto.respone.OrderResponse;
 import com.urbanwine.sell_wine_express.dto.respone.PageResponse;
 import com.urbanwine.sell_wine_express.dto.respone.ShipperWorkloadResponse;
 import com.urbanwine.sell_wine_express.enums.NotificationType;
+import com.urbanwine.sell_wine_express.enums.ShipperRejectStatus;
 import com.urbanwine.sell_wine_express.entity.Order;
 import com.urbanwine.sell_wine_express.entity.OrderDetail;
 import com.urbanwine.sell_wine_express.entity.PaymentTransaction;
@@ -565,5 +568,107 @@ class OrderServiceAdminTest {
         OrderResponse res = orderService.getShipperOrderDetail(currentShipper, 500L);
         assertNotNull(res);
         assertEquals(500L, res.getOrderId());
+    }
+
+    // =========================================================================
+    // SHIPPER REJECT ORDER FLOW TESTS
+    // =========================================================================
+
+    @Test
+    @DisplayName("Shipper gửi yêu cầu từ chối nhận đơn thành công khi gặp sự cố")
+    void requestShipperRejectOrder_Success() {
+        User currentShipper = User.builder().userId(10L).fullName("Shipper A").role(Role.ROLE_SHIPPER).build();
+        Order order = new Order();
+        order.setOrderId(600L);
+        order.setShipper(currentShipper);
+        order.setOrderStatus(OrderStatus.SHIPPING);
+        order.setCustomer(testCustomer);
+        order.setShipperRejectStatus(ShipperRejectStatus.NONE);
+
+        when(orderRepository.findByOrderIdAndShipper(600L, currentShipper)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArgument(0));
+        when(orderDetailRepository.findByOrder(order)).thenReturn(List.of());
+        when(paymentTransactionRepository.findByOrder(order)).thenReturn(Optional.empty());
+
+        ShipperRejectOrderRequest req = ShipperRejectOrderRequest.builder().reason("Xe hỏng dọc đường").build();
+        OrderResponse res = orderService.requestShipperRejectOrder(currentShipper, 600L, req);
+
+        assertNotNull(res);
+        assertEquals(ShipperRejectStatus.REQUESTED, res.getShipperRejectStatus());
+        assertEquals("Xe hỏng dọc đường", res.getShipperRejectReason());
+    }
+
+    @Test
+    @DisplayName("Admin xét duyệt chấp thuận (TH1): Rút đơn về PROCESSING, gỡ shipper, thông báo chấp thuận")
+    void reviewShipperRejectOrder_Approve_Success() {
+        User currentShipper = User.builder().userId(10L).fullName("Shipper A").role(Role.ROLE_SHIPPER).build();
+        Order order = new Order();
+        order.setOrderId(601L);
+        order.setShipper(currentShipper);
+        order.setOrderStatus(OrderStatus.SHIPPING);
+        order.setCustomer(testCustomer);
+        order.setShipperRejectStatus(ShipperRejectStatus.REQUESTED);
+
+        when(orderRepository.findById(601L)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArgument(0));
+        when(orderDetailRepository.findByOrder(order)).thenReturn(List.of());
+        when(paymentTransactionRepository.findByOrder(order)).thenReturn(Optional.empty());
+
+        ReviewShipperRejectRequest req = ReviewShipperRejectRequest.builder()
+                .approved(true)
+                .adminNote("Đồng ý rút đơn do sự cố xe cộ")
+                .build();
+
+        OrderResponse res = orderService.reviewShipperRejectOrder(601L, req);
+
+        assertNotNull(res);
+        assertEquals(OrderStatus.PROCESSING, res.getOrderStatus());
+        assertNull(res.getShipperId()); // Shipper đã được gỡ ra
+        assertEquals(ShipperRejectStatus.APPROVED, res.getShipperRejectStatus());
+
+        verify(notificationService).sendNotification(
+                eq(currentShipper),
+                contains("chấp thuận"),
+                anyString(),
+                eq(NotificationType.ORDER_REASSIGNED),
+                eq(601L)
+        );
+    }
+
+    @Test
+    @DisplayName("Admin xét duyệt từ chối (TH2): Đơn giữ nguyên SHIPPING, shipper tiếp tục giao, thông báo từ chối")
+    void reviewShipperRejectOrder_Reject_Success() {
+        User currentShipper = User.builder().userId(10L).fullName("Shipper A").role(Role.ROLE_SHIPPER).build();
+        Order order = new Order();
+        order.setOrderId(602L);
+        order.setShipper(currentShipper);
+        order.setOrderStatus(OrderStatus.SHIPPING);
+        order.setCustomer(testCustomer);
+        order.setShipperRejectStatus(ShipperRejectStatus.REQUESTED);
+
+        when(orderRepository.findById(602L)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArgument(0));
+        when(orderDetailRepository.findByOrder(order)).thenReturn(List.of());
+        when(paymentTransactionRepository.findByOrder(order)).thenReturn(Optional.empty());
+
+        ReviewShipperRejectRequest req = ReviewShipperRejectRequest.builder()
+                .approved(false)
+                .adminNote("Sự cố nhẹ, vui lòng tiếp tục giao")
+                .build();
+
+        OrderResponse res = orderService.reviewShipperRejectOrder(602L, req);
+
+        assertNotNull(res);
+        assertEquals(OrderStatus.SHIPPING, res.getOrderStatus());
+        assertEquals(10L, res.getShipperId()); // Shipper vẫn được giữ nguyên
+        assertEquals(ShipperRejectStatus.REJECTED, res.getShipperRejectStatus());
+
+        verify(notificationService).sendNotification(
+                eq(currentShipper),
+                contains("không được chấp thuận"),
+                anyString(),
+                eq(NotificationType.SYSTEM),
+                eq(602L)
+        );
     }
 }

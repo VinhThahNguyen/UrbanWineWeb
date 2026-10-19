@@ -185,4 +185,31 @@ public class AdminOrderController {
         OrderResponse response = orderService.reassignShipper(orderId, request);
         return ResponseEntity.ok(response);
     }
+
+    // =========================================================================
+    // SHIPPER REJECT DELIVERY REVIEW (ADMIN XÉT DUYỆT YÊU CẦU TỪ CHỐI TỪ SHIPPER)
+    // =========================================================================
+
+    /**
+     * Admin xem danh sách các đơn hàng có shipper gửi yêu cầu xin từ chối giao để xử lý điều phối.
+     */
+    @GetMapping("/shipper-reject-requests")
+    public ResponseEntity<java.util.List<OrderResponse>> getPendingShipperRejectOrders() {
+        java.util.List<OrderResponse> response = orderService.getPendingShipperRejectOrders();
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Admin xét duyệt yêu cầu từ chối nhận đơn của Shipper:
+     * - approved = true (Đồng ý): Rút đơn khỏi shipper cũ, đưa về PROCESSING sẵn sàng gán shipper khác.
+     * - approved = false (Từ chối): Bắt shipper cũ tiếp tục đi giao đơn.
+     */
+    @PostMapping("/{orderId}/review-shipper-reject")
+    public ResponseEntity<OrderResponse> reviewShipperReject(
+            @PathVariable("orderId") Long orderId,
+            @Valid @RequestBody com.urbanwine.sell_wine_express.dto.request.ReviewShipperRejectRequest request
+    ) {
+        OrderResponse response = orderService.reviewShipperRejectOrder(orderId, request);
+        return ResponseEntity.ok(response);
+    }
 }

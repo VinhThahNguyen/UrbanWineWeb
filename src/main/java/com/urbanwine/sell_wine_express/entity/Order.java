@@ -65,6 +65,16 @@ public class Order {
     @Column(name = "assigned_at")
     private LocalDateTime assignedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "shipper_reject_status", length = 20)
+    private com.urbanwine.sell_wine_express.enums.ShipperRejectStatus shipperRejectStatus = com.urbanwine.sell_wine_express.enums.ShipperRejectStatus.NONE;
+
+    @Column(name = "shipper_reject_reason", length = 500)
+    private String shipperRejectReason;
+
+    @Column(name = "shipper_reject_requested_at")
+    private LocalDateTime shipperRejectRequestedAt;
+
     @Column(name = "admin_note", length = 500)
     private String adminNote;
 
