@@ -48,6 +48,11 @@ import com.urbanwine.sell_wine_express.dto.request.VietQrWebhookRequest;
 import com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse;
 import com.urbanwine.sell_wine_express.enums.OrderChannel;
 import com.urbanwine.sell_wine_express.repository.UserRepository;
+import com.urbanwine.sell_wine_express.dto.request.AssignShipperRequest;
+import com.urbanwine.sell_wine_express.dto.respone.ShipperWorkloadResponse;
+import com.urbanwine.sell_wine_express.enums.NotificationType;
+import com.urbanwine.sell_wine_express.enums.Role;
+import com.urbanwine.sell_wine_express.service.NotificationService;
 import org.springframework.beans.factory.annotation.Value;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -65,6 +70,7 @@ public class OrderServiceImpl implements OrderService {
     private final VnPayService vnPayService;
     private final OrderEmailService orderEmailService;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public OrderServiceImpl(WineRepository wineRepository,
                             OrderRepository orderRepository,
@@ -73,7 +79,8 @@ public class OrderServiceImpl implements OrderService {
                             CartService cartService,
                             VnPayService vnPayService,
                             OrderEmailService orderEmailService,
-                            UserRepository userRepository) {
+                            UserRepository userRepository,
+                            NotificationService notificationService) {
         this.wineRepository = wineRepository;
         this.orderRepository = orderRepository;
         this.orderDetailRepository = orderDetailRepository;
@@ -82,6 +89,7 @@ public class OrderServiceImpl implements OrderService {
         this.vnPayService = vnPayService;
         this.orderEmailService = orderEmailService;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Value("${vietqr.bank-id:MB}")
@@ -97,6 +105,8 @@ public class OrderServiceImpl implements OrderService {
     public static final BigDecimal SHIPPING_FEE = new BigDecimal("30000");
     // Thuế VAT 10%
     public static final BigDecimal VAT_RATE = new BigDecimal("0.10");
+    // Giới hạn số đơn giao tối đa cùng lúc cho 1 shipper (Ngoại lệ E2)
+    public static final int MAX_CONCURRENT_ORDERS_PER_SHIPPER = 5;
 
     @Override
     public CheckoutSummaryResponse calculateCheckoutSummary(User customer, CheckoutSummaryRequest request) {
@@ -403,6 +413,10 @@ public class OrderServiceImpl implements OrderService {
                 .cancelRequestedAt(order.getCancelRequestedAt())
                 .approvedAt(order.getApprovedAt())
                 .adminNote(order.getAdminNote())
+                .shipperId(order.getShipper() != null ? order.getShipper().getUserId() : null)
+                .shipperName(order.getShipper() != null ? order.getShipper().getFullName() : null)
+                .shipperPhone(order.getShipper() != null ? order.getShipper().getPhoneNumber() : null)
+                .assignedAt(order.getAssignedAt())
                 .paymentStatus(paymentStatus)
                 .paymentMethod(paymentMethod)
                 .createdAt(order.getCreatedAt())
@@ -1145,4 +1159,204 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private record PreparedItem(Wine wine, Integer quantity, BigDecimal unitPrice, BigDecimal lineTotal) {}
+
+    // =========================================================================
+    // UC_2.1.4: ASSIGN ORDER TO SHIPPER (ĐIỀU PHỐI ĐƠN HÀNG CHO SHIPPER)
+    // =========================================================================
+
+    /**
+     * UC_2.1.4 Normal Flow - Bước 2 & Ngoại lệ E1:
+     * Lấy danh sách nhân viên giao hàng đang trong ca trực (isOnline = true)
+     * và thống kê số lượng đơn hàng đang giao hiện tại của từng người.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<ShipperWorkloadResponse> getAvailableShippers() {
+        List<User> onlineShippers = userRepository.findByRoleAndIsOnlineTrue(Role.ROLE_SHIPPER);
+        List<ShipperWorkloadResponse> responses = new ArrayList<>();
+
+        for (User shipper : onlineShippers) {
+            long activeOrders = orderRepository.countByShipperAndOrderStatus(shipper, OrderStatus.SHIPPING);
+            boolean canAssign = activeOrders < MAX_CONCURRENT_ORDERS_PER_SHIPPER;
+
+            responses.add(ShipperWorkloadResponse.builder()
+                    .shipperId(shipper.getUserId())
+                    .fullName(shipper.getFullName())
+                    .email(shipper.getEmail())
+                    .phoneNumber(shipper.getPhoneNumber())
+                    .currentActiveOrders(activeOrders)
+                    .maxOrders(MAX_CONCURRENT_ORDERS_PER_SHIPPER)
+                    .canAssign(canAssign)
+                    .isOnline(shipper.getIsOnline())
+                    .build());
+        }
+
+        return responses;
+    }
+
+    /**
+     * UC_2.1.4 Normal Flow - Bước 3, 4, 5:
+     * Quản lý phân công đơn hàng PROCESSING cho một Shipper đang Online.
+     * - PRE-2: Đơn hàng phải đang ở trạng thái PROCESSING.
+     * - Ngoại lệ E1: Shipper phải đang Online (isOnline = true).
+     * - Ngoại lệ E2: Chặn phân công nếu Shipper đã nhận đủ 5 đơn hàng cùng lúc.
+     * - POST-1: Gán shipper_id vào đơn hàng.
+     * - POST-2: Cập nhật order_status sang SHIPPING.
+     * - POST-3: Gửi thông báo đến tài khoản mobile của Shipper (Lưu bảng Notification + Log).
+     */
+    @Override
+    @Transactional
+    public OrderResponse assignShipper(Long orderId, AssignShipperRequest request) {
+        if (request == null || request.getShipperId() == null) {
+            throw new IllegalArgumentException("Vui lòng chọn nhân viên giao hàng (shipperId)");
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        // PRE-2: Đơn hàng phải ở trạng thái PROCESSING (Đã duyệt và sẵn sàng đóng gói giao hàng)
+        if (order.getOrderStatus() != OrderStatus.PROCESSING) {
+            throw new IllegalArgumentException("Chỉ có thể gán shipper cho đơn hàng đang ở trạng thái Chờ giao hàng (PROCESSING). Trạng thái hiện tại: " + order.getOrderStatus());
+        }
+
+        User shipper = userRepository.findById(request.getShipperId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nhân viên giao hàng với ID: " + request.getShipperId()));
+
+        if (shipper.getRole() != Role.ROLE_SHIPPER) {
+            throw new IllegalArgumentException("Người dùng được chọn không phải là nhân viên giao hàng (ROLE_SHIPPER)");
+        }
+
+        // Ngoại lệ E1: Shipper phải đang online trong ca làm việc
+        if (!Boolean.TRUE.equals(shipper.getIsOnline())) {
+            throw new IllegalArgumentException("Nhân viên giao hàng '" + shipper.getFullName() + "' hiện đang không trong ca trực (Offline). Vui lòng chọn nhân viên đang Online (Ngoại lệ E1)");
+        }
+
+        // Ngoại lệ E2: Shipper đã đạt tối đa số đơn cho phép (5 đơn)
+        long currentOrders = orderRepository.countByShipperAndOrderStatus(shipper, OrderStatus.SHIPPING);
+        if (currentOrders >= MAX_CONCURRENT_ORDERS_PER_SHIPPER) {
+            throw new IllegalArgumentException("Shipper '" + shipper.getFullName() + "' đã đạt giới hạn tối đa " + MAX_CONCURRENT_ORDERS_PER_SHIPPER + " đơn hàng đồng thời. Vui lòng chọn nhân viên khác (Ngoại lệ E2)");
+        }
+
+        // POST-1: Gán shipper vào đơn hàng
+        order.setShipper(shipper);
+        // POST-2: Cập nhật trạng thái sang SHIPPING
+        order.setOrderStatus(OrderStatus.SHIPPING);
+        order.setAssignedAt(LocalDateTime.now());
+        if (request.getNote() != null && !request.getNote().isBlank()) {
+            order.setAdminNote(request.getNote().trim());
+        }
+        orderRepository.save(order);
+
+        log.info("Admin đã phân công đơn hàng #{} thành công cho Shipper {} (ID: {})",
+                orderId, shipper.getFullName(), shipper.getUserId());
+
+        // POST-3: Gửi thông báo đến tài khoản mobile của Shipper
+        String notifMsg = String.format("Bạn vừa được phân công giao đơn hàng #%d. Người nhận: %s (%s). Địa chỉ giao: %s. Tổng tiền thu: %,.0f VNĐ.",
+                order.getOrderId(), order.getRecipientName(), order.getRecipientPhone(), order.getDeliveryAddress(), order.getTotalAmount());
+        notificationService.sendNotification(shipper, "Nhiệm vụ giao hàng mới #" + order.getOrderId(), notifMsg, NotificationType.ORDER_ASSIGNED, order.getOrderId());
+
+        return mapToOrderResponse(order);
+    }
+
+    /**
+     * UC_2.1.4 Alternative Flow:
+     * Điều phối lại đơn hàng sang một Shipper khác (khi shipper cũ gặp sự cố hoặc cần đổi người).
+     * - Chỉ áp dụng cho đơn đang ở trạng thái SHIPPING.
+     * - Shipper thay thế phải Online và chưa vượt quá 5 đơn.
+     * - Gửi thông báo thu hồi nhiệm vụ cho Shipper cũ (Shipper cũ vẫn online tiếp tục giao các đơn khác).
+     * - Gửi thông báo nhiệm vụ mới cho Shipper thay thế.
+     */
+    @Override
+    @Transactional
+    public OrderResponse reassignShipper(Long orderId, AssignShipperRequest request) {
+        if (request == null || request.getShipperId() == null) {
+            throw new IllegalArgumentException("Vui lòng chọn nhân viên giao hàng thay thế (shipperId)");
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        if (order.getOrderStatus() != OrderStatus.SHIPPING) {
+            throw new IllegalArgumentException("Chỉ có thể điều phối lại shipper cho đơn hàng đang trong quá trình vận chuyển (SHIPPING). Trạng thái hiện tại: " + order.getOrderStatus());
+        }
+
+        User previousShipper = order.getShipper();
+        if (previousShipper != null && previousShipper.getUserId().equals(request.getShipperId())) {
+            throw new IllegalArgumentException("Shipper được chọn trùng với shipper hiện tại của đơn hàng. Vui lòng chọn shipper thay thế khác!");
+        }
+
+        User newShipper = userRepository.findById(request.getShipperId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nhân viên giao hàng mới với ID: " + request.getShipperId()));
+
+        if (newShipper.getRole() != Role.ROLE_SHIPPER) {
+            throw new IllegalArgumentException("Người dùng được chọn không phải là nhân viên giao hàng");
+        }
+
+        if (!Boolean.TRUE.equals(newShipper.getIsOnline())) {
+            throw new IllegalArgumentException("Nhân viên giao hàng thay thế '" + newShipper.getFullName() + "' hiện đang không trong ca trực (Offline). Vui lòng chọn nhân viên đang Online (E1)");
+        }
+
+        long currentOrders = orderRepository.countByShipperAndOrderStatus(newShipper, OrderStatus.SHIPPING);
+        if (currentOrders >= MAX_CONCURRENT_ORDERS_PER_SHIPPER) {
+            throw new IllegalArgumentException("Shipper thay thế '" + newShipper.getFullName() + "' đã đạt giới hạn tối đa " + MAX_CONCURRENT_ORDERS_PER_SHIPPER + " đơn hàng. Vui lòng chọn nhân viên khác (E2)");
+        }
+
+        // Cập nhật shipper mới cho đơn hàng
+        order.setShipper(newShipper);
+        order.setAssignedAt(LocalDateTime.now());
+        if (request.getNote() != null && !request.getNote().isBlank()) {
+            order.setAdminNote(request.getNote().trim());
+        }
+        orderRepository.save(order);
+
+        log.info("Admin đã điều phối lại đơn hàng #{} từ Shipper {} sang Shipper {}",
+                orderId,
+                previousShipper != null ? previousShipper.getFullName() : "N/A",
+                newShipper.getFullName());
+
+        // Gửi thông báo thu hồi cho Shipper cũ (nếu có)
+        if (previousShipper != null) {
+            String revokeMsg = String.format("Nhiệm vụ giao đơn hàng #%d đã được điều phối lại cho nhân viên khác. Bạn không cần tiếp tục xử lý đơn này.", order.getOrderId());
+            notificationService.sendNotification(previousShipper, "Thu hồi nhiệm vụ giao hàng #" + order.getOrderId(), revokeMsg, NotificationType.ORDER_REASSIGNED, order.getOrderId());
+        }
+
+        // Gửi thông báo nhiệm vụ mới cho Shipper mới
+        String assignMsg = String.format("Bạn vừa được điều phối nhận lại đơn hàng #%d. Người nhận: %s (%s). Địa chỉ giao: %s. Tổng tiền thu: %,.0f VNĐ.",
+                order.getOrderId(), order.getRecipientName(), order.getRecipientPhone(), order.getDeliveryAddress(), order.getTotalAmount());
+        notificationService.sendNotification(newShipper, "Nhiệm vụ giao hàng mới #" + order.getOrderId(), assignMsg, NotificationType.ORDER_ASSIGNED, order.getOrderId());
+
+        return mapToOrderResponse(order);
+    }
+
+    /**
+     * Quy tắc BR-08 (Shipper Order Access):
+     * Shipper xem danh sách các đơn hàng được gán cho chính tài khoản của mình.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getShipperOrders(User shipper) {
+        if (shipper == null || shipper.getRole() != Role.ROLE_SHIPPER) {
+            throw new IllegalArgumentException("Bạn không có quyền truy cập danh sách đơn hàng của nhân viên giao hàng");
+        }
+
+        List<Order> orders = orderRepository.findByShipperOrderByCreatedAtDesc(shipper);
+        return orders.stream().map(this::mapToOrderResponse).toList();
+    }
+
+    /**
+     * Quy tắc BR-08 (Shipper Order Access):
+     * Shipper chỉ được xem chi tiết đơn hàng được gán cho chính tài khoản của mình.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse getShipperOrderDetail(User shipper, Long orderId) {
+        if (shipper == null || shipper.getRole() != Role.ROLE_SHIPPER) {
+            throw new IllegalArgumentException("Bạn không có quyền truy cập thông tin đơn hàng này");
+        }
+
+        Order order = orderRepository.findByOrderIdAndShipper(orderId, shipper)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId + " được phân công cho tài khoản của bạn (Quy tắc BR-08)"));
+
+        return mapToOrderResponse(order);
+    }
 }

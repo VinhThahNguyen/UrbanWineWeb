@@ -100,6 +100,11 @@ public class AuthService {
         }
 
         // Đối với ROLE_ADMIN hoặc ROLE_SHIPPER: Đăng nhập thẳng, nhận Token ngay
+        if (user.getRole() == Role.ROLE_SHIPPER) {
+            user.setIsOnline(true);
+            userRepository.save(user);
+        }
+
         return createTokenResponse(user);
     }
 
@@ -202,6 +207,10 @@ public class AuthService {
     public void logout(User currentUser) {
         if (currentUser != null) {
             refreshTokenService.deleteByUser(currentUser);
+            if (currentUser.getRole() == Role.ROLE_SHIPPER) {
+                currentUser.setIsOnline(false);
+                userRepository.save(currentUser);
+            }
         }
     }
 

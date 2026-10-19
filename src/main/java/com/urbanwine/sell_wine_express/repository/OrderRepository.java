@@ -30,4 +30,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Order> findRequiringAttentionOrders(@Param("orderStatus") OrderStatus orderStatus,
                                             @Param("cancelStatus") CancelStatus cancelStatus,
                                             Pageable pageable);
+
+    long countByShipperAndOrderStatus(User shipper, OrderStatus orderStatus);
+
+    List<Order> findByShipperOrderByCreatedAtDesc(User shipper);
+
+    java.util.Optional<Order> findByOrderIdAndShipper(Long orderId, User shipper);
 }

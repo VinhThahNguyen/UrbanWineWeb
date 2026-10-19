@@ -1,0 +1,76 @@
+### =========================================================================
+### HƯỚNG DẪN TỪ ĐẦU ĐẾN CUỐI: ĐĂNG KÝ VÀ ĐĂNG NHẬP KHÁCH HÀNG (CUSTOMER)
+### Base URL: http://localhost:8080
+### =========================================================================
+
+@baseUrl = http://localhost:8080
+
+### -------------------------------------------------------------------------
+### BƯỚC 1: GỬI YÊU CẦU ĐĂNG KÝ TÀI KHOẢN MỚI
+### - Bạn có thể thay email bên dưới bằng bất kỳ email nào (kể cả email ảo)
+### - Quy tắc BR-01: Ngày sinh phải đủ 18 tuổi trở lên (ví dụ năm 2000)
+### -------------------------------------------------------------------------
+# @name registerCustomer
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "khachhangtest@gmail.com",
+  "password": "Password@123",
+  "fullName": "Nguyễn Văn Test",
+  "phone": "0912345678",
+  "birthDate": "2000-05-15"
+}
+
+### -------------------------------------------------------------------------
+### BƯỚC 2: XÁC THỰC MÃ OTP ĐỂ KÍCH HOẠT TÀI KHOẢN
+### - Cách lấy mã OTP:
+###   + Cách 1: Mở hòm thư Gmail (nếu bạn điền email thật)
+###   + Cách 2: Xem trong cửa sổ Terminal/Console đang chạy server Spring Boot,
+###             dòng chữ vàng to: >>> MÃ OTP CHO [khachhangtest@gmail.com] LÀ: [xxxxxx] <<<
+### - Điền 6 số OTP vào trường "otpCode" bên dưới rồi nhấn Send Request:
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/auth/verify-register
+Content-Type: application/json
+
+{
+  "email": "khachhangtest@gmail.com",
+  "otpCode": "123456"
+}
+
+### -------------------------------------------------------------------------
+### BƯỚC 3: ĐĂNG NHẬP BƯỚC 1 (NHẬP EMAIL & MẬT KHẨU)
+### - Hệ thống kiểm tra mật khẩu hợp lệ và sinh mã OTP đăng nhập gửi về email/Console
+### - Phản hồi nhận được: "REQUIRES_OTP"
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "khachhangtest@gmail.com",
+  "password": "Password@123"
+}
+
+### -------------------------------------------------------------------------
+### BƯỚC 4: ĐĂNG NHẬP BƯỚC 2 (XÁC THỰC MÃ OTP ĐĂNG NHẬP ĐỂ NHẬN TOKEN)
+### - Lấy mã OTP mới vừa được in ra Console hoặc gửi về Email
+### - Điền vào "otpCode" bên dưới để hoàn tất đăng nhập
+### -------------------------------------------------------------------------
+# @name verifyLoginOtp
+POST {{baseUrl}}/api/auth/verify-login
+Content-Type: application/json
+
+{
+  "email": "khachhangtest@gmail.com",
+  "otpCode": "123456"
+}
+
+### Lưu Access Token nhận được sau khi đăng nhập thành công
+@customerToken = {{verifyLoginOtp.response.body.token}}
+
+### -------------------------------------------------------------------------
+### BƯỚC 5: KIỂM TRA THỬ DÙNG TOKEN VỪA NHẬN ĐỂ TRUY VẤN
+### - Xem thông tin tài khoản cá nhân của chính mình
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/users/profile
+Authorization: Bearer {{customerToken}}

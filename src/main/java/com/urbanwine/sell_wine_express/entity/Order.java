@@ -62,6 +62,9 @@ public class Order {
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
+    @Column(name = "assigned_at")
+    private LocalDateTime assignedAt;
+
     @Column(name = "admin_note", length = 500)
     private String adminNote;
 

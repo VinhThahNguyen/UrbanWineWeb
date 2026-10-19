@@ -141,4 +141,48 @@ public class AdminOrderController {
         com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse response = orderService.getOfflineOrderDetail(orderId);
         return ResponseEntity.ok(response);
     }
+
+    // =========================================================================
+    // UC_2.1.4: ASSIGN ORDER TO SHIPPER (ĐIỀU PHỐI ĐƠN HÀNG CHO SHIPPER)
+    // =========================================================================
+
+    /**
+     * UC_2.1.4 Normal Flow - Bước 2 & Ngoại lệ E1:
+     * Quản lý xem danh sách các nhân viên giao hàng đang trong ca trực (Online)
+     * kèm số lượng đơn đang giao hiện tại để lựa chọn phân công.
+     */
+    @GetMapping({"/shippers/available", "/available-shippers"})
+    public ResponseEntity<java.util.List<com.urbanwine.sell_wine_express.dto.respone.ShipperWorkloadResponse>> getAvailableShippers() {
+        java.util.List<com.urbanwine.sell_wine_express.dto.respone.ShipperWorkloadResponse> response = orderService.getAvailableShippers();
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * UC_2.1.4 Normal Flow - Bước 3, 4, 5:
+     * Quản lý gán đơn hàng PROCESSING cho shipper đã chọn.
+     * Chuyển trạng thái sang SHIPPING và gửi thông báo tới shipper (POST-1, POST-2, POST-3).
+     * Chặn nếu shipper đã đạt tối đa 5 đơn (Ngoại lệ E2).
+     */
+    @PostMapping("/{orderId}/assign-shipper")
+    public ResponseEntity<OrderResponse> assignShipper(
+            @PathVariable("orderId") Long orderId,
+            @Valid @RequestBody com.urbanwine.sell_wine_express.dto.request.AssignShipperRequest request
+    ) {
+        OrderResponse response = orderService.assignShipper(orderId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * UC_2.1.4 Alternative Flow:
+     * Quản lý điều phối lại đơn hàng sang một shipper khác khi cần thiết (đổi người, sự cố).
+     * Gửi thông báo thu hồi cho shipper cũ và thông báo mới cho shipper thay thế.
+     */
+    @PostMapping("/{orderId}/reassign-shipper")
+    public ResponseEntity<OrderResponse> reassignShipper(
+            @PathVariable("orderId") Long orderId,
+            @Valid @RequestBody com.urbanwine.sell_wine_express.dto.request.AssignShipperRequest request
+    ) {
+        OrderResponse response = orderService.reassignShipper(orderId, request);
+        return ResponseEntity.ok(response);
+    }
 }

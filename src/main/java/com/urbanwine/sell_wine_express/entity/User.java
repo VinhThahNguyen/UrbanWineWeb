@@ -46,4 +46,8 @@ public class User {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = false;
+
+    @Column(name = "is_online")
+    @Builder.Default
+    private Boolean isOnline = false;
 }

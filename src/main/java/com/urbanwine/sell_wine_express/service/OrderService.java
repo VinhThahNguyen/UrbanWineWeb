@@ -63,4 +63,22 @@ public interface OrderService {
 
     // 4. Nhận Webhook IPN từ cổng thanh toán / ngân hàng xác nhận khách quét VietQR thành công
     com.urbanwine.sell_wine_express.dto.respone.OfflineOrderResponse processVietQrWebhook(com.urbanwine.sell_wine_express.dto.request.VietQrWebhookRequest request);
+
+    // =========================================================================
+    // UC_2.1.4: ASSIGN ORDER TO SHIPPER (ĐIỀU PHỐI ĐƠN HÀNG CHO SHIPPER)
+    // =========================================================================
+    // 1. Lấy danh sách nhân viên giao hàng đang trong ca trực (isOnline = true) và khối lượng công việc hiện tại (E1)
+    List<com.urbanwine.sell_wine_express.dto.respone.ShipperWorkloadResponse> getAvailableShippers();
+
+    // 2. Gán đơn hàng PROCESSING cho shipper lần đầu -> chuyển sang SHIPPING (PRE-2, POST-1, POST-2, POST-3, E2)
+    OrderResponse assignShipper(Long orderId, com.urbanwine.sell_wine_express.dto.request.AssignShipperRequest request);
+
+    // 3. Phân công lại đơn hàng cho shipper khác khi cần thiết (Alternative Flow)
+    OrderResponse reassignShipper(Long orderId, com.urbanwine.sell_wine_express.dto.request.AssignShipperRequest request);
+
+    // 4. Shipper xem danh sách các đơn hàng được gán cho chính mình (BR-08)
+    List<OrderResponse> getShipperOrders(User shipper);
+
+    // 5. Shipper xem chi tiết đơn hàng được gán cho mình (BR-08)
+    OrderResponse getShipperOrderDetail(User shipper, Long orderId);
 }

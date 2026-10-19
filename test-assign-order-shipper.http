@@ -1,0 +1,170 @@
+### =========================================================================
+### USE CASE UC_2.1.4: ASSIGN ORDER TO SHIPPER (ĐIỀU PHỐI ĐƠN HÀNG CHO SHIPPER)
+### =========================================================================
+@baseUrl = http://localhost:8080
+
+### -------------------------------------------------------------------------
+### 1. ĐĂNG NHẬP ADMIN (PRE-1)
+### -------------------------------------------------------------------------
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@urbanwine.com",
+  "password": "Admin@123"
+}
+
+### Lưu Token Admin
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+
+### -------------------------------------------------------------------------
+### 2. BƯỚC 2 & NGOẠI LỆ E1: ADMIN XEM DANH SÁCH SHIPPER TRONG CA TRỰC KHI CHƯA AI ONLINE
+### Kỳ vọng: Trả về danh sách rỗng [] nếu tất cả shipper đều đang Offline (chưa đăng nhập)
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/orders/shippers/available
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 3. SHIPPER 1 ĐĂNG NHẬP VÀO CA LÀM VIỆC (KÍCH HOẠT CHẤM XANH isOnline = true)
+### Tài khoản: shipper1@urbanwine.com / 123456
+### -------------------------------------------------------------------------
+# @name loginShipper1
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "shipper1@urbanwine.com",
+  "password": "123456"
+}
+
+### Lưu Token Shipper 1
+@shipper1Token = {{loginShipper1.response.body.token}}
+@shipper1Id = {{loginShipper1.response.body.userId}}
+
+
+### -------------------------------------------------------------------------
+### 4. SHIPPER 2 ĐĂNG NHẬP VÀO CA LÀM VIỆC (KÍCH HOẠT CHẤM XANH isOnline = true)
+### Tài khoản: shipper2@urbanwine.com / 123456
+### -------------------------------------------------------------------------
+# @name loginShipper2
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "shipper2@urbanwine.com",
+  "password": "123456"
+}
+
+### Lưu Token Shipper 2
+@shipper2Token = {{loginShipper2.response.body.token}}
+@shipper2Id = {{loginShipper2.response.body.userId}}
+
+
+### -------------------------------------------------------------------------
+### 5. NORMAL FLOW BƯỚC 2: ADMIN XEM DANH SÁCH SHIPPER ĐANG ONLINE VÀ TẢI CÔNG VIỆC
+### Kỳ vọng: Hiển thị Shipper 1 và Shipper 2 kèm currentActiveOrders, maxOrders = 5, canAssign = true
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/orders/shippers/available
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 6. ADMIN LẤY DANH SÁCH ĐƠN HÀNG SẴN SÀNG GIAO (STATUS = PROCESSING)
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/orders?status=PROCESSING&page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 7. NORMAL FLOW BƯỚC 3, 4, 5: ADMIN PHÂN CÔNG ĐƠN HÀNG CHO SHIPPER 1 (POST-1, POST-2, POST-3)
+### - Thay 1 bằng orderId thực tế đang PROCESSING
+### - Trạng thái đơn chuyển sang: SHIPPING
+### - Gửi thông báo đến tài khoản mobile của Shipper 1 (Lưu bảng notifications)
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/orders/1/assign-shipper
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "shipperId": {{shipper1Id}},
+  "note": "Rượu vang cao cấp đóng hộp gỗ, lưu ý nhẹ tay và liên hệ khách trước khi đến"
+}
+
+
+### -------------------------------------------------------------------------
+### 8. QUẢ CHUÔNG THÔNG BÁO: SHIPPER 1 XEM DANH SÁCH THÔNG BÁO CỦA MÌNH
+### Kỳ vọng: Thấy thông báo phân công đơn hàng mới #[ID] kèm địa chỉ và tiền thu
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/shipper/notifications
+Authorization: Bearer {{shipper1Token}}
+
+
+### -------------------------------------------------------------------------
+### 9. QUẢ CHUÔNG THÔNG BÁO: SHIPPER 1 ĐÁNH DẤU ĐÃ ĐỌC THÔNG BÁO
+### Thay 1 bằng notificationId thực tế
+### -------------------------------------------------------------------------
+PATCH {{baseUrl}}/api/shipper/notifications/1/read
+Authorization: Bearer {{shipper1Token}}
+
+
+### -------------------------------------------------------------------------
+### 10. QUY TẮC BR-08: SHIPPER 1 XEM DANH SÁCH ĐƠN ĐƯỢC PHÂN CÔNG CHO CHÍNH MÌNH
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/shipper/orders
+Authorization: Bearer {{shipper1Token}}
+
+
+### -------------------------------------------------------------------------
+### 11. QUY TẮC BR-08: SHIPPER 1 XEM CHI TIẾT ĐƠN HÀNG ĐƯỢC GÁN
+### Thay 1 bằng orderId của Shipper 1
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/shipper/orders/1
+Authorization: Bearer {{shipper1Token}}
+
+
+### -------------------------------------------------------------------------
+### 12. ALTERNATIVE FLOW: ADMIN ĐIỀU PHỐI LẠI ĐƠN HÀNG CHO SHIPPER 2 (REASSIGN)
+### - Gửi thông báo thu hồi nhiệm vụ cho Shipper 1
+### - Gửi thông báo nhiệm vụ mới cho Shipper 2
+### - Shipper 1 vẫn Online và tiếp tục giao các đơn khác
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/orders/1/reassign-shipper
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "shipperId": {{shipper2Id}},
+  "note": "Điều phối lại cho Shipper 2 theo phân luồng tuyến đường"
+}
+
+
+### -------------------------------------------------------------------------
+### 13. SHIPPER 1 XEM THÔNG BÁO THU HỒI ĐƠN HÀNG
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/shipper/notifications
+Authorization: Bearer {{shipper1Token}}
+
+
+### -------------------------------------------------------------------------
+### 14. SHIPPER 2 XEM THÔNG BÁO NHẬN ĐƠN MỚI
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/shipper/notifications
+Authorization: Bearer {{shipper2Token}}
+
+
+### -------------------------------------------------------------------------
+### 15. SHIPPER 1 ĐĂNG XUẤT (KẾT THÚC CA LÀM VIỆC -> isOnline = false)
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{shipper1Token}}
+
+
+### -------------------------------------------------------------------------
+### 16. KIỂM TRA LẠI: ADMIN XEM DANH SÁCH SHIPPER KHẢ DỤNG
+### Kỳ vọng: Chỉ còn Shipper 2 xuất hiện (Shipper 1 đã Offline nên không hiện theo E1)
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/orders/shippers/available
+Authorization: Bearer {{adminToken}}

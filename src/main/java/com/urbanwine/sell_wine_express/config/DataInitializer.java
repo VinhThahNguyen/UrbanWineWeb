@@ -26,6 +26,7 @@ public class DataInitializer implements CommandLineRunner {
         initializeAdminUser();
         initializeCustomerUser();
         initializeGuestUser();
+        initializeShipperUsers();
     }
 
     private void initializeAdminUser() {
@@ -114,6 +115,40 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
             userRepository.save(guest);
             log.info(" Đã khởi tạo tài khoản Khách vãng lai mua tại quầy (guest@urbanwine.com)");
+        }
+    }
+
+    private void initializeShipperUsers() {
+        if (userRepository.findByEmail("shipper1@urbanwine.com").isEmpty()) {
+            User shipper1 = User.builder()
+                    .email("shipper1@urbanwine.com")
+                    .passwordHash(passwordEncoder.encode("123456"))
+                    .fullName("Nguyễn Văn Giao (Shipper 1)")
+                    .phoneNumber("0911111111")
+                    .birthDate(LocalDate.of(1996, 5, 10))
+                    .role(Role.ROLE_SHIPPER)
+                    .isOver18(true)
+                    .isActive(true)
+                    .isOnline(false) // Mặc định chưa online, khi đăng nhập sẽ online
+                    .build();
+            userRepository.save(shipper1);
+            log.info(" Đã khởi tạo tài khoản Shipper 1: shipper1@urbanwine.com / 123456");
+        }
+
+        if (userRepository.findByEmail("shipper2@urbanwine.com").isEmpty()) {
+            User shipper2 = User.builder()
+                    .email("shipper2@urbanwine.com")
+                    .passwordHash(passwordEncoder.encode("123456"))
+                    .fullName("Trần Văn Tốc (Shipper 2)")
+                    .phoneNumber("0922222222")
+                    .birthDate(LocalDate.of(1998, 8, 20))
+                    .role(Role.ROLE_SHIPPER)
+                    .isOver18(true)
+                    .isActive(true)
+                    .isOnline(false)
+                    .build();
+            userRepository.save(shipper2);
+            log.info(" Đã khởi tạo tài khoản Shipper 2: shipper2@urbanwine.com / 123456");
         }
     }
 }

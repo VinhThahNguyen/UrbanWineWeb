@@ -35,6 +35,10 @@ public class OrderResponse {
     private LocalDateTime cancelRequestedAt;
     private LocalDateTime approvedAt;
     private String adminNote;
+    private Long shipperId;
+    private String shipperName;
+    private String shipperPhone;
+    private LocalDateTime assignedAt;
     private PaymentStatus paymentStatus;
     private PaymentMethod paymentMethod;
     private String paymentUrl;
