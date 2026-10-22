@@ -17,11 +17,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class PaymentStatusResponse {
     private Long orderId;
+    private String orderCode;
     private BigDecimal totalAmount;
     private OrderStatus orderStatus;
     private PaymentMethod paymentMethod;
     private PaymentStatus paymentStatus;
     private String bankReceiptCode;
     private Boolean isPaid;
+    private String message;
     private LocalDateTime createdAt;
 }
+

@@ -1040,25 +1040,40 @@ public class OrderServiceImpl implements OrderService {
                     return tx;
                 });
 
-        // Cập nhật trạng thái sang COMPLETED và PAID
-        order.setOrderStatus(OrderStatus.COMPLETED);
-        orderRepository.save(order);
+        // Cập nhật trạng thái: Nếu là đơn OFFLINE tại quầy -> COMPLETED; Nếu là đơn SHIPPING của Shipper -> giữ nguyên SHIPPING để Shipper bàn giao hàng (UC_2.3.4 Lựa chọn A)
+        if (order.getChannelType() == OrderChannel.OFFLINE) {
+            order.setOrderStatus(OrderStatus.COMPLETED);
+            orderRepository.save(order);
+            log.info("Webhook VietQR: Đơn hàng tại quầy #{} đã xác nhận thanh toán thành công qua chuyển khoản ngân hàng!", order.getOrderId());
+        } else {
+            // Đơn giao hàng của Shipper (UC_2.3.4): Giữ nguyên trạng thái SHIPPING (Lựa chọn A)
+            // Bắn thông báo chuông ngay cho Shipper biết tiền đã vào tài khoản
+            if (order.getShipper() != null) {
+                String notifMsg = String.format("Khách hàng đã thanh toán thành công số tiền %,d VNĐ qua VietQR cho đơn hàng #%d. Vui lòng bàn giao rượu cho khách và xác nhận hoàn tất!",
+                        order.getTotalAmount().longValue(), order.getOrderId());
+                notificationService.sendNotification(order.getShipper(), "Thanh toán VietQR thành công #" + order.getOrderId(), notifMsg, NotificationType.SYSTEM, order.getOrderId());
+            }
+            log.info("Webhook VietQR: Đơn hàng giao Shipper #{} đã xác nhận thanh toán thành công! Giữ trạng thái SHIPPING để Shipper bàn giao rượu.", order.getOrderId());
+        }
 
         paymentTx.setPaymentStatus(PaymentStatus.PAID);
+        paymentTx.setPaymentMethod(PaymentMethod.VIETQR.name());
         if (request.getReferenceCode() != null) {
             paymentTx.setBankReceiptCode(request.getReferenceCode());
         }
         paymentTransactionRepository.save(paymentTx);
 
-        log.info("Webhook VietQR: Đơn hàng tại quầy #{} đã xác nhận thanh toán thành công qua chuyển khoản ngân hàng!", order.getOrderId());
         return mapToOfflineOrderResponse(order, paymentTx, null, null);
     }
 
     private String generateVietQrUrl(Long orderId, BigDecimal amount) {
         String memo = "WINE" + orderId;
-        String encodedAccountName = URLEncoder.encode(vietQrAccountName, StandardCharsets.UTF_8);
+        String bankId = (vietQrBankId != null && !vietQrBankId.isEmpty()) ? vietQrBankId : "MB";
+        String accountNo = (vietQrAccountNo != null && !vietQrAccountNo.isEmpty()) ? vietQrAccountNo : "0987654321";
+        String accountName = (vietQrAccountName != null && !vietQrAccountName.isEmpty()) ? vietQrAccountName : "URBAN WINE STORE";
+        String encodedAccountName = URLEncoder.encode(accountName, StandardCharsets.UTF_8);
         return String.format("https://img.vietqr.io/image/%s-%s-compact2.png?amount=%s&addInfo=%s&accountName=%s",
-                vietQrBankId, vietQrAccountNo, amount.toBigInteger().toString(), memo, encodedAccountName);
+                bankId, accountNo, amount.toBigInteger().toString(), memo, encodedAccountName);
     }
 
     private String generateReceiptContent(Order order, List<OrderItemResponse> items,
@@ -1598,5 +1613,150 @@ public class OrderServiceImpl implements OrderService {
 
         return mapToOrderResponse(order);
     }
+
+    // =========================================================================
+    // UC_2.3.4: DISPLAY PAYMENT METHOD (HIỂN THỊ VIETQR ĐỘNG CHO SHIPPER THU TIỀN TẠI CHỖ)
+    // =========================================================================
+
+    @Override
+    @Transactional
+    public com.urbanwine.sell_wine_express.dto.respone.ShipperVietQrResponse generateShipperVietQr(User shipper, Long orderId) {
+        if (shipper == null) {
+            throw new IllegalArgumentException("Thông tin nhân viên giao hàng không hợp lệ");
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId));
+
+        // BR-08 & PRE-2: Kiểm tra đơn hàng có được phân công cho shipper này không
+        if (order.getShipper() == null || !order.getShipper().getUserId().equals(shipper.getUserId())) {
+            throw new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId + " được phân công cho tài khoản của bạn (Quy tắc BR-08)");
+        }
+
+        // PRE-2: Đơn hàng phải đang ở trạng thái SHIPPING
+        if (order.getOrderStatus() != OrderStatus.SHIPPING) {
+            throw new IllegalArgumentException("Chỉ có thể tạo mã thanh toán VietQR cho đơn hàng đang ở trạng thái Đang giao (SHIPPING). Trạng thái hiện tại: " + order.getOrderStatus());
+        }
+
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order)
+                .orElseGet(() -> {
+                    PaymentTransaction tx = new PaymentTransaction();
+                    tx.setOrder(order);
+                    tx.setPaymentMethod(PaymentMethod.COD.name());
+                    tx.setPaymentStatus(PaymentStatus.UNPAID);
+                    tx.setCreatedAt(LocalDateTime.now());
+                    return paymentTransactionRepository.save(tx);
+                });
+
+        // Ngoại lệ E1: Đơn hàng đã được thanh toán online trước (số tiền cần thu là 0)
+        if (paymentTx.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new IllegalArgumentException("Đơn hàng #" + orderId + " đã được thanh toán từ trước (Số tiền cần thu: 0 VNĐ). Vui lòng bàn giao hàng cho khách mà không cần thu thêm tiền (Quy tắc E1)");
+        }
+
+        // Sinh link mã VietQR động chuẩn Napas 247
+        String qrUrl = generateVietQrUrl(order.getOrderId(), order.getTotalAmount());
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(15);
+        long expiresInSeconds = 900L;
+
+        // Cập nhật phương thức sang VIETQR
+        paymentTx.setPaymentMethod(PaymentMethod.VIETQR.name());
+        paymentTransactionRepository.save(paymentTx);
+
+        log.info("Shipper '{}' (ID: {}) đã tạo mã VietQR động cho đơn hàng #{}, số tiền thu: {} VNĐ",
+                shipper.getFullName(), shipper.getUserId(), orderId, order.getTotalAmount());
+
+        return com.urbanwine.sell_wine_express.dto.respone.ShipperVietQrResponse.builder()
+                .orderId(order.getOrderId())
+                .orderCode(String.format("ORD-%06d", order.getOrderId()))
+                .amountToCollect(order.getTotalAmount())
+                .bankId(vietQrBankId != null ? vietQrBankId : "MB")
+                .accountNo(vietQrAccountNo != null ? vietQrAccountNo : "0987654321")
+                .accountName(vietQrAccountName != null ? vietQrAccountName : "URBAN WINE STORE")
+                .transferMemo("WINE" + order.getOrderId())
+                .qrCodeUrl(qrUrl)
+                .paymentStatus(paymentTx.getPaymentStatus())
+                .expiresAt(expiresAt)
+                .expiresInSeconds(expiresInSeconds)
+                .message("Vui lòng hướng dẫn khách hàng mở App Ngân hàng quét mã VietQR để thanh toán đúng số tiền.")
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse cancelShipperVietQr(User shipper, Long orderId) {
+        if (shipper == null) {
+            throw new IllegalArgumentException("Thông tin nhân viên giao hàng không hợp lệ");
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId));
+
+        // BR-08: Kiểm tra quyền truy cập đơn của shipper
+        if (order.getShipper() == null || !order.getShipper().getUserId().equals(shipper.getUserId())) {
+            throw new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId + " được phân công cho tài khoản của bạn (Quy tắc BR-08)");
+        }
+
+        if (order.getOrderStatus() != OrderStatus.SHIPPING) {
+            throw new IllegalArgumentException("Chỉ có thể chuyển đổi phương thức thanh toán cho đơn hàng đang ở trạng thái Đang giao (SHIPPING)");
+        }
+
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        if (paymentTx != null && paymentTx.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new IllegalArgumentException("Đơn hàng #" + orderId + " đã được thanh toán thành công qua chuyển khoản, không thể hủy phiên thanh toán QR");
+        }
+
+        if (paymentTx != null) {
+            paymentTx.setPaymentMethod(PaymentMethod.COD.name());
+            paymentTransactionRepository.save(paymentTx);
+        }
+
+        log.info("Shipper '{}' đã hủy phiên thanh toán VietQR cho đơn #{}, chuyển về thu tiền mặt trực tiếp (Alternative Flow)",
+                shipper.getFullName(), orderId);
+
+        return mapToOrderResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.urbanwine.sell_wine_express.dto.respone.PaymentStatusResponse getShipperPaymentStatus(User shipper, Long orderId) {
+        if (shipper == null) {
+            throw new IllegalArgumentException("Thông tin nhân viên giao hàng không hợp lệ");
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId));
+
+        // BR-08: Kiểm tra quyền truy cập
+        if (order.getShipper() == null || !order.getShipper().getUserId().equals(shipper.getUserId())) {
+            throw new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId + " được phân công cho tài khoản của bạn (Quy tắc BR-08)");
+        }
+
+        PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
+        PaymentStatus status = (paymentTx != null) ? paymentTx.getPaymentStatus() : PaymentStatus.UNPAID;
+        PaymentMethod enumMethod = PaymentMethod.COD;
+        if (paymentTx != null && paymentTx.getPaymentMethod() != null) {
+            try {
+                enumMethod = PaymentMethod.valueOf(paymentTx.getPaymentMethod());
+            } catch (Exception ignored) {}
+        }
+
+        String message = (status == PaymentStatus.PAID)
+                ? "Thanh toán thành công! Khách hàng đã chuyển tiền xong, bạn có thể bàn giao rượu."
+                : "Đang chờ khách hàng quét mã và xác nhận chuyển khoản ngân hàng...";
+
+        return com.urbanwine.sell_wine_express.dto.respone.PaymentStatusResponse.builder()
+                .orderId(order.getOrderId())
+                .orderCode(String.format("ORD-%06d", order.getOrderId()))
+                .totalAmount(order.getTotalAmount())
+                .orderStatus(order.getOrderStatus())
+                .paymentStatus(status)
+                .paymentMethod(enumMethod)
+                .isPaid(status == PaymentStatus.PAID)
+                .bankReceiptCode(paymentTx != null ? paymentTx.getBankReceiptCode() : null)
+                .message(message)
+                .createdAt(order.getCreatedAt())
+                .build();
+    }
 }
+
 

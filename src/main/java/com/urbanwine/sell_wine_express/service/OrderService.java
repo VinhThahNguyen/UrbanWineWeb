@@ -102,5 +102,18 @@ public interface OrderService {
 
     // 2. Shipper báo cáo giao hàng thất bại kèm lý do (POST-2, BR-04, BR-08, E2)
     OrderResponse failDelivery(User shipper, Long orderId, com.urbanwine.sell_wine_express.dto.request.FailDeliveryRequest request);
+
+    // =========================================================================
+    // UC_2.3.4: DISPLAY PAYMENT METHOD (HIỂN THỊ VIETQR ĐỘNG CHO SHIPPER THU TIỀN TẠI CHỖ)
+    // =========================================================================
+    // 1. Shipper yêu cầu tạo mã VietQR động để khách quét thanh toán tại chỗ (Normal Flow, BR-08, E1)
+    com.urbanwine.sell_wine_express.dto.respone.ShipperVietQrResponse generateShipperVietQr(User shipper, Long orderId);
+
+    // 2. Khách đổi ý trả tiền mặt -> Shipper hủy phiên QR chuyển về tiền mặt (Alternative Flow)
+    OrderResponse cancelShipperVietQr(User shipper, Long orderId);
+
+    // 3. Shipper kiểm tra trạng thái thanh toán thời gian thực khi đang chờ khách quét QR (Polling)
+    com.urbanwine.sell_wine_express.dto.respone.PaymentStatusResponse getShipperPaymentStatus(User shipper, Long orderId);
 }
+
 

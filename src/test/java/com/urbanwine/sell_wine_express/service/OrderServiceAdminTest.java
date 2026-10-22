@@ -15,6 +15,7 @@ import com.urbanwine.sell_wine_express.entity.PaymentTransaction;
 import com.urbanwine.sell_wine_express.entity.User;
 import com.urbanwine.sell_wine_express.entity.Wine;
 import com.urbanwine.sell_wine_express.enums.CancelStatus;
+import com.urbanwine.sell_wine_express.enums.OrderChannel;
 import com.urbanwine.sell_wine_express.enums.OrderStatus;
 import com.urbanwine.sell_wine_express.enums.PaymentMethod;
 import com.urbanwine.sell_wine_express.enums.PaymentStatus;
@@ -818,5 +819,156 @@ class OrderServiceAdminTest {
 
         assertTrue(ex.getMessage().contains("Quy tắc E2"));
     }
+
+    // =========================================================================
+    // UC_2.3.4 DISPLAY PAYMENT METHOD (VIETQR ĐỘNG CHO SHIPPER) TESTS
+    // =========================================================================
+
+    @Test
+    @DisplayName("UC_2.3.4 Normal Flow: Shipper tạo mã VietQR động thành công kèm thông tin thanh toán chuẩn Napas 247")
+    void generateShipperVietQr_Success() {
+        User currentShipper = User.builder().userId(10L).fullName("Nguyễn Văn Giao").role(Role.ROLE_SHIPPER).build();
+        Order order = new Order();
+        order.setOrderId(801L);
+        order.setShipper(currentShipper);
+        order.setOrderStatus(OrderStatus.SHIPPING);
+        order.setTotalAmount(new BigDecimal("350000"));
+
+        PaymentTransaction paymentTx = new PaymentTransaction();
+        paymentTx.setOrder(order);
+        paymentTx.setPaymentMethod(PaymentMethod.COD.name());
+        paymentTx.setPaymentStatus(PaymentStatus.UNPAID);
+
+        when(orderRepository.findById(801L)).thenReturn(Optional.of(order));
+        when(paymentTransactionRepository.findByOrder(order)).thenReturn(Optional.of(paymentTx));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+
+        com.urbanwine.sell_wine_express.dto.respone.ShipperVietQrResponse res =
+                orderService.generateShipperVietQr(currentShipper, 801L);
+
+        assertNotNull(res);
+        assertEquals(801L, res.getOrderId());
+        assertEquals(new BigDecimal("350000"), res.getAmountToCollect());
+        assertTrue(res.getQrCodeUrl().contains("https://img.vietqr.io"));
+        assertEquals("WINE801", res.getTransferMemo());
+        assertEquals(PaymentStatus.UNPAID, res.getPaymentStatus());
+        assertEquals(900L, res.getExpiresInSeconds());
+        assertEquals(PaymentMethod.VIETQR.name(), paymentTx.getPaymentMethod());
+    }
+
+    @Test
+    @DisplayName("UC_2.3.4 Exception E1: Đơn hàng đã được thanh toán từ trước -> Bị từ chối tạo mã QR mới")
+    void generateShipperVietQr_Exception_AlreadyPaid() {
+        User currentShipper = User.builder().userId(10L).fullName("Nguyễn Văn Giao").role(Role.ROLE_SHIPPER).build();
+        Order order = new Order();
+        order.setOrderId(802L);
+        order.setShipper(currentShipper);
+        order.setOrderStatus(OrderStatus.SHIPPING);
+        order.setTotalAmount(new BigDecimal("350000"));
+
+        PaymentTransaction paidTx = new PaymentTransaction();
+        paidTx.setOrder(order);
+        paidTx.setPaymentMethod(PaymentMethod.VNPAY.name());
+        paidTx.setPaymentStatus(PaymentStatus.PAID);
+
+        when(orderRepository.findById(802L)).thenReturn(Optional.of(order));
+        when(paymentTransactionRepository.findByOrder(order)).thenReturn(Optional.of(paidTx));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                orderService.generateShipperVietQr(currentShipper, 802L));
+
+        assertTrue(ex.getMessage().contains("Quy tắc E1"));
+    }
+
+    @Test
+    @DisplayName("UC_2.3.4 Exception BR-08: Shipper khác yêu cầu tạo mã QR cho đơn không thuộc về mình -> Bị chặn")
+    void generateShipperVietQr_Exception_NotAssignedShipper() {
+        User shipper1 = User.builder().userId(10L).fullName("Shipper 1").role(Role.ROLE_SHIPPER).build();
+        User shipper2 = User.builder().userId(20L).fullName("Shipper 2").role(Role.ROLE_SHIPPER).build();
+
+        Order order = new Order();
+        order.setOrderId(803L);
+        order.setShipper(shipper1);
+        order.setOrderStatus(OrderStatus.SHIPPING);
+
+        when(orderRepository.findById(803L)).thenReturn(Optional.of(order));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                orderService.generateShipperVietQr(shipper2, 803L));
+
+        assertTrue(ex.getMessage().contains("Quy tắc BR-08"));
+    }
+
+    @Test
+    @DisplayName("UC_2.3.4 Alternative Flow: Hủy phiên VietQR -> Chuyển về thanh toán tiền mặt COD")
+    void cancelShipperVietQr_Success() {
+        User currentShipper = User.builder().userId(10L).fullName("Nguyễn Văn Giao").role(Role.ROLE_SHIPPER).build();
+        Order order = new Order();
+        order.setOrderId(804L);
+        order.setShipper(currentShipper);
+        order.setOrderStatus(OrderStatus.SHIPPING);
+
+        PaymentTransaction qrTx = new PaymentTransaction();
+        qrTx.setOrder(order);
+        qrTx.setPaymentMethod(PaymentMethod.VIETQR.name());
+        qrTx.setPaymentStatus(PaymentStatus.UNPAID);
+
+        when(orderRepository.findById(804L)).thenReturn(Optional.of(order));
+        when(paymentTransactionRepository.findByOrder(order)).thenReturn(Optional.of(qrTx));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+        when(orderDetailRepository.findByOrder(order)).thenReturn(List.of());
+
+        OrderResponse res = orderService.cancelShipperVietQr(currentShipper, 804L);
+
+        assertNotNull(res);
+        assertEquals(PaymentMethod.COD.name(), qrTx.getPaymentMethod());
+    }
+
+    @Test
+    @DisplayName("UC_2.3.4 Lựa chọn A: Webhook VietQR nhận tiền đơn Online -> Đơn giữ nguyên SHIPPING, tiền sang PAID, bắn chuông cho Shipper")
+    void processVietQrWebhook_OnlineShipperOrder_PreservesShippingAndNotifiesShipper() {
+        User currentShipper = User.builder().userId(10L).fullName("Nguyễn Văn Giao").role(Role.ROLE_SHIPPER).build();
+        Order order = new Order();
+        order.setOrderId(805L);
+        order.setShipper(currentShipper);
+        order.setOrderStatus(OrderStatus.SHIPPING);
+        order.setChannelType(OrderChannel.ONLINE);
+        order.setTotalAmount(new BigDecimal("450000"));
+
+        PaymentTransaction tx = new PaymentTransaction();
+        tx.setOrder(order);
+        tx.setPaymentMethod(PaymentMethod.VIETQR.name());
+        tx.setPaymentStatus(PaymentStatus.UNPAID);
+
+        when(orderRepository.findById(805L)).thenReturn(Optional.of(order));
+        when(paymentTransactionRepository.findByOrder(order)).thenReturn(Optional.of(tx));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+        when(orderDetailRepository.findByOrder(order)).thenReturn(List.of());
+
+        com.urbanwine.sell_wine_express.dto.request.VietQrWebhookRequest webhookReq =
+                com.urbanwine.sell_wine_express.dto.request.VietQrWebhookRequest.builder()
+                        .orderId(805L)
+                        .amount(new BigDecimal("450000"))
+                        .referenceCode("MB_TRANS_998877")
+                        .build();
+
+        orderService.processVietQrWebhook(webhookReq);
+
+        // Đơn hàng VẪN GIỮ NGUYÊN SHIPPING theo Lựa chọn A
+        assertEquals(OrderStatus.SHIPPING, order.getOrderStatus());
+        // Tiền chuyển sang PAID
+        assertEquals(PaymentStatus.PAID, tx.getPaymentStatus());
+        assertEquals("MB_TRANS_998877", tx.getBankReceiptCode());
+
+        // Kiểm tra thông báo bắn cho Shipper biết tiền đã vào
+        verify(notificationService).sendNotification(
+                eq(currentShipper),
+                contains("Thanh toán VietQR thành công"),
+                anyString(),
+                eq(NotificationType.SYSTEM),
+                eq(805L)
+        );
+    }
 }
+
 

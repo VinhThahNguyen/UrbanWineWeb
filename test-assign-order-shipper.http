@@ -312,3 +312,72 @@ GET {{baseUrl}}/api/shipper/notifications
 Authorization: Bearer {{shipper2Token}}
 
 
+### =========================================================================
+### USE CASE UC_2.3.4: DISPLAY PAYMENT METHOD (MÃ VIETQR ĐỘNG CHO SHIPPER THU TIỀN TẠI CHỖ)
+### =========================================================================
+
+### -------------------------------------------------------------------------
+### 27. NORMAL FLOW: KHÁCH XIN QUÉT QR CHUYỂN KHOẢN TẠI CHỖ -> SHIPPER TẠO MÃ VIETQR
+### POST /api/shipper/orders/{orderId}/generate-qr
+### Kỳ vọng:
+### - Trả về ảnh mã qrCodeUrl chuẩn Napas 247 có sẵn số tiền chính xác và nội dung
+### - amountToCollect: số tiền cần thu
+### - expiresInSeconds: 900 (15 phút)
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/shipper/orders/1/generate-qr
+Authorization: Bearer {{shipper1Token}}
+
+
+### -------------------------------------------------------------------------
+### 28. POLLING: ỨNG DỤNG SHIPPER KIỂM TRA TRẠNG THÁI TIỀN ĐÃ VÀO TÀI KHOẢN CHƯA
+### GET /api/shipper/orders/{orderId}/payment-status
+### Kỳ vọng: paymentStatus = UNPAID, message: "Đang chờ khách hàng quét mã..."
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/shipper/orders/1/payment-status
+Authorization: Bearer {{shipper1Token}}
+
+
+### -------------------------------------------------------------------------
+### 29. MÔ PHỎNG CỔNG THANH TOÁN / NGÂN HÀNG GỬI WEBHOOK IPN TIỀN VỀ (POST-1, POST-2)
+### POST /api/payment/vietqr-webhook
+### Kỳ vọng:
+### - Tiền đơn hàng chuyển sang PAID
+### - Đơn hàng VẪN GIỮ NGUYÊN SHIPPING (Lựa chọn A) để Shipper bàn giao hàng
+### - Bắn chuông thông báo cho Shipper: "Thanh toán VietQR thành công"
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/payment/vietqr-webhook
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "amount": 280000,
+  "referenceCode": "MB_TRANS_12345678"
+}
+
+
+### -------------------------------------------------------------------------
+### 30. SHIPPER KIỂM TRA LẠI: MÀN HÌNH CHUYỂN SANG ĐÃ THANH TOÁN THÀNH CÔNG
+### GET /api/shipper/orders/{orderId}/payment-status
+### Kỳ vọng: paymentStatus = PAID, message: "Thanh toán thành công! Khách hàng đã chuyển tiền xong..."
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/shipper/orders/1/payment-status
+Authorization: Bearer {{shipper1Token}}
+
+
+### -------------------------------------------------------------------------
+### 31. SHIPPER BÀN GIAO RƯỢU TẬN TAY VÀ BẤM HOÀN TẤT ĐƠN HÀNG (UC_2.3.2)
+### POST /api/shipper/orders/{orderId}/complete
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/shipper/orders/1/complete
+Authorization: Bearer {{shipper1Token}}
+
+
+### -------------------------------------------------------------------------
+### 32. ALTERNATIVE FLOW: KHÁCH ĐỔI Ý TRẢ TIỀN MẶT -> SHIPPER HỦY PHIÊN QR
+### POST /api/shipper/orders/{orderId}/cancel-qr
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/shipper/orders/2/cancel-qr
+Authorization: Bearer {{shipper1Token}}
+
+
+

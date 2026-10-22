@@ -116,5 +116,49 @@ public class ShipperController {
         OrderResponse response = orderService.failDelivery(currentShipper, orderId, request);
         return ResponseEntity.ok(response);
     }
+
+    // =========================================================================
+    // UC_2.3.4: DISPLAY PAYMENT METHOD (HIỂN THỊ VIETQR ĐỘNG CHO SHIPPER THU TIỀN TẠI CHỖ)
+    // =========================================================================
+
+    /**
+     * UC_2.3.4 Normal Flow:
+     * Khách hàng yêu cầu quét mã chuyển khoản tại chỗ -> Shipper tạo mã VietQR động có sẵn số tiền & nội dung đơn (POST-1, POST-2).
+     */
+    @PostMapping("/orders/{orderId}/generate-qr")
+    public ResponseEntity<com.urbanwine.sell_wine_express.dto.respone.ShipperVietQrResponse> generateShipperVietQr(
+            @AuthenticationPrincipal User currentShipper,
+            @PathVariable("orderId") Long orderId
+    ) {
+        com.urbanwine.sell_wine_express.dto.respone.ShipperVietQrResponse response = orderService.generateShipperVietQr(currentShipper, orderId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * UC_2.3.4 Alternative Flow:
+     * Khách hàng đổi ý trả tiền mặt -> Shipper hủy phiên QR chuyển về thu tiền mặt trực tiếp.
+     */
+    @PostMapping("/orders/{orderId}/cancel-qr")
+    public ResponseEntity<OrderResponse> cancelShipperVietQr(
+            @AuthenticationPrincipal User currentShipper,
+            @PathVariable("orderId") Long orderId
+    ) {
+        OrderResponse response = orderService.cancelShipperVietQr(currentShipper, orderId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * UC_2.3.4 Polling:
+     * Ứng dụng Shipper kiểm tra trạng thái thanh toán thời gian thực khi đang mở mã QR cho khách quét.
+     */
+    @GetMapping("/orders/{orderId}/payment-status")
+    public ResponseEntity<com.urbanwine.sell_wine_express.dto.respone.PaymentStatusResponse> getShipperPaymentStatus(
+            @AuthenticationPrincipal User currentShipper,
+            @PathVariable("orderId") Long orderId
+    ) {
+        com.urbanwine.sell_wine_express.dto.respone.PaymentStatusResponse response = orderService.getShipperPaymentStatus(currentShipper, orderId);
+        return ResponseEntity.ok(response);
+    }
 }
+
 
