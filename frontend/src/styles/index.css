@@ -1,0 +1,72 @@
+/* ==========================================================================
+   URBAN WINE EXPRESS - LUXURY DESIGN SYSTEM
+   Dark Theme & Gold Accents
+   ========================================================================== */
+
+:root {
+  --bg-primary: #0a0908;
+  --bg-secondary: #12100e;
+  --bg-card: #181512;
+  --bg-card-hover: #221d19;
+  
+  --gold-primary: #d4af37;
+  --gold-light: #f3e5ab;
+  --gold-hover: #e5be3e;
+  --gold-muted: rgba(212, 175, 55, 0.2);
+  --gold-border: rgba(212, 175, 55, 0.25);
+  
+  --text-primary: #ffffff;
+  --text-secondary: #c7c3be;
+  --text-muted: #8b857d;
+  --text-gold: #d4af37;
+
+  --font-serif: 'Cormorant Garamond', 'Cinzel', serif;
+  --font-display: 'Cinzel', serif;
+  --font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: #2b2622;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-border);
+}
