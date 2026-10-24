@@ -3,38 +3,187 @@ import { Header } from '@/shared/components/Header';
 import { HeroSection } from '@/features/home/components/HeroSection';
 import { CategorySection } from '@/features/home/components/CategorySection';
 import { AuthModal } from '@/features/auth/components/AuthModal';
+import { WineCellarSection } from '@/features/wine/components/WineCellarSection';
+import { WineDetailPage } from '@/features/wine/pages/WineDetailPage';
+import { CartPage, CartItem } from '@/features/cart/pages/CartPage';
+import { WineProduct, initialWines } from '@/features/wine/data/winesData';
 
-interface HomePageProps {
-  onSignInClick?: () => void;
-}
+type CurrentView = 'HOME' | 'DETAIL' | 'CART';
 
-export const HomePage: React.FC<HomePageProps> = () => {
+export const HomePage: React.FC = () => {
+  const [view, setView] = useState<CurrentView>('HOME');
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [selectedWine, setSelectedWine] = useState<WineProduct | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  // Cart state initialized with 3 sample items matching Screenshot 4
+  const [cartItems, setCartItems] = useState<CartItem[]>([
+    { wine: initialWines[0], quantity: 8 }, // Château Margaux: 8
+    { wine: initialWines[1], quantity: 1 }, // Sassicaia: 1
+    { wine: initialWines[2], quantity: 1 }, // Dom Pérignon: 1
+  ]);
+
+  const [activeNav, setActiveNav] = useState<string>('home');
+
   const [currentUser, setCurrentUser] = useState<any>(() => {
     const saved = localStorage.getItem('urbanwine_user');
     return saved ? JSON.parse(saved) : null;
   });
 
+  // Smooth scroll to Wine Cellar
+  const scrollToWineCellar = (category?: string) => {
+    if (category) setSelectedCategory(category);
+    setActiveNav('catalog');
+    setView('HOME');
+    setTimeout(() => {
+      const el = document.getElementById('wine-cellar');
+      el?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  // Smooth scroll to Categories
+  const scrollToCategories = () => {
+    setActiveNav('categories');
+    setView('HOME');
+    setTimeout(() => {
+      const el = document.getElementById('categories');
+      el?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+
+  // Add to cart handler
+  const handleAddToCart = (wine: WineProduct, quantity: number) => {
+    setCartItems((prev) => {
+      const existing = prev.find((item) => item.wine.id === wine.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.wine.id === wine.id
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        );
+      }
+      return [...prev, { wine, quantity }];
+    });
+  };
+
+  // Update quantity in cart
+  const handleUpdateQuantity = (wineId: string | number, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      handleRemoveFromCart(wineId);
+      return;
+    }
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.wine.id === wineId ? { ...item, quantity: newQuantity } : item
+      )
+    );
+  };
+
+  // Remove item from cart
+  const handleRemoveFromCart = (wineId: string | number) => {
+    setCartItems((prev) => prev.filter((item) => item.wine.id !== wineId));
+  };
+
+  // Proceed to checkout: If not logged in, trigger AuthModal
+  const handleProceedToCheckout = () => {
+    if (!currentUser) {
+      setIsAuthOpen(true);
+    } else {
+      alert(`Xin chào ${currentUser.fullName || currentUser.email}! Đang chuyển tiếp tới cổng thanh toán VNPay / VietQR.`);
+    }
+  };
+
+  const totalCartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
   return (
     <div className="home-page-container">
-      {/* 1. Header with logo, nav, search, cart, and sign in */}
+      {/* 1. Header with dynamic cart counter badge & active nav link */}
       <Header
-        cartCount={2}
+        cartCount={totalCartCount}
+        activeNav={activeNav}
         onSignInClick={() => setIsAuthOpen(true)}
+        onCartClick={() => {
+          setActiveNav('');
+          setView('CART');
+        }}
+        onNavClick={(target) => {
+          setActiveNav(target);
+          if (target === 'home') {
+            setView('HOME');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+          if (target === 'catalog') scrollToWineCellar('ALL');
+          if (target === 'categories') scrollToCategories();
+          if (target === 'about') {
+            setView('HOME');
+            window.scrollTo({ top: 500, behavior: 'smooth' });
+          }
+        }}
       />
 
-      <main>
-        {/* 2. Hero Section: Discover Exceptional Wines */}
-        <HeroSection
-          onExploreCatalog={() => console.log('Explore Catalog Clicked')}
-          onOurStory={() => console.log('Our Story Clicked')}
-        />
 
-        {/* 3. Explore By Category: Red, White, Sparkling */}
-        <CategorySection
-          onViewAll={() => console.log('View All Categories Clicked')}
-          onSelectCategory={(id) => console.log('Selected Category:', id)}
-        />
+      <main>
+        {/* VIEW 1: HOME PAGE */}
+        {view === 'HOME' && (
+          <>
+            {/* Hero Section */}
+            <HeroSection
+              onExploreCatalog={() => scrollToWineCellar('ALL')}
+              onOurStory={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
+            />
+
+            {/* Explore By Category */}
+            <CategorySection
+              onViewAll={() => scrollToWineCellar('ALL')}
+              onSelectCategory={(id) => {
+                if (id === 1) scrollToWineCellar('RED');
+                else if (id === 2) scrollToWineCellar('WHITE');
+                else if (id === 3) scrollToWineCellar('SPARKLING');
+                else scrollToWineCellar('ALL');
+              }}
+            />
+
+            {/* Wine Cellar Section (Screenshot 1 & 2) */}
+            <WineCellarSection
+              selectedCategory={selectedCategory}
+              onSelectCategory={(cat) => setSelectedCategory(cat)}
+              onWineClick={(wine) => {
+                setSelectedWine(wine);
+                setView('DETAIL');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onAddToCart={handleAddToCart}
+            />
+          </>
+        )}
+
+        {/* VIEW 2: PRODUCT DETAIL PAGE (Screenshot 3) */}
+        {view === 'DETAIL' && selectedWine && (
+          <WineDetailPage
+            wine={selectedWine}
+            onBack={() => setView('HOME')}
+            onAddToCart={(wine, qty) => {
+              handleAddToCart(wine, qty);
+              setView('CART');
+            }}
+            onProceedToCheckout={(wine, qty) => {
+              handleAddToCart(wine, qty);
+              handleProceedToCheckout();
+            }}
+          />
+        )}
+
+        {/* VIEW 3: CART PAGE (Screenshot 4) */}
+        {view === 'CART' && (
+          <CartPage
+            items={cartItems}
+            onUpdateQuantity={handleUpdateQuantity}
+            onRemoveItem={handleRemoveFromCart}
+            onContinueShopping={() => setView('HOME')}
+            onProceedToCheckout={handleProceedToCheckout}
+          />
+        )}
       </main>
 
       {/* Luxury Authentication Modal */}
@@ -48,4 +197,3 @@ export const HomePage: React.FC<HomePageProps> = () => {
     </div>
   );
 };
-

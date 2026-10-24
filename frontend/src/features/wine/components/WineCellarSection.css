@@ -1,0 +1,505 @@
+/* ==========================================================================
+   WINE CELLAR SECTION STYLES
+   Exact reproduction of Figma/Screenshot: Wine Cellar Grid, ABV/InStock Badges, Quick Add
+   ========================================================================== */
+
+.wine-cellar-section {
+  padding: 4.5rem 0 6rem 0;
+  background-color: #0d0c0a;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  width: 100%;
+}
+
+.wine-cellar-inner {
+  max-width: 100%;
+  margin: 0;
+  padding: 0 4rem;
+}
+
+
+.wine-cellar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.wine-cellar-title {
+  font-family: var(--font-serif);
+  font-size: 2.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.wine-cellar-subtitle {
+  font-size: 0.95rem;
+  color: #9ca3af;
+  max-width: 650px;
+  line-height: 1.6;
+}
+
+.wine-filter-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sort-label {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.sort-select {
+  background-color: #171615;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.sort-select:focus {
+  border-color: #d4af37;
+}
+
+/* Category Filter Tabs Bar */
+.category-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.filter-chip {
+  padding: 0.45rem 1.1rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #c7c3be;
+  font-size: 0.825rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.filter-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.filter-chip.active {
+  background-color: #4a151b;
+  border-color: #d4af37;
+  color: #e5be3e;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(212, 175, 55, 0.2);
+}
+
+/* Grid of Wine Cards */
+.wines-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+@media (max-width: 1100px) {
+  .wines-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .wines-grid {
+    grid-template-columns: 1fr;
+  }
+  .wine-cellar-inner {
+    padding: 0 1.5rem;
+  }
+}
+
+
+/* Wine Card Component */
+.wine-card {
+  background-color: #161514;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  position: relative;
+}
+
+.wine-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(212, 175, 55, 0.35);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+}
+
+.wine-card-media {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  overflow: hidden;
+  background-color: #1a1918;
+}
+
+.wine-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.wine-card:hover .wine-card-img {
+  transform: scale(1.05);
+}
+
+/* Top Floating Badges */
+.card-badge-abv {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background-color: rgba(18, 16, 15, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #e5be3e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.card-badge-stock {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10b981;
+  font-size: 0.725rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.card-badge-stock.out-of-stock {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+/* Card Content Details */
+.wine-card-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.wine-type-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #8b857d;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.wine-vintage-producer {
+  font-size: 0.825rem;
+  color: #a39e97;
+  margin-bottom: 0.35rem;
+}
+
+.wine-card-name {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.25;
+  margin-bottom: 0.25rem;
+  transition: color 0.2s;
+}
+
+.wine-card:hover .wine-card-name {
+  color: #d4af37;
+}
+
+.wine-origin-region {
+  font-size: 0.825rem;
+  color: #8b857d;
+  margin-bottom: 0.65rem;
+}
+
+.wine-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.star-icons {
+  color: #e5be3e;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+}
+
+.rating-score {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.wine-card-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.wine-card-price {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #d4af37;
+}
+
+.btn-quick-add {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  color: #e5be3e;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  padding: 0.75rem;
+  border-radius: 8px;
+  text-transform: uppercase;
+  transition: all 0.25s ease;
+}
+
+.btn-quick-add:hover {
+  background: linear-gradient(180deg, #d4af37 0%, #b89327 100%);
+  color: #12100e;
+  border-color: #d4af37;
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.3);
+}
+
+/* Quick Quantity Select Modal Styles (Screenshot 2) */
+.quantity-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(5, 5, 5, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1.25rem;
+  animation: authFadeIn 0.2s ease-out;
+}
+
+.quantity-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background-color: #171615;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+  color: #ffffff;
+  animation: authSlideUp 0.25s ease-out;
+}
+
+.quantity-modal-subtitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #d4af37;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.quantity-modal-title {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+}
+
+.quantity-product-snippet {
+  display: flex;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 1.25rem;
+}
+
+.snippet-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  object-fit: cover;
+  background-color: #201f1e;
+}
+
+.snippet-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.snippet-producer {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.snippet-region {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0.15rem 0;
+}
+
+.snippet-spec {
+  font-size: 0.775rem;
+  color: #8b857d;
+}
+
+.snippet-price-unit {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #d4af37;
+  margin-top: 0.25rem;
+}
+
+.cellar-stock-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin-bottom: 1.5rem;
+}
+
+.stock-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.cellar-stock-indicator strong {
+  color: #ffffff;
+}
+
+/* Quantity Control Row */
+.quantity-control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.quantity-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.qty-stepper {
+  display: flex;
+  align-items: center;
+  background-color: #211f1e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.qty-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d4af37;
+  font-size: 1.25rem;
+  transition: background-color 0.2s;
+}
+
+.qty-btn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.qty-btn:disabled {
+  color: #555;
+  cursor: not-allowed;
+}
+
+.qty-value {
+  width: 44px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Subtotal box */
+.subtotal-box {
+  background-color: #121110;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.subtotal-label {
+  font-size: 0.9rem;
+  color: #9ca3af;
+}
+
+.subtotal-amount {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #d4af37;
+}
+
+.btn-add-to-cart-modal {
+  width: 100%;
+  background: linear-gradient(180deg, #d4af37 0%, #b89327 100%);
+  color: #12100e;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  padding: 0.85rem;
+  border-radius: 8px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.3);
+  transition: all 0.2s;
+}
+
+.btn-add-to-cart-modal:hover {
+  background: linear-gradient(180deg, #e5be3e 0%, #c49c2d 100%);
+  transform: translateY(-1px);
+}

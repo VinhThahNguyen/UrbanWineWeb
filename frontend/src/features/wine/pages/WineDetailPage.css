@@ -1,0 +1,338 @@
+/* ==========================================================================
+   PRODUCT DETAIL PAGE STYLES (Screenshot 3)
+   Thumbnail zoom, Tasting Notes, Food Pairing, Quick pack options (1 bottle, 2 bottles, 6-bottle case)
+   ========================================================================== */
+
+.product-detail-page {
+  padding: 3rem 4rem 6rem 4rem;
+  max-width: 100%;
+  margin: 0;
+}
+
+
+.detail-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.825rem;
+  color: #8b857d;
+  margin-bottom: 2rem;
+}
+
+.breadcrumb-link {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.breadcrumb-link:hover {
+  color: #d4af37;
+}
+
+.breadcrumb-separator {
+  color: #555;
+}
+
+.detail-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 3.5rem;
+  align-items: start;
+}
+
+/* Left Image Column */
+.detail-media-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.main-image-wrapper {
+  position: relative;
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  background-color: #161514;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.main-wine-image {
+  width: 100%;
+  height: 480px;
+  object-fit: cover;
+  display: block;
+}
+
+.zoom-hint-badge {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background-color: rgba(18, 16, 15, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #c7c3be;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.thumbnails-row {
+  display: flex;
+  gap: 0.85rem;
+}
+
+.thumb-item {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.thumb-item.active {
+  border-color: #d4af37;
+}
+
+.thumb-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Right Information Column */
+.detail-info-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  color: #ffffff;
+}
+
+.detail-top-badges {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.badge-tag-type {
+  background-color: #4a151b;
+  color: #f87171;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.65rem;
+  border-radius: 4px;
+}
+
+.badge-tag-cellar {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 0.725rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 4px;
+}
+
+.detail-wine-title {
+  font-family: var(--font-serif);
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.detail-producer-row {
+  font-size: 0.95rem;
+  color: #a39e97;
+}
+
+.detail-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detail-price-hero {
+  font-family: var(--font-serif);
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #d4af37;
+}
+
+.detail-price-hero span {
+  font-size: 1rem;
+  color: #8b857d;
+  font-weight: 400;
+}
+
+.detail-description-p {
+  font-size: 0.9rem;
+  color: #c7c3be;
+  line-height: 1.6;
+}
+
+/* 4-Specs Matrix Box */
+.detail-specs-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background-color: #151413;
+  overflow: hidden;
+}
+
+.spec-cell {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.spec-cell:nth-child(odd) {
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.spec-cell:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+.spec-lbl {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #8b857d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+
+.spec-val {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Pills Lists (Tasting Notes / Food Pairing) */
+.pills-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pills-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8b857d;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pills-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pill-item {
+  background-color: #1a1918;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e5be3e;
+  font-size: 0.775rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+}
+
+/* Pack Option Buttons (1 bottle, 2 bottles, 6-bottle case) */
+.quantity-pack-options {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-pack-opt {
+  flex: 1;
+  padding: 0.65rem;
+  border-radius: 8px;
+  background-color: #1a1918;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #c7c3be;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-pack-opt.active {
+  background-color: #262118;
+  border-color: #d4af37;
+  color: #d4af37;
+}
+
+/* Calculation Bar */
+.detail-calc-bar {
+  background-color: #131211;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 8px;
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calc-formula {
+  font-size: 0.9rem;
+  color: #9ca3af;
+}
+
+.calc-total {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #d4af37;
+}
+
+/* 2 Action Buttons */
+.detail-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 1rem;
+}
+
+.btn-detail-add-cart {
+  background: #171615;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #e5be3e;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  padding: 0.9rem;
+  border-radius: 8px;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+
+.btn-detail-add-cart:hover {
+  background-color: #24201a;
+  border-color: #d4af37;
+}
+
+.btn-detail-checkout {
+  background: linear-gradient(180deg, #d4af37 0%, #b89327 100%);
+  color: #12100e;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  padding: 0.9rem;
+  border-radius: 8px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.3);
+  transition: all 0.2s;
+}
+
+.btn-detail-checkout:hover {
+  background: linear-gradient(180deg, #e5be3e 0%, #c49c2d 100%);
+  transform: translateY(-1px);
+}
+
+.detail-trust-badges {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.775rem;
+  color: #8b857d;
+  padding-top: 0.5rem;
+}

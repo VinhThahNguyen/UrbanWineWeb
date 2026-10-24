@@ -4,26 +4,73 @@ import './Header.css';
 
 interface HeaderProps {
   cartCount?: number;
+  activeNav?: string;
   onSignInClick?: () => void;
+  onCartClick?: () => void;
+  onNavClick?: (view: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ cartCount = 2, onSignInClick }) => {
+export const Header: React.FC<HeaderProps> = ({
+  cartCount = 2,
+  activeNav = 'home',
+  onSignInClick,
+  onCartClick,
+  onNavClick,
+}) => {
   return (
     <header className="header-container">
       <div className="header-inner">
         {/* Brand Logo */}
-        <div className="header-logo">
+        <div className="header-logo" onClick={() => onNavClick && onNavClick('home')} style={{ cursor: 'pointer' }}>
           <Wine className="logo-icon" size={24} />
           <span className="logo-text">Urban Wine Express</span>
         </div>
 
         {/* Navigation Menu */}
         <nav className="header-nav">
-          <a href="#home" className="nav-item active">Home</a>
-          <a href="#catalog" className="nav-item">Wine Catalog</a>
-          <a href="#categories" className="nav-item">Categories</a>
-          <a href="#about" className="nav-item">About Us</a>
+          <a
+            href="#home"
+            className={`nav-item ${activeNav === 'home' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              onNavClick && onNavClick('home');
+            }}
+          >
+            Home
+          </a>
+          <a
+            href="#catalog"
+            className={`nav-item ${activeNav === 'catalog' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              onNavClick && onNavClick('catalog');
+            }}
+          >
+            Wine Catalog
+          </a>
+          <a
+            href="#categories"
+            className={`nav-item ${activeNav === 'categories' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              onNavClick && onNavClick('categories');
+            }}
+          >
+            Categories
+          </a>
+          <a
+            href="#about"
+            className={`nav-item ${activeNav === 'about' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              onNavClick && onNavClick('about');
+            }}
+          >
+            About Us
+          </a>
         </nav>
+
+
 
         {/* Action Controls */}
         <div className="header-actions">
@@ -38,10 +85,11 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 2, onSignInClick }) 
           </div>
 
           {/* Cart Icon with Counter Badge */}
-          <button className="cart-button" title="View Cart">
+          <button className="cart-button" title="View Cart" onClick={onCartClick}>
             <ShoppingBag size={20} />
             {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
           </button>
+
 
           {/* Sign In CTA Button */}
           <button className="signin-button" onClick={onSignInClick}>

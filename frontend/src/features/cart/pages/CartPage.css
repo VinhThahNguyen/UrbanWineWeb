@@ -1,0 +1,281 @@
+/* ==========================================================================
+   CART PAGE STYLES (Screenshot 4)
+   Breadcrumb 1. Cart -> 2. Checkout -> 3. Confirmation
+   Bảng danh sách rượu, QTY Stepper, Order Summary box with 10% VAT & 30k Ship
+   ========================================================================== */
+
+.cart-page-container {
+  padding: 3rem 4rem 6rem 4rem;
+  max-width: 100%;
+  margin: 0;
+  color: #ffffff;
+}
+
+
+/* 3-Step Process Indicator */
+.cart-steps-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+  margin-bottom: 2rem;
+}
+
+.step-item {
+  color: #6b7280;
+}
+
+.step-item.active {
+  color: #d4af37;
+  font-weight: 600;
+}
+
+.step-divider-line {
+  width: 40px;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.cart-title-row {
+  margin-bottom: 1.5rem;
+}
+
+.cart-page-title {
+  font-family: var(--font-serif);
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 0.25rem;
+}
+
+.cart-items-selected-lbl {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+/* Reservation Alert Banner */
+.cart-alert-notice {
+  background-color: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 8px;
+  padding: 0.85rem 1.25rem;
+  font-size: 0.8rem;
+  color: #e5be3e;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 2rem;
+}
+
+/* 2-Columns Cart Layout */
+.cart-grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+/* Table of Wine Items */
+.cart-table-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cart-table-header {
+  display: grid;
+  grid-template-columns: 2.5fr 1.2fr 1fr 1.4fr;
+  padding: 0 1.25rem 0.5rem 1.25rem;
+  font-size: 0.725rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #8b857d;
+  text-transform: uppercase;
+}
+
+.cart-table-row {
+  display: grid;
+  grid-template-columns: 2.5fr 1.2fr 1fr 1.4fr;
+  align-items: center;
+  background-color: #161514;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: border-color 0.2s;
+}
+
+.cart-table-row:hover {
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.cart-col-wine {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cart-wine-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  background-color: #201f1e;
+}
+
+.cart-wine-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.cart-wine-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #ffffff;
+}
+
+.cart-wine-sub {
+  font-size: 0.775rem;
+  color: #8b857d;
+  margin-top: 0.15rem;
+}
+
+.cart-col-price {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  color: #d4af37;
+}
+
+.cart-col-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.cart-line-total-price {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #d4af37;
+}
+
+.btn-remove-item {
+  color: #6b7280;
+  cursor: pointer;
+  background: none;
+  border: none;
+  transition: color 0.2s;
+  padding: 0.25rem;
+}
+
+.btn-remove-item:hover {
+  color: #ef4444;
+}
+
+.cart-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #a39e97;
+  cursor: pointer;
+  margin-top: 1.5rem;
+  transition: color 0.2s;
+}
+
+.cart-back-btn:hover {
+  color: #d4af37;
+}
+
+/* Right Column: Order Summary Card */
+.order-summary-card {
+  background-color: #171615;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.order-summary-title {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.summary-rows-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #a39e97;
+}
+
+.summary-val {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.grand-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: -0.25rem;
+}
+
+.grand-total-lbl {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.grand-total-val {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #d4af37;
+}
+
+.btn-proceed-checkout {
+  width: 100%;
+  background: linear-gradient(180deg, #d4af37 0%, #b89327 100%);
+  color: #12100e;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  padding: 0.95rem;
+  border-radius: 8px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.3);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.btn-proceed-checkout:hover {
+  background: linear-gradient(180deg, #e5be3e 0%, #c49c2d 100%);
+  transform: translateY(-1px);
+}
+
+.summary-disclaimer {
+  font-size: 0.725rem;
+  color: #8b857d;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.empty-cart-view {
+  text-align: center;
+  padding: 4rem 2rem;
+  background-color: #161514;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
