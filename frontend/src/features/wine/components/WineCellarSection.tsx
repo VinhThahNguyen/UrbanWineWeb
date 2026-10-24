@@ -16,7 +16,6 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
   onWineClick,
   onAddToCart,
 }) => {
-  const [sortBy, setSortBy] = useState('recommended');
   const [quickAddWine, setQuickAddWine] = useState<WineProduct | null>(null);
 
   const formatVnd = (amount: number) => {
@@ -27,14 +26,6 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
   const filteredWines = initialWines.filter((wine) => {
     if (selectedCategory === 'ALL') return true;
     return wine.category === selectedCategory;
-  });
-
-  // Sort wines
-  const sortedWines = [...filteredWines].sort((a, b) => {
-    if (sortBy === 'price-low') return a.price - b.price;
-    if (sortBy === 'price-high') return b.price - a.price;
-    if (sortBy === 'rating') return b.rating - a.rating;
-    return 0; // recommended
   });
 
   return (
@@ -48,21 +39,8 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
               Curated fine wines for the discerning palate — inner Hanoi delivery in 90 minutes
             </p>
           </div>
-
-          <div className="wine-filter-toolbar">
-            <span className="sort-label">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="sort-select"
-            >
-              <option value="recommended">Recommended</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="rating">Top Rated</option>
-            </select>
-          </div>
         </div>
+
 
         {/* Filter Chips Bar */}
         <div className="category-filter-chips">
@@ -94,7 +72,7 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
 
         {/* Wines Cards Grid */}
         <div className="wines-grid">
-          {sortedWines.map((wine) => (
+          {filteredWines.map((wine) => (
             <div
               key={wine.id}
               className="wine-card"
@@ -116,11 +94,6 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
                 <h3 className="wine-card-name">{wine.name}</h3>
                 <div className="wine-origin-region">{wine.region}</div>
 
-                <div className="wine-rating-row">
-                  <span className="star-icons">★★★★★</span>
-                  <span className="rating-score">{wine.rating}</span>
-                </div>
-
                 <div className="wine-card-footer">
                   <div className="wine-card-price">{formatVnd(wine.price)}</div>
                   <button
@@ -137,6 +110,7 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
             </div>
           ))}
         </div>
+
       </div>
 
       {/* Quick Add Modal */}

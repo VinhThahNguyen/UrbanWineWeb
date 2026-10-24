@@ -79,14 +79,10 @@ export const WineDetailPage: React.FC<WineDetailPageProps> = ({
             {wine.vintage} · {wine.winery} | {wine.region} · {wine.country}
           </div>
 
-          <div className="detail-rating-row">
-            <span className="star-icons">★★★★★</span>
-            <span className="rating-score">{wine.rating} / 5.0</span>
-          </div>
-
           <div className="detail-price-hero">
             {formatVnd(wine.price)} <span>/ bottle</span>
           </div>
+
 
           <p className="detail-description-p">{wine.description}</p>
 
