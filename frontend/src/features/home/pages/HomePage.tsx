@@ -90,9 +90,10 @@ export const HomePage: React.FC = () => {
     if (!currentUser) {
       setIsAuthOpen(true);
     } else {
-      alert(`Xin chào ${currentUser.fullName || currentUser.email}! Đang chuyển tiếp tới cổng thanh toán VNPay / VietQR.`);
+      alert('Chào Vinh');
     }
   };
+
 
   const totalCartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -102,6 +103,12 @@ export const HomePage: React.FC = () => {
       <Header
         cartCount={totalCartCount}
         activeNav={activeNav}
+        currentUser={currentUser}
+        onLogout={() => {
+          localStorage.removeItem('urbanwine_token');
+          localStorage.removeItem('urbanwine_user');
+          setCurrentUser(null);
+        }}
         onSignInClick={() => setIsAuthOpen(true)}
         onCartClick={() => {
           setActiveNav('');
@@ -121,6 +128,7 @@ export const HomePage: React.FC = () => {
           }
         }}
       />
+
 
 
       <main>

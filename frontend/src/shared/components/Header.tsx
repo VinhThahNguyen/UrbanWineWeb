@@ -5,7 +5,9 @@ import './Header.css';
 interface HeaderProps {
   cartCount?: number;
   activeNav?: string;
+  currentUser?: any;
   onSignInClick?: () => void;
+  onLogout?: () => void;
   onCartClick?: () => void;
   onNavClick?: (view: string) => void;
 }
@@ -13,10 +15,13 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   cartCount = 2,
   activeNav = 'home',
+  currentUser,
   onSignInClick,
+  onLogout,
   onCartClick,
   onNavClick,
 }) => {
+
   return (
     <header className="header-container">
       <div className="header-inner">
@@ -91,13 +96,34 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
 
-          {/* Sign In CTA Button */}
-          <button className="signin-button" onClick={onSignInClick}>
-            <User size={16} className="signin-icon" />
-            <span>Sign In</span>
-          </button>
+          {/* Sign In CTA Button or Logged-in Customer Badge with Icon */}
+          {currentUser ? (
+            <div className="user-profile-badge">
+              <div className="user-avatar-circle">
+                <User size={15} />
+              </div>
+              <span className="user-display-name">
+                Xin chào, {currentUser.fullName || currentUser.email}
+              </span>
+              <button
+                className="btn-logout-small"
+                onClick={onLogout}
+                title="Đăng xuất"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button className="signin-button" onClick={onSignInClick}>
+              <User size={16} className="signin-icon" />
+              <span>Sign In</span>
+            </button>
+          )}
+
+
         </div>
       </div>
     </header>
   );
 };
+

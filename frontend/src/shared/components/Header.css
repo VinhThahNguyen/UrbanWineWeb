@@ -167,8 +167,59 @@
   box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
 }
 
+/* Logged-in Customer Badge */
+
+.user-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 0.35rem 0.85rem 0.35rem 0.45rem;
+  border-radius: 20px;
+}
+
+.user-avatar-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d4af37, #996515);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #12100e;
+}
+
+.user-display-name {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #ffffff;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-logout-small {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  margin-left: 0.25rem;
+}
+
+.btn-logout-small:hover {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
 @media (max-width: 900px) {
   .header-nav {
     display: none;
   }
 }
+
