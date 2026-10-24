@@ -1,0 +1,484 @@
+/* ==========================================================================
+   URBAN WINE EXPRESS - AUTH MODAL STYLES
+   Exact reproduction of Figma/Screenshots: Dark Slate, Burgundy, & Gold Accent
+   ========================================================================== */
+
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(5, 5, 5, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1.25rem;
+  animation: authFadeIn 0.25s ease-out;
+}
+
+@keyframes authFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.auth-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background-color: #171717;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2rem 2rem 2.25rem 2rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85),
+              0 0 40px rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  animation: authSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@keyframes authSlideUp {
+  from {
+    transform: translateY(16px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Close & Back Button */
+.auth-close-btn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b857d;
+  background-color: rgba(255, 255, 255, 0.04);
+  transition: all 0.2s ease;
+}
+
+.auth-close-btn:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.auth-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.825rem;
+  color: #a39e97;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.auth-back-link:hover {
+  color: #e5be3e;
+}
+
+/* Brand Header */
+.auth-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.auth-logo-icon {
+  color: #d4af37;
+  flex-shrink: 0;
+}
+
+.auth-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-welcome {
+  font-size: 0.85rem;
+  color: #d4af37;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.auth-brand-name {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-style: italic;
+  color: #d4af37;
+  line-height: 1.2;
+}
+
+/* Internal Access Badge for Staff */
+.staff-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: rgba(120, 20, 25, 0.25);
+  border: 1px solid rgba(185, 28, 28, 0.4);
+  color: #ef4444;
+  font-size: 0.675rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.staff-warning-box {
+  background-color: rgba(127, 29, 29, 0.18);
+  border: 1px solid rgba(185, 28, 28, 0.3);
+  color: #f87171;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+}
+
+/* Tabs: Customer Sign In / Create Account */
+.auth-tabs {
+  display: flex;
+  background-color: #201f1f;
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 1.5rem;
+}
+
+.auth-tab-btn {
+  flex: 1;
+  text-align: center;
+  padding: 0.65rem 0.5rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  border-radius: 8px;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+}
+
+.auth-tab-btn.active {
+  background-color: #4a151b; /* Deep Burgundy Red */
+  color: #e5be3e; /* Gold text */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.auth-tab-btn:not(.active):hover {
+  color: #ffffff;
+}
+
+/* View Titles */
+.auth-view-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.35rem;
+}
+
+.auth-view-desc {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  line-height: 1.4;
+  margin-bottom: 1.25rem;
+}
+
+/* Success Banner */
+.auth-success-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #10b981;
+  font-size: 0.775rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
+}
+
+/* Form Styles */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+}
+
+.form-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #d1d5db;
+}
+
+.form-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-input {
+  width: 100%;
+  background-color: #202020;
+  border: 1px solid #333333;
+  border-radius: 8px;
+  padding: 0.75rem 0.85rem;
+  color: #ffffff;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+  border-color: #d4af37;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
+}
+
+.form-input::placeholder {
+  color: #6b7280;
+}
+
+.form-input-wrapper .input-icon-btn {
+  position: absolute;
+  right: 0.75rem;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.form-input-wrapper .input-icon-btn:hover {
+  color: #d4af37;
+}
+
+.form-hint {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  font-style: italic;
+  margin-top: 0.15rem;
+}
+
+.form-forgot-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.35rem;
+}
+
+.link-forgot {
+  font-size: 0.775rem;
+  color: #d4af37;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.link-forgot:hover {
+  opacity: 0.85;
+}
+
+/* Secondary Button (Send OTP) */
+.btn-secondary-action {
+  background-color: #4a151b;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  color: #e5be3e;
+  font-weight: 700;
+  font-size: 0.825rem;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  margin-top: 0.25rem;
+}
+
+.btn-secondary-action:hover:not(:disabled) {
+  background-color: #5c1b22;
+  box-shadow: 0 4px 12px rgba(74, 21, 27, 0.5);
+}
+
+.btn-secondary-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* OTP 6-Digit Grid */
+.otp-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.otp-inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+}
+
+.otp-digit-input {
+  width: 100%;
+  height: 52px;
+  background-color: #202020;
+  border: 1px solid #3b2a2a;
+  border-radius: 8px;
+  color: #e5be3e;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.otp-digit-input:focus {
+  border-color: #d4af37;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+  background-color: #262422;
+}
+
+.otp-timer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 0.25rem;
+}
+
+.otp-expires-badge {
+  color: #d4af37;
+  font-weight: 600;
+}
+
+.btn-resend-link {
+  color: #d4af37;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  background: none;
+  font-size: 0.75rem;
+}
+
+.btn-resend-link:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.btn-resend-link:disabled {
+  color: #6b7280;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+/* Primary Action Buttons */
+.btn-auth-primary {
+  width: 100%;
+  background: linear-gradient(180deg, #d4af37 0%, #b89327 100%);
+  color: #1a1715;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  padding: 0.85rem;
+  border-radius: 8px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.3);
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.btn-auth-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #e5be3e 0%, #c49c2d 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(212, 175, 55, 0.4);
+}
+
+.btn-auth-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Staff Action Button (Burgundy Red) */
+.btn-auth-staff {
+  width: 100%;
+  background-color: #5c1820;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  padding: 0.85rem;
+  border-radius: 8px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(92, 24, 32, 0.4);
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.btn-auth-staff:hover:not(:disabled) {
+  background-color: #731e28;
+  transform: translateY(-1px);
+}
+
+.btn-auth-staff:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Error message banner */
+.auth-error-banner {
+  background-color: rgba(220, 38, 38, 0.15);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  color: #ef4444;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.775rem;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+
+.auth-footer-caption {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* Bottom Employee Switcher */
+.auth-switch-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.auth-switch-link {
+  color: #d4af37;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  margin-left: 0.25rem;
+  transition: opacity 0.2s;
+}
+
+.auth-switch-link:hover {
+  opacity: 0.85;
+}
