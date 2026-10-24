@@ -239,29 +239,21 @@
   border-radius: 20px;
 }
 
-/* Pack Option Buttons (1 bottle, 2 bottles, 6-bottle case) */
-.quantity-pack-options {
+/* Interactive Quantity Stepper Row (matching screenshot) */
+.detail-quantity-row {
   display: flex;
-  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
 }
 
-.btn-pack-opt {
-  flex: 1;
-  padding: 0.65rem;
-  border-radius: 8px;
-  background-color: #1a1918;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #c7c3be;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: all 0.2s;
+.detail-quantity-label {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
 }
 
-.btn-pack-opt.active {
-  background-color: #262118;
-  border-color: #d4af37;
-  color: #d4af37;
-}
 
 /* Calculation Bar */
 .detail-calc-bar {

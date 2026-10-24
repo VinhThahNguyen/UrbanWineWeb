@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { WineProduct } from '../data/winesData';
-import { Truck, ShieldCheck, Snowflake, ChevronRight } from 'lucide-react';
+import { Truck, ShieldCheck, Snowflake, ChevronRight, Minus, Plus } from 'lucide-react';
+
 import './WineDetailPage.css';
 
 interface WineDetailPageProps {
@@ -126,27 +127,24 @@ export const WineDetailPage: React.FC<WineDetailPageProps> = ({
             </div>
           </div>
 
-          {/* Select Quantity Pack Options */}
-          <div className="pills-group">
-            <div className="pills-title">SELECT QUANTITY</div>
-            <div className="quantity-pack-options">
+          {/* Interactive Quantity Stepper */}
+          <div className="detail-quantity-row">
+            <span className="detail-quantity-label">Quantity</span>
+            <div className="qty-stepper">
               <button
-                className={`btn-pack-opt ${selectedPack === 1 ? 'active' : ''}`}
-                onClick={() => setSelectedPack(1)}
+                className="qty-btn"
+                onClick={() => setSelectedPack((prev) => Math.max(1, prev - 1))}
+                disabled={selectedPack <= 1}
               >
-                1 bottle
+                <Minus size={16} />
               </button>
+              <span className="qty-value">{selectedPack}</span>
               <button
-                className={`btn-pack-opt ${selectedPack === 2 ? 'active' : ''}`}
-                onClick={() => setSelectedPack(2)}
+                className="qty-btn"
+                onClick={() => setSelectedPack((prev) => Math.min(wine.stock, prev + 1))}
+                disabled={selectedPack >= wine.stock}
               >
-                2 bottles
-              </button>
-              <button
-                className={`btn-pack-opt ${selectedPack === 6 ? 'active' : ''}`}
-                onClick={() => setSelectedPack(6)}
-              >
-                6-bottle case
+                <Plus size={16} />
               </button>
             </div>
           </div>
@@ -158,6 +156,7 @@ export const WineDetailPage: React.FC<WineDetailPageProps> = ({
             </span>
             <span className="calc-total">{formatVnd(totalAmount)}</span>
           </div>
+
 
           {/* 2 CTA Buttons */}
           <div className="detail-actions-row">
