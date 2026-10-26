@@ -7,8 +7,10 @@ import { WineCellarSection } from '@/features/wine/components/WineCellarSection'
 import { WineDetailPage } from '@/features/wine/pages/WineDetailPage';
 import { CartPage, CartItem } from '@/features/cart/pages/CartPage';
 import { WineProduct, initialWines } from '@/features/wine/data/winesData';
+import { AdminCatalogPage } from '@/features/admin/pages/AdminCatalogPage';
 
 type CurrentView = 'HOME' | 'DETAIL' | 'CART';
+
 
 export const HomePage: React.FC = () => {
   const [view, setView] = useState<CurrentView>('HOME');
@@ -99,72 +101,99 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="home-page-container">
-      {/* 1. Header with dynamic cart counter badge & active nav link */}
-      <Header
-        cartCount={totalCartCount}
-        activeNav={activeNav}
-        currentUser={currentUser}
-        onLogout={() => {
-          localStorage.removeItem('urbanwine_token');
-          localStorage.removeItem('urbanwine_user');
-          setCurrentUser(null);
-        }}
-        onSignInClick={() => setIsAuthOpen(true)}
-        onCartClick={() => {
-          setActiveNav('');
-          setView('CART');
-        }}
-        onNavClick={(target) => {
-          setActiveNav(target);
-          if (target === 'home') {
-            setView('HOME');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-          if (target === 'catalog') scrollToWineCellar('ALL');
-          if (target === 'categories') scrollToCategories();
-          if (target === 'about') {
-            setView('HOME');
-            window.scrollTo({ top: 500, behavior: 'smooth' });
-          }
-        }}
-      />
+      {/* 1. Header công khai chỉ hiển thị khi chưa đăng nhập (hoặc đang xem Cart/Detail của guest) */}
+      {!currentUser && (
+        <Header
+          cartCount={totalCartCount}
+          activeNav={activeNav}
+          currentUser={currentUser}
+          onLogout={() => {
+            localStorage.removeItem('urbanwine_token');
+            localStorage.removeItem('urbanwine_user');
+            setCurrentUser(null);
+          }}
+          onSignInClick={() => setIsAuthOpen(true)}
+          onCartClick={() => {
+            setActiveNav('');
+            setView('CART');
+          }}
+          onNavClick={(target) => {
+            setActiveNav(target);
+            if (target === 'home') {
+              setView('HOME');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            if (target === 'catalog') scrollToWineCellar('ALL');
+            if (target === 'categories') scrollToCategories();
+            if (target === 'about') {
+              setView('HOME');
+              window.scrollTo({ top: 500, behavior: 'smooth' });
+            }
+          }}
+        />
+      )}
+
 
 
 
       <main>
         {/* VIEW 1: HOME PAGE */}
         {view === 'HOME' && (
-          <>
-            {/* Hero Section */}
-            <HeroSection
-              onExploreCatalog={() => scrollToWineCellar('ALL')}
-              onOurStory={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
-            />
-
-            {/* Explore By Category */}
-            <CategorySection
-              onViewAll={() => scrollToWineCellar('ALL')}
-              onSelectCategory={(id) => {
-                if (id === 1) scrollToWineCellar('RED');
-                else if (id === 2) scrollToWineCellar('WHITE');
-                else if (id === 3) scrollToWineCellar('SPARKLING');
-                else scrollToWineCellar('ALL');
+          currentUser ? (
+            /* Khi đã đăng nhập (Admin / Customer đã xác thực): Hiển thị đúng màn hình như ảnh bạn chụp */
+            <AdminCatalogPage
+              currentUser={currentUser}
+              cartCount={totalCartCount}
+              onLogout={() => {
+                localStorage.removeItem('urbanwine_token');
+                localStorage.removeItem('urbanwine_user');
+                setCurrentUser(null);
+                setView('HOME');
               }}
-            />
-
-            {/* Wine Cellar Section (Screenshot 1 & 2) */}
-            <WineCellarSection
-              selectedCategory={selectedCategory}
-              onSelectCategory={(cat) => setSelectedCategory(cat)}
               onWineClick={(wine) => {
                 setSelectedWine(wine);
                 setView('DETAIL');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               onAddToCart={handleAddToCart}
+              onViewCart={() => setView('CART')}
+              onViewOrders={() => alert('Đang mở trang danh sách đơn hàng')}
             />
-          </>
+          ) : (
+            /* Khi chưa đăng nhập (Khách vãng lai): Trang chủ với Hero banner & Danh mục */
+            <>
+              {/* Hero Section */}
+              <HeroSection
+                onExploreCatalog={() => scrollToWineCellar('ALL')}
+                onOurStory={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
+              />
+
+              {/* Explore By Category */}
+              <CategorySection
+                onViewAll={() => scrollToWineCellar('ALL')}
+                onSelectCategory={(id) => {
+                  if (id === 1) scrollToWineCellar('RED');
+                  else if (id === 2) scrollToWineCellar('WHITE');
+                  else if (id === 3) scrollToWineCellar('SPARKLING');
+                  else scrollToWineCellar('ALL');
+                }}
+              />
+
+              {/* Wine Cellar Section */}
+              <WineCellarSection
+                selectedCategory={selectedCategory}
+                onSelectCategory={(cat) => setSelectedCategory(cat)}
+                onWineClick={(wine) => {
+                  setSelectedWine(wine);
+                  setView('DETAIL');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onAddToCart={handleAddToCart}
+              />
+            </>
+          )
         )}
+
 
         {/* VIEW 2: PRODUCT DETAIL PAGE (Screenshot 3) */}
         {view === 'DETAIL' && selectedWine && (

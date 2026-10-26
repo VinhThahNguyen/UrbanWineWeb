@@ -1,0 +1,478 @@
+/* ==========================================================================
+   AUTHENTICATED WINE CATALOG STYLES (MATCHING USER SCREENSHOT)
+   Full-featured Wine Catalog layout with Refine Selection sidebar and Wine Cellar
+   ========================================================================== */
+
+.admin-catalog-page {
+  background-color: #0c0b0a;
+  min-height: 100vh;
+  color: #ffffff;
+}
+
+/* 1. Header Styling for Authenticated Admin */
+.admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: #11100e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.admin-header-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex: 1;
+}
+
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+}
+
+.admin-brand-icon {
+  color: #d4af37;
+}
+
+.admin-brand-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-brand-main {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #d4af37;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.admin-brand-sub {
+  font-family: var(--font-display);
+  font-size: 0.575rem;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  color: #d4af37;
+  line-height: 1.2;
+}
+
+
+/* Header search bar */
+.admin-search-wrapper {
+  position: relative;
+  max-width: 420px;
+  width: 100%;
+}
+
+.admin-search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+}
+
+.admin-search-input {
+  width: 100%;
+  background-color: #171615;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.55rem 1rem 0.55rem 2.5rem;
+  color: #ffffff;
+  font-size: 0.825rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.admin-search-input:focus {
+  border-color: #d4af37;
+}
+
+/* Header Right Actions */
+.admin-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.admin-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-nav-pill {
+  padding: 0.45rem 1.1rem;
+  border-radius: 6px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #9ca3af;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-nav-pill.active {
+  background-color: #211c14;
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.admin-nav-pill:not(.active):hover {
+  color: #ffffff;
+}
+
+.admin-cart-btn {
+  position: relative;
+  background: none;
+  border: none;
+  color: #c7c3be;
+  cursor: pointer;
+  padding: 0.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-cart-btn:hover {
+  color: #d4af37;
+}
+
+.admin-cart-dot {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  background-color: #d4af37;
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 700;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Admin User Dropdown Pill */
+.admin-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background-color: #171615;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.35rem 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  line-height: 1.3;
+}
+
+.user-greeting-txt {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  color: #9ca3af;
+}
+
+.user-name-bold {
+  color: #ffffff;
+  font-weight: 700;
+  margin-left: 0.25rem;
+}
+
+.user-badge-tag {
+  background-color: #8b181b;
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 0.675rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.user-chevron {
+  color: #9ca3af;
+}
+
+/* User Dropdown Menu */
+.admin-user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background-color: #171615;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  width: 180px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  z-index: 200;
+  overflow: hidden;
+}
+
+.menu-item-btn {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: #c7c3be;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.menu-item-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.menu-item-btn.logout {
+  color: #ef4444;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.menu-item-btn.logout:hover {
+  background-color: rgba(239, 68, 68, 0.12);
+}
+
+/* 2. Main Two-Column Layout (Sidebar + Content) */
+.admin-catalog-body {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: calc(100vh - 65px);
+}
+
+/* Left Sidebar: Refine Selection */
+.admin-sidebar {
+  background-color: #0f0e0c;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 2.25rem 1.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.sidebar-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar-title {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  color: #d4af37;
+  text-transform: uppercase;
+}
+
+.sidebar-reset-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-family: var(--font-sans);
+  font-size: 0.775rem;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.sidebar-reset-btn:hover {
+  color: #d4af37;
+  text-decoration: underline;
+}
+
+/* Filter Sections */
+.filter-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.filter-block-title {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.12em;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+/* Checkbox group */
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  line-height: 1.3;
+}
+
+.checkbox-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.filter-checkbox {
+  width: 15px;
+  height: 15px;
+  accent-color: #d4af37;
+  cursor: pointer;
+  background-color: #1a1918;
+  border: 1px solid #444;
+  border-radius: 3px;
+}
+
+.checkbox-label {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: #d1d5db;
+}
+
+.checkbox-count {
+  font-family: var(--font-sans);
+  font-size: 0.775rem;
+  line-height: 1.4;
+  color: #6b7280;
+}
+
+
+/* Slider Filters */
+.range-slider-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.filter-range-input {
+  width: 100%;
+  accent-color: #d4af37;
+  cursor: pointer;
+  height: 4px;
+  background: #2b2824;
+  border-radius: 2px;
+}
+
+.range-values-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.775rem;
+  color: #9ca3af;
+}
+
+.range-divider {
+  color: #555;
+}
+
+/* Country Selector */
+.country-select-box {
+  width: 100%;
+  background-color: #171615;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  color: #ffffff;
+  font-size: 0.825rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.sidebar-count-footer {
+  margin-top: auto;
+  font-size: 0.75rem;
+  color: #6b7280;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-count-footer strong {
+  color: #d4af37;
+}
+
+/* 3. Right Content Area: Wine Cellar Grid */
+.admin-content-area {
+  padding: 2.5rem 3rem 4rem 3rem;
+  background-color: #0c0b0a;
+}
+
+.content-top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.content-page-title {
+  font-family: var(--font-serif);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.35rem;
+}
+
+.content-page-desc {
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.content-sort-box {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.content-sort-label {
+  font-size: 0.825rem;
+  color: #9ca3af;
+}
+
+.content-sort-select {
+  background-color: #171615;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.825rem;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .admin-catalog-body {
+    grid-template-columns: 1fr;
+  }
+  .admin-sidebar {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}

@@ -131,25 +131,26 @@
 .wine-card {
   background-color: #161514;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
   position: relative;
+  height: 100%;
 }
 
 .wine-card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-5px);
   border-color: rgba(212, 175, 55, 0.35);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65);
 }
 
 .wine-card-media {
   position: relative;
   width: 100%;
-  height: 260px;
+  height: 250px;
   overflow: hidden;
   background-color: #1a1918;
 }
@@ -165,137 +166,159 @@
   transform: scale(1.05);
 }
 
-/* Top Floating Badges */
+/* Top Floating Badges (ABV & In Stock) */
 .card-badge-abv {
   position: absolute;
-  top: 1rem;
-  left: 1rem;
-  background-color: rgba(18, 16, 15, 0.85);
-  border: 1px solid rgba(212, 175, 55, 0.4);
+  top: 0.85rem;
+  left: 0.85rem;
+  background-color: rgba(18, 16, 15, 0.9);
+  border: 1px solid rgba(212, 175, 55, 0.45);
   color: #e5be3e;
-  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 0.25rem 0.6rem;
-  border-radius: 6px;
-  backdrop-filter: blur(4px);
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.55rem;
+  border-radius: 4px;
+  backdrop-filter: blur(6px);
+  z-index: 2;
 }
 
 .card-badge-stock {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background-color: rgba(16, 185, 129, 0.18);
+  top: 0.85rem;
+  right: 0.85rem;
+  background-color: rgba(16, 185, 129, 0.16);
   border: 1px solid rgba(16, 185, 129, 0.4);
   color: #10b981;
-  font-size: 0.725rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
   font-weight: 600;
-  padding: 0.25rem 0.65rem;
-  border-radius: 6px;
-  backdrop-filter: blur(4px);
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  backdrop-filter: blur(6px);
+  z-index: 2;
 }
 
 .card-badge-stock.out-of-stock {
-  background-color: rgba(239, 68, 68, 0.15);
+  background-color: rgba(239, 68, 68, 0.16);
   border-color: rgba(239, 68, 68, 0.4);
   color: #ef4444;
 }
 
 /* Card Content Details */
 .wine-card-body {
-  padding: 1.5rem;
+  padding: 1.35rem 1.4rem 1.4rem 1.4rem;
   display: flex;
   flex-direction: column;
   flex: 1;
 }
 
+/* Category Badge (RED / WHITE / SPARKLING) */
 .wine-type-tag {
-  font-size: 0.7rem;
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  color: #8b857d;
+  line-height: 1.3;
+  letter-spacing: 0.14em;
+  color: #9ca3af;
   text-transform: uppercase;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.45rem;
+  display: block;
 }
 
+/* Vintage and Producer (e.g. 2018 · Château Margaux) */
 .wine-vintage-producer {
-  font-size: 0.825rem;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
   color: #a39e97;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.3rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* Wine Name Title */
 .wine-card-name {
   font-family: var(--font-serif);
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   font-weight: 700;
   color: #ffffff;
   line-height: 1.25;
-  margin-bottom: 0.25rem;
-  transition: color 0.2s;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.35rem;
+  min-height: 1.8rem;
+  transition: color 0.2s ease;
 }
 
 .wine-card:hover .wine-card-name {
   color: #d4af37;
 }
 
+/* Region Origin (e.g. Margaux, Bordeaux) */
 .wine-origin-region {
-  font-size: 0.825rem;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.4;
   color: #8b857d;
-  margin-bottom: 0.65rem;
-}
-
-.wine-rating-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
+  letter-spacing: 0.01em;
   margin-bottom: 1.25rem;
 }
 
-.star-icons {
-  color: #e5be3e;
-  font-size: 0.85rem;
-  letter-spacing: 2px;
-}
-
-.rating-score {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #ffffff;
-}
-
+/* Card Footer: Always pinned to bottom with consistent height */
 .wine-card-footer {
   margin-top: auto;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  padding-top: 0.5rem;
 }
 
+/* Product Price */
 .wine-card-price {
   font-family: var(--font-serif);
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
   color: #d4af37;
 }
 
+/* Quick Add CTA Button */
 .btn-quick-add {
   width: 100%;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(212, 175, 55, 0.45);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(212, 175, 55, 0.4);
   color: #e5be3e;
+  font-family: var(--font-sans);
   font-weight: 700;
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  padding: 0.75rem;
-  border-radius: 8px;
+  font-size: 0.775rem;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
   text-transform: uppercase;
+  text-align: center;
   transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-quick-add:hover {
   background: linear-gradient(180deg, #d4af37 0%, #b89327 100%);
   color: #12100e;
   border-color: #d4af37;
-  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35);
 }
+
 
 /* Quick Quantity Select Modal Styles (Screenshot 2) */
 .quantity-modal-overlay {
