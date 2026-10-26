@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Wine, Search, ShoppingBag, ChevronDown, LogOut, RotateCcw } from 'lucide-react';
+import { Wine, Search, ShoppingBag, LogOut, RotateCcw } from 'lucide-react';
 import { WineProduct, initialWines } from '@/features/wine/data/winesData';
 import { SelectQuantityModal } from '@/features/wine/components/SelectQuantityModal';
 import '@/features/wine/components/WineCellarSection.css';
@@ -29,9 +29,6 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
 
   // Active top nav tab: 'cellar' | 'cart' | 'orders'
   const [activeTab, setActiveTab] = useState<'cellar' | 'cart' | 'orders'>('cellar');
-
-  // User menu dropdown toggle
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   // Quick add modal state
   const [quickAddWine, setQuickAddWine] = useState<WineProduct | null>(null);
@@ -193,32 +190,12 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
             {cartCount > 0 && <span className="admin-cart-dot">{cartCount}</span>}
           </button>
 
-          {/* User Profile Pill matching screenshot: "Xin chào, Thế Vinh [TV] v" */}
-          <div
-            className="admin-user-pill"
-            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-          >
+          {/* Customer Profile Pill (No logout dropdown) */}
+          <div className="admin-user-pill static-pill" title="Tài khoản Khách hàng">
             <span className="user-greeting-txt">
               Xin chào, <strong className="user-name-bold">{displayName}</strong>
             </span>
             <span className="user-badge-tag">{displayTag}</span>
-            <ChevronDown size={14} className="user-chevron" />
-
-            {/* Dropdown menu */}
-            {isUserMenuOpen && (
-              <div className="admin-user-menu" onClick={(e) => e.stopPropagation()}>
-                <button
-                  className="menu-item-btn logout"
-                  onClick={() => {
-                    setIsUserMenuOpen(false);
-                    onLogout();
-                  }}
-                >
-                  <LogOut size={14} />
-                  <span>Đăng xuất</span>
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </header>
@@ -315,6 +292,19 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
           {/* Footer count indicator */}
           <div className="sidebar-count-footer">
             Showing <strong>{sortedWines.length}</strong> of {initialWines.length} wines
+          </div>
+
+          {/* Bottom Logout in Sidebar (matching Admin design) */}
+          <div className="admin-sidebar-footer">
+            <button
+              type="button"
+              className="admin-footer-btn btn-logout"
+              onClick={onLogout}
+              title="Đăng xuất khỏi hệ thống"
+            >
+              <LogOut size={16} />
+              <span>Sign Out</span>
+            </button>
           </div>
         </aside>
 

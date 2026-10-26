@@ -176,6 +176,10 @@
   line-height: 1.3;
 }
 
+.admin-user-pill.static-pill {
+  cursor: default;
+}
+
 .user-greeting-txt {
   font-family: var(--font-sans);
   font-size: 0.8125rem;
@@ -414,6 +418,44 @@
 
 .sidebar-count-footer strong {
   color: #d4af37;
+}
+
+/* Sidebar Logout Footer matching Admin layout */
+.admin-sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-footer-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  width: 100%;
+}
+
+.admin-footer-btn.btn-logout {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #f87171;
+  font-weight: 600;
+}
+
+.admin-footer-btn.btn-logout:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #ffffff;
+  transform: translateX(2px);
 }
 
 /* 3. Right Content Area: Wine Cellar Grid */

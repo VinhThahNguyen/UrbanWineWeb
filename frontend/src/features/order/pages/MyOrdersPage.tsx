@@ -178,7 +178,7 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
           </button>
 
           {/* User Profile Badge */}
-          <div className="orders-user-pill" onClick={onLogout} title="Click để đăng xuất">
+          <div className="orders-user-pill static-pill" title="Tài khoản Khách hàng">
             <span>Xin chào, <strong>{displayName}</strong></span>
             <span className="orders-user-badge-red">TV</span>
           </div>

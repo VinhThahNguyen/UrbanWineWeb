@@ -170,6 +170,10 @@
   cursor: pointer;
 }
 
+.orders-user-pill.static-pill {
+  cursor: default;
+}
+
 .orders-user-badge-red {
   background-color: #8b181b;
   color: #ffffff;

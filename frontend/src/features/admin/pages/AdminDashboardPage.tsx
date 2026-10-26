@@ -444,7 +444,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             </button>
 
             {/* Admin Profile Pill */}
-            <div className="admin-profile-pill">
+            <div className="admin-profile-pill" title="Tài khoản Quản trị">
               <div className="admin-avatar-circle">
                 <span>{adminInitials}</span>
               </div>

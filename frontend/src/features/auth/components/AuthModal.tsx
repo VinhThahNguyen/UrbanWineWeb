@@ -103,7 +103,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const getFullOtp = () => otpDigits.join('');
 
-  // 1. Submit Customer Sign In
+  // 1. Submit Customer Sign In (CHỈ CHO PHÉP TÀI KHOẢN KHÁCH HÀNG)
   const handleCustomerSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -111,20 +111,36 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       const res = await authApi.login({ email, password });
+
       if ('requiresOtp' in res && res.requiresOtp) {
         // Customer 2FA enabled: Switch to OTP verification
         setOtpTimer(285);
         setOtpDigits(['', '', '', '', '', '']);
         setView('CUSTOMER_LOGIN_OTP');
       } else {
-        const token = (res as any).token || (res as any).accessToken;
+        const successRes = res as any;
+
+        // NẾU LÀ TÀI KHOẢN ADMIN HOẶC SHIPPER -> CHẶN LẠI VÀ YÊU CẦU DÙNG CỔNG STORE STAFF!
+        if (successRes.role === 'ROLE_ADMIN' || successRes.role === 'ROLE_SHIPPER') {
+          setStaffUsername(email);
+          setStaffPassword(password);
+          setErrorMsg('Cổng đăng nhập này chỉ dành riêng cho Khách hàng (Customer)! Tài khoản Quản trị / Nhân viên không được phép đăng nhập tại đây. Vui lòng bấm vào "Log in as Store Staff" bên dưới.');
+          return;
+        }
+
+        if (successRes.role && successRes.role !== 'ROLE_CUSTOMER') {
+          setErrorMsg('Tài khoản này không phải là Khách hàng. Vui lòng chuyển sang cổng Store Staff.');
+          return;
+        }
+
+        const token = successRes.token || successRes.accessToken;
         localStorage.setItem('urbanwine_token', token);
-        localStorage.setItem('urbanwine_user', JSON.stringify(res));
-        if (onLoginSuccess) onLoginSuccess(res);
+        localStorage.setItem('urbanwine_user', JSON.stringify(successRes));
+        if (onLoginSuccess) onLoginSuccess(successRes);
         onClose();
       }
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Email hoặc mật khẩu không chính xác');
+      setErrorMsg(err.response?.data?.error || err.response?.data?.message || 'Email hoặc mật khẩu không chính xác');
     } finally {
       setLoading(false);
     }
@@ -263,32 +279,49 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  // 8. Staff Login
+  // 8. Staff / Admin Login (CHỈ CHO PHÉP TÀI KHOẢN ADMIN HOẶC NHÂN VIÊN)
   const handleStaffLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setLoading(true);
 
     try {
-      // Backend chấp nhận email nhân viên nội bộ
       const res = await authApi.login({
         email: staffUsername,
         password: staffPassword,
       });
 
+      // NẾU LÀ TÀI KHOẢN CẦN OTP 2FA (Customer) -> CHẶN LẠI!
       if ('requiresOtp' in res && res.requiresOtp) {
-        setErrorMsg('Tài khoản này không phải là nhân viên nội bộ hợp lệ.');
-      } else {
-        const staffRes = res as any;
-        const token = staffRes.token || staffRes.accessToken;
-        localStorage.setItem('urbanwine_token', token);
-        localStorage.setItem('urbanwine_user', JSON.stringify(staffRes));
-        if (onLoginSuccess) onLoginSuccess(staffRes);
-        onClose();
-        alert(`Chào mừng nhân viên ${staffRes.fullName || staffRes.email}! Vai trò: ${staffRes.role}`);
+        setEmail(staffUsername);
+        setPassword(staffPassword);
+        setErrorMsg('Cổng này chỉ dành riêng cho Quản trị viên / Nhân viên cửa hàng (Store Staff)! Tài khoản Khách hàng không được phép đăng nhập tại đây. Vui lòng quay lại cổng Khách hàng.');
+        return;
       }
+
+      const staffRes = res as any;
+
+      // NẾU LÀ TÀI KHOẢN CUSTOMER -> CHẶN LẠI VÀ THÔNG BÁO!
+      if (staffRes.role === 'ROLE_CUSTOMER') {
+        setEmail(staffUsername);
+        setPassword(staffPassword);
+        setErrorMsg('Cổng này chỉ dành riêng cho Quản trị viên / Nhân viên cửa hàng (Store Staff)! Tài khoản Khách hàng không được phép đăng nhập tại đây. Vui lòng quay lại cổng Khách hàng.');
+        return;
+      }
+
+      // Kiểm tra vai trò hợp lệ
+      if (staffRes.role !== 'ROLE_ADMIN' && staffRes.role !== 'ROLE_SHIPPER') {
+        setErrorMsg('Tài khoản này không có quyền truy cập vào khu vực quản trị.');
+        return;
+      }
+
+      const token = staffRes.token || staffRes.accessToken;
+      localStorage.setItem('urbanwine_token', token);
+      localStorage.setItem('urbanwine_user', JSON.stringify(staffRes));
+      if (onLoginSuccess) onLoginSuccess(staffRes);
+      onClose();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Thông tin đăng nhập nhân viên không chính xác');
+      setErrorMsg(err.response?.data?.error || err.response?.data?.message || 'Thông tin đăng nhập quản trị/nhân viên không chính xác');
     } finally {
       setLoading(false);
     }
@@ -327,7 +360,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </button>
             </div>
 
-            {errorMsg && <div className="auth-error-banner">{errorMsg}</div>}
+            {errorMsg && (
+              <div className="auth-error-banner">
+                <div>{errorMsg}</div>
+                {errorMsg.includes('Store Staff') && (
+                  <button
+                    type="button"
+                    className="auth-error-switch-btn"
+                    onClick={() => {
+                      setErrorMsg(null);
+                      setStaffUsername(email);
+                      setStaffPassword(password);
+                      setView('STAFF_LOGIN');
+                    }}
+                  >
+                    Chuyển sang cổng "Log in as Store Staff" ngay →
+                  </button>
+                )}
+              </div>
+            )}
             {successMsg && <div className="auth-success-banner">{successMsg}</div>}
 
             <form onSubmit={handleCustomerSignIn} className="auth-form">
@@ -737,7 +788,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               are logged and may result in legal action.
             </div>
 
-            {errorMsg && <div className="auth-error-banner">{errorMsg}</div>}
+            {errorMsg && (
+              <div className="auth-error-banner">
+                <div>{errorMsg}</div>
+                {errorMsg.includes('Khách hàng') && (
+                  <button
+                    type="button"
+                    className="auth-error-switch-btn"
+                    onClick={() => {
+                      setErrorMsg(null);
+                      setEmail(staffUsername);
+                      setPassword(staffPassword);
+                      setView('CUSTOMER_SIGNIN');
+                    }}
+                  >
+                    Quay lại cổng đăng nhập Khách hàng →
+                  </button>
+                )}
+              </div>
+            )}
 
             <form onSubmit={handleStaffLogin} className="auth-form">
               <div className="form-group">

@@ -447,11 +447,37 @@
   background-color: rgba(220, 38, 38, 0.15);
   border: 1px solid rgba(220, 38, 38, 0.35);
   color: #ef4444;
-  padding: 0.6rem 0.8rem;
+  padding: 0.65rem 0.85rem;
   border-radius: 6px;
   font-size: 0.775rem;
-  line-height: 1.4;
-  margin-bottom: 0.5rem;
+  line-height: 1.45;
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-error-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: 4px;
+  background: rgba(212, 175, 55, 0.18);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  color: #f3e5ab;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.auth-error-switch-btn:hover {
+  background: rgba(212, 175, 55, 0.3);
+  color: #ffffff;
+  border-color: #d4af37;
+  transform: translateY(-1px);
 }
 
 .auth-footer-caption {
