@@ -8,15 +8,33 @@ import { WineDetailPage } from '@/features/wine/pages/WineDetailPage';
 import { CartPage, CartItem } from '@/features/cart/pages/CartPage';
 import { WineProduct, initialWines } from '@/features/wine/data/winesData';
 import { AdminCatalogPage } from '@/features/admin/pages/AdminCatalogPage';
+import { AdminDashboardPage } from '@/features/admin/pages/AdminDashboardPage';
 import { MyOrdersPage } from '@/features/order/pages/MyOrdersPage';
 import { CheckoutPage } from '@/features/checkout/pages/CheckoutPage';
 import { OrderPlacedPage } from '@/features/checkout/pages/OrderPlacedPage';
 
-type CurrentView = 'HOME' | 'DETAIL' | 'CART' | 'CHECKOUT' | 'ORDER_PLACED' | 'ORDERS';
+type CurrentView = 'HOME' | 'DETAIL' | 'CART' | 'CHECKOUT' | 'ORDER_PLACED' | 'ORDERS' | 'ADMIN_DASHBOARD';
 
 
 export const HomePage: React.FC = () => {
-  const [view, setView] = useState<CurrentView>('HOME');
+  const [currentUser, setCurrentUser] = useState<any>(() => {
+    const saved = localStorage.getItem('urbanwine_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [view, setView] = useState<CurrentView>(() => {
+    const saved = localStorage.getItem('urbanwine_user');
+    if (saved) {
+      try {
+        const u = JSON.parse(saved);
+        if (u.role === 'ROLE_ADMIN') return 'ADMIN_DASHBOARD';
+      } catch {
+        // ignore
+      }
+    }
+    return 'HOME';
+  });
+
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedWine, setSelectedWine] = useState<WineProduct | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -29,11 +47,6 @@ export const HomePage: React.FC = () => {
   ]);
 
   const [activeNav, setActiveNav] = useState<string>('home');
-
-  const [currentUser, setCurrentUser] = useState<any>(() => {
-    const saved = localStorage.getItem('urbanwine_user');
-    return saved ? JSON.parse(saved) : null;
-  });
 
   // Smooth scroll to Wine Cellar
   const scrollToWineCellar = (category?: string) => {
@@ -104,7 +117,7 @@ export const HomePage: React.FC = () => {
   return (
     <div className="home-page-container">
       {/* 1. Header công khai chỉ hiển thị khi chưa đăng nhập (hoặc đang xem Cart/Detail của guest) */}
-      {!currentUser && view !== 'ORDERS' && view !== 'CHECKOUT' && view !== 'ORDER_PLACED' && (
+      {!currentUser && view !== 'ORDERS' && view !== 'CHECKOUT' && view !== 'ORDER_PLACED' && view !== 'ADMIN_DASHBOARD' && (
         <Header
           cartCount={totalCartCount}
           activeNav={activeNav}
@@ -161,6 +174,10 @@ export const HomePage: React.FC = () => {
               onViewCart={() => setView('CART')}
               onViewOrders={() => {
                 setView('ORDERS');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onViewDashboard={() => {
+                setView('ADMIN_DASHBOARD');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
@@ -289,6 +306,27 @@ export const HomePage: React.FC = () => {
             }}
           />
         )}
+
+        {/* VIEW 7: ADMIN DASHBOARD (Matching Admin Control Screenshot styled in Luxury Customer theme) */}
+        {view === 'ADMIN_DASHBOARD' && (
+          <AdminDashboardPage
+            currentUser={currentUser}
+            onLogout={() => {
+              localStorage.removeItem('urbanwine_token');
+              localStorage.removeItem('urbanwine_user');
+              setCurrentUser(null);
+              setView('HOME');
+            }}
+            onNavigateToCatalog={() => {
+              setView('HOME');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onNavigateToCustomerStore={() => {
+              setView('HOME');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+        )}
       </main>
 
       {/* Luxury Authentication Modal */}
@@ -297,6 +335,9 @@ export const HomePage: React.FC = () => {
         onClose={() => setIsAuthOpen(false)}
         onLoginSuccess={(user) => {
           setCurrentUser(user);
+          if (user?.role === 'ROLE_ADMIN') {
+            setView('ADMIN_DASHBOARD');
+          }
         }}
       />
     </div>

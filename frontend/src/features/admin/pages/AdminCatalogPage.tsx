@@ -13,6 +13,7 @@ interface AdminCatalogPageProps {
   onAddToCart: (wine: WineProduct, quantity: number) => void;
   onViewCart: () => void;
   onViewOrders?: () => void;
+  onViewDashboard?: () => void;
 }
 
 export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
@@ -23,6 +24,7 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
   onAddToCart,
   onViewCart,
   onViewOrders,
+  onViewDashboard,
 }) => {
   // Search state
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -160,6 +162,19 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
         {/* Right Nav & User Dropdown */}
         <div className="admin-header-right">
           <div className="admin-nav-tabs">
+            {onViewDashboard && (
+              <button
+                className="admin-nav-pill dashboard-pill"
+                onClick={onViewDashboard}
+                style={{
+                  background: 'linear-gradient(135deg, #63141a 0%, #3e0c11 100%)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(212, 175, 55, 0.3)',
+                }}
+              >
+                Dashboard
+              </button>
+            )}
             <button
               className={`admin-nav-pill ${activeTab === 'cellar' ? 'active' : ''}`}
               onClick={() => setActiveTab('cellar')}

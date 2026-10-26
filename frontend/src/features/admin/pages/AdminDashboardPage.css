@@ -1,0 +1,897 @@
+/* ==========================================================================
+   URBAN WINE EXPRESS - ADMIN DASHBOARD (LUXURY CUSTOMER THEME)
+   Style aligned with customer-facing storefront: Dark, Gold & Wine Red
+   ========================================================================== */
+
+/* 1. LAYOUT ROOT */
+.admin-dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #0c0b0a;
+  background-image: 
+    radial-gradient(circle at 10% 15%, rgba(114, 47, 55, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 90% 85%, rgba(212, 175, 55, 0.05) 0%, transparent 45%);
+  color: #f7f3ed;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   2. LEFT SIDEBAR NAVIGATION
+   ========================================================================== */
+.admin-sidebar-nav {
+  width: 260px;
+  min-width: 260px;
+  background-color: #0e0d0c;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  box-sizing: border-box;
+  z-index: 40;
+}
+
+/* Brand Header */
+.admin-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 8px 24px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  user-select: none;
+}
+
+.admin-brand-wine-icon {
+  color: #d4af37;
+  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.35));
+}
+
+.admin-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-brand-name {
+  font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #f7f3ed;
+  line-height: 1.15;
+}
+
+.admin-brand-role {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: #d4af37;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+/* Nav Sections */
+.admin-nav-sections {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 20px;
+  overflow-y: auto;
+}
+
+.admin-nav-group-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #71717a;
+  text-transform: uppercase;
+  padding: 16px 12px 6px 12px;
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #a1a1aa;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+  position: relative;
+  border: 1px solid transparent;
+}
+
+.admin-nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+  color: #f4f4f5;
+  transform: translateX(3px);
+}
+
+.admin-nav-item.nav-dashboard.active {
+  background: linear-gradient(135deg, #63141a 0%, #3e0c11 100%);
+  color: #ffffff;
+  font-weight: 600;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  box-shadow: 0 4px 16px rgba(99, 20, 26, 0.4);
+}
+
+.admin-nav-item.active:not(.nav-dashboard) {
+  background: rgba(212, 175, 55, 0.12);
+  color: #d4af37;
+  font-weight: 600;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.nav-item-icon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.admin-nav-item.active .nav-item-icon {
+  opacity: 1;
+  color: inherit;
+}
+
+.nav-item-badge {
+  margin-left: auto;
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+/* Sidebar Footer */
+.admin-sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.admin-footer-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+}
+
+.admin-footer-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #e4e4e7;
+}
+
+.admin-footer-btn.btn-logout:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+}
+
+/* ==========================================================================
+   3. MAIN WRAPPER & TOPBAR
+   ========================================================================== */
+.admin-main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.admin-topbar {
+  height: 68px;
+  background-color: #0e0d0c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 36px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  box-sizing: border-box;
+}
+
+/* Search Box */
+.admin-topbar-search {
+  position: relative;
+  width: 360px;
+}
+
+.admin-topbar-search .search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #71717a;
+}
+
+.admin-topbar-search .search-input {
+  width: 100%;
+  background-color: #171615;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  padding: 8px 16px 8px 38px;
+  color: #e4e4e7;
+  font-size: 0.85rem;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.admin-topbar-search .search-input:focus {
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
+  background-color: #1c1a18;
+}
+
+.admin-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.admin-clock-indicator {
+  font-size: 0.85rem;
+  color: #a1a1aa;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.admin-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #171615;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c7c3be;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.admin-icon-btn:hover {
+  border-color: rgba(212, 175, 55, 0.3);
+  color: #d4af37;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.bell-badge-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #d4af37;
+  box-shadow: 0 0 6px #d4af37;
+}
+
+/* Admin Profile Pill */
+.admin-profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #171615;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px 12px 4px 6px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.admin-profile-pill:hover {
+  border-color: rgba(212, 175, 55, 0.35);
+}
+
+.admin-avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #722f37 0%, #3e1217 100%);
+  border: 1.5px solid #d4af37;
+  color: #d4af37;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
+}
+
+.admin-user-details {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.admin-user-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f4f4f5;
+}
+
+.admin-user-tag {
+  font-size: 0.65rem;
+  color: #a1a1aa;
+}
+
+/* ==========================================================================
+   4. DASHBOARD VIEW CONTENT
+   ========================================================================== */
+.admin-content-view {
+  padding: 32px 36px 60px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Title & Quick Order Row */
+.admin-dashboard-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-dashboard-heading {
+  font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #f7f3ed;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.admin-dashboard-subheading {
+  font-size: 0.85rem;
+  color: #8b857d;
+  margin-top: 4px;
+}
+
+/* Luxury Gold Quick Order Button */
+.admin-quick-order-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #d4af37 0%, #b8972e 100%);
+  color: #0c0b0a;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 10px 22px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.28);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-quick-order-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #e5be3e 0%, #c4a132 100%);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+}
+
+/* ==========================================================================
+   5. 4 KPI METRIC CARDS
+   ========================================================================== */
+.admin-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.admin-kpi-card {
+  background-color: #141312;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 22px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.admin-kpi-card:hover {
+  border-color: rgba(212, 175, 55, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.kpi-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpi-label {
+  font-size: 0.82rem;
+  color: #a1a1aa;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.kpi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.kpi-badge.badge-green {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.kpi-badge.badge-alert-red {
+  background-color: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.kpi-value {
+  margin-top: 14px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.kpi-value.gold-text {
+  font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+  font-size: 1.6rem;
+  color: #d4af37;
+  letter-spacing: 0.5px;
+}
+
+.kpi-value.white-text {
+  font-size: 2.1rem;
+  color: #ffffff;
+}
+
+.kpi-value.red-alert-text {
+  font-size: 2.1rem;
+  color: #ef4444;
+}
+
+.kpi-value.green-text {
+  font-size: 2.1rem;
+  color: #4ade80;
+}
+
+/* ==========================================================================
+   6. SPLIT GRID (RECENT ORDERS & LOW STOCK WARNINGS)
+   ========================================================================== */
+.admin-split-grid {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 24px;
+}
+
+.admin-card-surface {
+  background-color: #141312;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.card-surface-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.card-surface-title {
+  font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f7f3ed;
+  letter-spacing: 0.5px;
+}
+
+.card-surface-link {
+  font-size: 0.82rem;
+  color: #d4af37;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.card-surface-link:hover {
+  color: #f3e5ab;
+  text-decoration: underline;
+}
+
+/* Table Styling */
+.admin-table-container {
+  overflow-x: auto;
+}
+
+.admin-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.admin-orders-table th {
+  padding: 0 12px 14px 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #71717a;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.admin-orders-table td {
+  padding: 16px 12px;
+  font-size: 0.88rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.admin-orders-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.order-id-cell {
+  color: #d4af37;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.customer-cell {
+  color: #f4f4f5;
+  font-weight: 500;
+}
+
+.amount-cell {
+  color: #e4e4e7;
+  font-weight: 600;
+}
+
+.time-cell {
+  color: #8b857d;
+  font-size: 0.82rem;
+}
+
+/* Status Badges */
+.admin-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.badge-pending {
+  background-color: rgba(234, 179, 8, 0.12);
+  color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+.badge-pending .status-dot {
+  background-color: #eab308;
+}
+
+.badge-processing {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.badge-processing .status-dot {
+  background-color: #60a5fa;
+}
+
+.badge-shipping {
+  background-color: rgba(168, 85, 247, 0.12);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+.badge-shipping .status-dot {
+  background-color: #c084fc;
+}
+
+.badge-completed {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.badge-completed .status-dot {
+  background-color: #4ade80;
+}
+
+.badge-cancelled {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.badge-cancelled .status-dot {
+  background-color: #f87171;
+}
+
+/* Low Stock Warnings List */
+.low-stock-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.low-stock-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.low-stock-item-row:last-child {
+  border-bottom: none;
+}
+
+.low-stock-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.low-stock-wine-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #f4f4f5;
+}
+
+.low-stock-category {
+  font-size: 0.78rem;
+  color: #8b857d;
+  margin-top: 3px;
+}
+
+.low-stock-count-badge {
+  color: #ef4444;
+  font-weight: 700;
+  font-size: 0.88rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+/* ==========================================================================
+   7. QUICK ORDER MODAL
+   ========================================================================== */
+.admin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.admin-modal-container {
+  background-color: #141312;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 520px;
+  padding: 28px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  position: relative;
+  animation: modalFadeIn 0.25s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.admin-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 14px;
+}
+
+.modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-gold-icon {
+  color: #d4af37;
+}
+
+.admin-modal-title {
+  font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+  font-size: 1.05rem;
+  color: #f7f3ed;
+  font-weight: 700;
+}
+
+.admin-modal-close {
+  color: #8b857d;
+  transition: color 0.2s ease;
+}
+
+.admin-modal-close:hover {
+  color: #ffffff;
+}
+
+.admin-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.form-label {
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  font-weight: 500;
+}
+
+.form-input,
+.form-select {
+  background-color: #1a1816;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 0.88rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus,
+.form-select:focus {
+  border-color: #d4af37;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.modal-summary-box {
+  background-color: #1a1816;
+  border: 1px dashed rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 4px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+  color: #c7c3be;
+}
+
+.summary-total-amount {
+  font-family: 'Cinzel', serif;
+  font-size: 1.15rem;
+  color: #d4af37;
+}
+
+.admin-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.modal-cancel-btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #a1a1aa;
+  background-color: rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+}
+
+.modal-cancel-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.modal-submit-btn {
+  padding: 9px 22px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0c0b0a;
+  background: linear-gradient(135deg, #d4af37 0%, #b8972e 100%);
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.25);
+  transition: all 0.2s ease;
+}
+
+.modal-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #e5be3e 0%, #c4a132 100%);
+  box-shadow: 0 6px 18px rgba(212, 175, 55, 0.35);
+}
+
+.modal-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-modal-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0;
+  gap: 12px;
+  color: #4ade80;
+  text-align: center;
+}
+
+.admin-modal-success .success-icon {
+  color: #4ade80;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .admin-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-split-grid {
+    grid-template-columns: 1fr;
+  }
+}
