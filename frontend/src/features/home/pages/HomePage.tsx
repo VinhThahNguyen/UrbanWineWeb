@@ -8,8 +8,11 @@ import { WineDetailPage } from '@/features/wine/pages/WineDetailPage';
 import { CartPage, CartItem } from '@/features/cart/pages/CartPage';
 import { WineProduct, initialWines } from '@/features/wine/data/winesData';
 import { AdminCatalogPage } from '@/features/admin/pages/AdminCatalogPage';
+import { MyOrdersPage } from '@/features/order/pages/MyOrdersPage';
+import { CheckoutPage } from '@/features/checkout/pages/CheckoutPage';
+import { OrderPlacedPage } from '@/features/checkout/pages/OrderPlacedPage';
 
-type CurrentView = 'HOME' | 'DETAIL' | 'CART';
+type CurrentView = 'HOME' | 'DETAIL' | 'CART' | 'CHECKOUT' | 'ORDER_PLACED' | 'ORDERS';
 
 
 export const HomePage: React.FC = () => {
@@ -87,22 +90,21 @@ export const HomePage: React.FC = () => {
     setCartItems((prev) => prev.filter((item) => item.wine.id !== wineId));
   };
 
-  // Proceed to checkout: If not logged in, trigger AuthModal
-  const handleProceedToCheckout = () => {
-    if (!currentUser) {
-      setIsAuthOpen(true);
-    } else {
-      alert('Chào Vinh');
-    }
-  };
+  // Placed Order Code for confirmation screen
+  const [placedOrderCode, setPlacedOrderCode] = useState<string>('#UWE-8911');
 
+  // Proceed to checkout: Open Checkout page
+  const handleProceedToCheckout = () => {
+    setView('CHECKOUT');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const totalCartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <div className="home-page-container">
       {/* 1. Header công khai chỉ hiển thị khi chưa đăng nhập (hoặc đang xem Cart/Detail của guest) */}
-      {!currentUser && (
+      {!currentUser && view !== 'ORDERS' && view !== 'CHECKOUT' && view !== 'ORDER_PLACED' && (
         <Header
           cartCount={totalCartCount}
           activeNav={activeNav}
@@ -157,7 +159,10 @@ export const HomePage: React.FC = () => {
               }}
               onAddToCart={handleAddToCart}
               onViewCart={() => setView('CART')}
-              onViewOrders={() => alert('Đang mở trang danh sách đơn hàng')}
+              onViewOrders={() => {
+                setView('ORDERS');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             />
           ) : (
             /* Khi chưa đăng nhập (Khách vãng lai): Trang chủ với Hero banner & Danh mục */
@@ -219,6 +224,69 @@ export const HomePage: React.FC = () => {
             onRemoveItem={handleRemoveFromCart}
             onContinueShopping={() => setView('HOME')}
             onProceedToCheckout={handleProceedToCheckout}
+          />
+        )}
+
+        {/* VIEW 4: MY ORDERS PAGE (Screenshot 8.1 - 8.6) */}
+        {view === 'ORDERS' && (
+          <MyOrdersPage
+            currentUser={currentUser}
+            cartCount={totalCartCount}
+            onBackToCellar={() => {
+              setView('HOME');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onViewCart={() => {
+              setView('CART');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onLogout={() => {
+              localStorage.removeItem('urbanwine_token');
+              localStorage.removeItem('urbanwine_user');
+              setCurrentUser(null);
+              setView('HOME');
+            }}
+          />
+        )}
+
+        {/* VIEW 5: CHECKOUT PAGE (Screenshot 1) */}
+        {view === 'CHECKOUT' && (
+          <CheckoutPage
+            currentUser={currentUser}
+            cartItems={cartItems}
+            onBackToCart={() => {
+              setView('CART');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onBackToCellar={() => {
+              setView('HOME');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOrderPlaced={(orderCode) => {
+              setPlacedOrderCode(orderCode);
+              setView('ORDER_PLACED');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onViewOrders={() => {
+              setView('ORDERS');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+        )}
+
+        {/* VIEW 6: ORDER PLACED CONFIRMATION (Screenshot 2) */}
+        {view === 'ORDER_PLACED' && (
+          <OrderPlacedPage
+            orderCode={placedOrderCode}
+            onTrackOrder={() => {
+              setView('ORDERS');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onContinueShopping={() => {
+              setCartItems([]);
+              setView('HOME');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
           />
         )}
       </main>

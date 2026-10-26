@@ -7,10 +7,26 @@ export const apiClient = axios.create({
   },
 });
 
-
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('urbanwine_token');
-  if (token && config.headers) {
+  let token = localStorage.getItem('urbanwine_token');
+
+  // Nếu token trong localStorage bị undefined/null, thử trích xuất từ urbanwine_user
+  if (!token || token === 'undefined' || token === 'null') {
+    const userStr = localStorage.getItem('urbanwine_user');
+    if (userStr) {
+      try {
+        const userObj = JSON.parse(userStr);
+        token = userObj.token || userObj.accessToken;
+        if (token && token !== 'undefined' && token !== 'null') {
+          localStorage.setItem('urbanwine_token', token);
+        }
+      } catch (e) {
+        console.error('Error parsing urbanwine_user from localStorage', e);
+      }
+    }
+  }
+
+  if (token && token !== 'undefined' && token !== 'null' && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

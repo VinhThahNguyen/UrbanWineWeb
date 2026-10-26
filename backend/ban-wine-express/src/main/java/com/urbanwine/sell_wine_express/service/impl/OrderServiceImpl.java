@@ -153,6 +153,7 @@ public class OrderServiceImpl implements OrderService {
                     .unitPrice(wine.getPrice())
                     .quantity(itemReq.getQuantity())
                     .subtotal(lineTotal)
+                    .vintageYear(wine.getVintageYear())
                     .build());
         }
 
@@ -254,6 +255,7 @@ public class OrderServiceImpl implements OrderService {
                     .unitPrice(prep.unitPrice)
                     .quantity(prep.quantity)
                     .subtotal(prep.lineTotal)
+                    .vintageYear(prep.wine.getVintageYear())
                     .build());
         }
 
@@ -384,6 +386,7 @@ public class OrderServiceImpl implements OrderService {
                     .unitPrice(detail.getUnitPrice())
                     .quantity(detail.getQuantity())
                     .subtotal(lineTotal)
+                    .vintageYear(detail.getWine().getVintageYear())
                     .build());
         }
 
@@ -904,6 +907,7 @@ public class OrderServiceImpl implements OrderService {
                     .unitPrice(prep.unitPrice)
                     .quantity(prep.quantity)
                     .subtotal(prep.lineTotal)
+                    .vintageYear(prep.wine.getVintageYear())
                     .build());
         }
 
@@ -1138,6 +1142,7 @@ public class OrderServiceImpl implements OrderService {
                     .unitPrice(detail.getUnitPrice())
                     .quantity(detail.getQuantity())
                     .subtotal(lineTotal)
+                    .vintageYear(wine.getVintageYear())
                     .build());
         }
 

@@ -117,7 +117,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setOtpDigits(['', '', '', '', '', '']);
         setView('CUSTOMER_LOGIN_OTP');
       } else {
-        localStorage.setItem('urbanwine_token', (res as any).accessToken);
+        const token = (res as any).token || (res as any).accessToken;
+        localStorage.setItem('urbanwine_token', token);
         localStorage.setItem('urbanwine_user', JSON.stringify(res));
         if (onLoginSuccess) onLoginSuccess(res);
         onClose();
@@ -144,7 +145,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       const res = await authApi.verifyLoginOtp({ email, otpCode });
-      localStorage.setItem('urbanwine_token', res.accessToken);
+      const token = res.token || (res as any).accessToken;
+      localStorage.setItem('urbanwine_token', token);
       localStorage.setItem('urbanwine_user', JSON.stringify(res));
       if (onLoginSuccess) onLoginSuccess(res);
       onClose();
@@ -278,7 +280,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setErrorMsg('Tài khoản này không phải là nhân viên nội bộ hợp lệ.');
       } else {
         const staffRes = res as any;
-        localStorage.setItem('urbanwine_token', staffRes.accessToken);
+        const token = staffRes.token || staffRes.accessToken;
+        localStorage.setItem('urbanwine_token', token);
         localStorage.setItem('urbanwine_user', JSON.stringify(staffRes));
         if (onLoginSuccess) onLoginSuccess(staffRes);
         onClose();

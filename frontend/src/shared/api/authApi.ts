@@ -33,9 +33,11 @@ export interface AuthUser {
 }
 
 export interface LoginSuccessResponse {
-  accessToken: string;
+  token: string;
+  accessToken?: string;
   refreshToken: string;
-  tokenType: string;
+  tokenType?: string;
+  type?: string;
   userId: number;
   email: string;
   fullName: string;

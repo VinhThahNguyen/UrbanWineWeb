@@ -1,0 +1,103 @@
+/* ==========================================================================
+   URBAN WINE EXPRESS - ORDER PLACED CONFIRMATION (SCREENSHOT 2)
+   ========================================================================== */
+
+.order-placed-container {
+  min-height: 100vh;
+  background-color: #0c0b0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.order-placed-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 540px;
+  width: 100%;
+}
+
+.order-placed-icon-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #1e1b15;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d4af37;
+  margin-bottom: 24px;
+}
+
+.order-placed-title {
+  font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+  font-size: 2.3rem;
+  font-weight: 600;
+  color: #f7f3ed;
+  margin-bottom: 16px;
+}
+
+.order-placed-desc-main {
+  font-size: 0.95rem;
+  color: #d4d4d8;
+  margin-bottom: 8px;
+}
+
+.order-code-highlight {
+  color: #d4af37;
+  font-weight: 600;
+  font-family: 'Cinzel', Georgia, serif;
+}
+
+.order-placed-desc-sub {
+  font-size: 0.85rem;
+  color: #71717a;
+  line-height: 1.5;
+  margin-bottom: 32px;
+  max-width: 440px;
+}
+
+.order-placed-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.btn-track-order {
+  background-color: #1b1a18;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #d4af37;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-track-order:hover {
+  background-color: #24221f;
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+.btn-continue-shopping {
+  background-color: #d4af37;
+  border: 1px solid #d4af37;
+  color: #0c0b0a;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-continue-shopping:hover {
+  background-color: #e5be3e;
+}

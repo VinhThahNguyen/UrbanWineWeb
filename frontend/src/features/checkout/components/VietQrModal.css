@@ -1,0 +1,198 @@
+/* ==========================================================================
+   URBAN WINE EXPRESS - DYNAMIC VIETQR PAYMENT MODAL
+   ========================================================================== */
+
+.vietqr-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.vietqr-modal-card {
+  background-color: #161514;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 460px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+  position: relative;
+  text-align: center;
+}
+
+.vietqr-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: transparent;
+  border: none;
+  color: #71717a;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.vietqr-close-btn:hover {
+  color: #ffffff;
+}
+
+.vietqr-header-title {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #f7f3ed;
+  margin-top: 4px;
+}
+
+.vietqr-timer-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #d4af37;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.vietqr-code-wrapper {
+  background-color: #ffffff;
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.vietqr-image {
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+}
+
+.vietqr-napas-logo {
+  height: 20px;
+  object-fit: contain;
+}
+
+.vietqr-banking-info {
+  width: 100%;
+  background-color: #1a1918;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  font-size: 0.82rem;
+}
+
+.banking-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.banking-info-label {
+  color: #8b857d;
+}
+
+.banking-info-val {
+  color: #ffffff;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.banking-info-val.amount {
+  color: #d4af37;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.btn-copy-chip {
+  background-color: #262421;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #d4af37;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.btn-copy-chip:hover {
+  background-color: rgba(212, 175, 55, 0.2);
+}
+
+.vietqr-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #a19b91;
+}
+
+.spinner-pulse {
+  width: 8px;
+  height: 8px;
+  background-color: #d4af37;
+  border-radius: 50%;
+  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(212, 175, 55, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+  }
+}
+
+.vietqr-actions {
+  width: 100%;
+  display: flex;
+  gap: 12px;
+}
+
+.btn-done-transfer {
+  flex: 1;
+  background-color: #d4af37;
+  color: #0c0b0a;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-done-transfer:hover {
+  background-color: #e5be3e;
+}
