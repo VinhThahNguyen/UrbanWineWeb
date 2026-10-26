@@ -23,8 +23,6 @@ import './AdminDashboardPage.css';
 interface AdminDashboardPageProps {
   currentUser?: any;
   onLogout: () => void;
-  onNavigateToCatalog?: () => void;
-  onNavigateToCustomerStore?: () => void;
 }
 
 interface WineCatalogOption {
@@ -37,8 +35,6 @@ interface WineCatalogOption {
 export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   currentUser,
   onLogout,
-  onNavigateToCatalog,
-  onNavigateToCustomerStore,
 }) => {
   // Navigation active tab
   const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'catalog' | 'alerts' | 'users' | 'reports' | 'settings'>('dashboard');
@@ -297,14 +293,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const selectedQuickWine = availableWines.find((w) => w.id === quickOrderWineId) || availableWines[0];
 
   // Admin user initials & name
-  const adminName = currentUser?.fullName || 'Manager Vinh';
-  const adminInitials = adminName
-    .split(' ')
-    .filter(Boolean)
-    .map((n: string) => n[0])
-    .slice(-2)
-    .join('')
-    .toUpperCase() || 'MV';
+  const adminName = currentUser?.fullName || 'System Administrator';
+  const cleanName = adminName.replace(/\(.*?\)/g, '').trim();
+  const nameParts = cleanName.split(/\s+/).filter(Boolean);
+  const adminInitials = nameParts.length >= 2
+    ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+    : (cleanName.slice(0, 2).toUpperCase() || 'AD');
 
   return (
     <div className="admin-dashboard-layout">
@@ -349,10 +343,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           <button
             type="button"
             className={`admin-nav-item ${activeTab === 'catalog' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('catalog');
-              if (onNavigateToCatalog) onNavigateToCatalog();
-            }}
+            onClick={() => setActiveTab('catalog')}
           >
             <Wine size={18} className="nav-item-icon" />
             <span>Wine Catalog</span>
@@ -401,20 +392,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           </button>
         </nav>
 
-        {/* Bottom Storefront & Logout Shortcuts */}
+        {/* Bottom Logout */}
         <div className="admin-sidebar-footer">
-          {onNavigateToCustomerStore && (
-            <button
-              type="button"
-              className="admin-footer-btn"
-              onClick={onNavigateToCustomerStore}
-              title="Về giao diện khách hàng"
-            >
-              <PackageCheck size={16} />
-              <span>Customer Store</span>
-            </button>
-          )}
-
           <button
             type="button"
             className="admin-footer-btn btn-logout"
