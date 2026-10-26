@@ -289,12 +289,7 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
             </select>
           </div>
 
-          {/* Footer count indicator */}
-          <div className="sidebar-count-footer">
-            Showing <strong>{sortedWines.length}</strong> of {initialWines.length} wines
-          </div>
-
-          {/* Bottom Logout in Sidebar (matching Admin design) */}
+          {/* Logout in Sidebar (placed above Showing count) */}
           <div className="admin-sidebar-footer">
             <button
               type="button"
@@ -305,6 +300,11 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
               <LogOut size={16} />
               <span>Sign Out</span>
             </button>
+          </div>
+
+          {/* Footer count indicator */}
+          <div className="sidebar-count-footer">
+            Showing <strong>{sortedWines.length}</strong> of {initialWines.length} wines
           </div>
         </aside>
 

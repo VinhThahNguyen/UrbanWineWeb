@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/shared/components/Header';
 import { HeroSection } from '@/features/home/components/HeroSection';
 import { CategorySection } from '@/features/home/components/CategorySection';
@@ -12,6 +12,7 @@ import { AdminDashboardPage } from '@/features/admin/pages/AdminDashboardPage';
 import { MyOrdersPage } from '@/features/order/pages/MyOrdersPage';
 import { CheckoutPage } from '@/features/checkout/pages/CheckoutPage';
 import { OrderPlacedPage } from '@/features/checkout/pages/OrderPlacedPage';
+import { cartApi, BackendCartResponse } from '@/shared/api/cartApi';
 
 type CurrentView = 'HOME' | 'DETAIL' | 'CART' | 'CHECKOUT' | 'ORDER_PLACED' | 'ORDERS';
 
@@ -27,12 +28,63 @@ export const HomePage: React.FC = () => {
   const [selectedWine, setSelectedWine] = useState<WineProduct | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // Cart state initialized with 3 sample items matching Screenshot 4
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    { wine: initialWines[0], quantity: 8 }, // Château Margaux: 8
-    { wine: initialWines[1], quantity: 1 }, // Sassicaia: 1
-    { wine: initialWines[2], quantity: 1 }, // Dom Pérignon: 1
-  ]);
+  // Cart state 100% Dynamic from Backend Database (Zero mock items)
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isCartLoading, setIsCartLoading] = useState<boolean>(false);
+
+  // Helper mapping backend cart response to frontend CartItem
+  const mapBackendCartToItems = (data: BackendCartResponse): CartItem[] => {
+    if (!data || !data.items) return [];
+    return data.items.map((ci) => {
+      const matched = initialWines.find((w) => Number(w.id) === Number(ci.wineId));
+      return {
+        cartItemId: ci.cartItemId,
+        quantity: ci.quantity,
+        wine: matched || {
+          id: ci.wineId,
+          name: ci.wineName,
+          winery: 'Urban Wine Selection',
+          price: Number(ci.price),
+          imageUrl: ci.imageUrl || 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=800&q=80',
+          category: 'RED',
+          categoryName: 'Red Wine',
+          vintage: 2018,
+          region: 'Fine Wine',
+          country: 'Imported',
+          abv: 14.0,
+          volume: '750ml',
+          stock: ci.stockQuantity || 10,
+          rating: 4.8,
+          description: ci.wineName,
+          tastingNotes: ['Fine Tasting Notes'],
+          foodPairing: ['Premium Pairing'],
+        },
+      };
+    });
+  };
+
+  // Fetch real cart from Database
+  const fetchUserCart = async () => {
+    const token = localStorage.getItem('urbanwine_token');
+    if (!token) {
+      setCartItems([]);
+      return;
+    }
+    try {
+      setIsCartLoading(true);
+      const data = await cartApi.getCart();
+      setCartItems(mapBackendCartToItems(data));
+    } catch (err) {
+      console.error('Error fetching real cart from backend:', err);
+      setCartItems([]);
+    } finally {
+      setIsCartLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserCart();
+  }, [currentUser]);
 
   const [activeNav, setActiveNav] = useState<string>('home');
 
@@ -57,9 +109,19 @@ export const HomePage: React.FC = () => {
     }, 100);
   };
 
-
-  // Add to cart handler
-  const handleAddToCart = (wine: WineProduct, quantity: number) => {
+  // Add to cart handler (Persisted directly to Backend Database)
+  const handleAddToCart = async (wine: WineProduct, quantity: number) => {
+    const token = localStorage.getItem('urbanwine_token');
+    if (token) {
+      try {
+        const updatedCart = await cartApi.addItem(Number(wine.id), quantity);
+        setCartItems(mapBackendCartToItems(updatedCart));
+        return;
+      } catch (err) {
+        console.error('Failed to add item to backend cart:', err);
+      }
+    }
+    // Guest fallback in memory
     setCartItems((prev) => {
       const existing = prev.find((item) => item.wine.id === wine.id);
       if (existing) {
@@ -73,11 +135,23 @@ export const HomePage: React.FC = () => {
     });
   };
 
-  // Update quantity in cart
-  const handleUpdateQuantity = (wineId: string | number, newQuantity: number) => {
+  // Update quantity in cart (Persisted to Backend Database)
+  const handleUpdateQuantity = async (wineId: string | number, newQuantity: number) => {
     if (newQuantity <= 0) {
       handleRemoveFromCart(wineId);
       return;
+    }
+    const token = localStorage.getItem('urbanwine_token');
+    const targetItem = cartItems.find((it) => it.wine.id === wineId);
+
+    if (token && targetItem?.cartItemId) {
+      try {
+        const updatedCart = await cartApi.updateQuantity(targetItem.cartItemId, newQuantity);
+        setCartItems(mapBackendCartToItems(updatedCart));
+        return;
+      } catch (err) {
+        console.error('Failed to update quantity in backend cart:', err);
+      }
     }
     setCartItems((prev) =>
       prev.map((item) =>
@@ -86,8 +160,20 @@ export const HomePage: React.FC = () => {
     );
   };
 
-  // Remove item from cart
-  const handleRemoveFromCart = (wineId: string | number) => {
+  // Remove item from cart (Persisted to Backend Database)
+  const handleRemoveFromCart = async (wineId: string | number) => {
+    const token = localStorage.getItem('urbanwine_token');
+    const targetItem = cartItems.find((it) => it.wine.id === wineId);
+
+    if (token && targetItem?.cartItemId) {
+      try {
+        const updatedCart = await cartApi.removeItem(targetItem.cartItemId);
+        setCartItems(mapBackendCartToItems(updatedCart));
+        return;
+      } catch (err) {
+        console.error('Failed to remove item from backend cart:', err);
+      }
+    }
     setCartItems((prev) => prev.filter((item) => item.wine.id !== wineId));
   };
 
@@ -168,6 +254,7 @@ export const HomePage: React.FC = () => {
                 localStorage.removeItem('urbanwine_token');
                 localStorage.removeItem('urbanwine_user');
                 setCurrentUser(null);
+                setCartItems([]);
                 setView('HOME');
               }}
               onWineClick={(wine) => {
@@ -238,6 +325,7 @@ export const HomePage: React.FC = () => {
         {view === 'CART' && (
           <CartPage
             items={cartItems}
+            isLoading={isCartLoading}
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveFromCart}
             onContinueShopping={() => setView('HOME')}
@@ -262,6 +350,7 @@ export const HomePage: React.FC = () => {
               localStorage.removeItem('urbanwine_token');
               localStorage.removeItem('urbanwine_user');
               setCurrentUser(null);
+              setCartItems([]);
               setView('HOME');
             }}
           />

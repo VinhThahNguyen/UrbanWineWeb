@@ -408,25 +408,26 @@
   cursor: pointer;
 }
 
-.sidebar-count-footer {
+/* Sidebar Logout Footer matching Admin layout (placed above Showing count) */
+.admin-sidebar-footer {
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-count-footer {
+  margin-top: -0.75rem;
   font-size: 0.75rem;
   color: #6b7280;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 0.25rem;
+  padding-left: 0.25rem;
 }
 
 .sidebar-count-footer strong {
   color: #d4af37;
-}
-
-/* Sidebar Logout Footer matching Admin layout */
-.admin-sidebar-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .admin-footer-btn {

@@ -1,9 +1,10 @@
 import React from 'react';
 import { WineProduct } from '@/features/wine/data/winesData';
-import { Trash2, Minus, Plus, ChevronLeft, Info } from 'lucide-react';
+import { Trash2, Minus, Plus, ChevronLeft, Info, ShoppingBag, Loader2 } from 'lucide-react';
 import './CartPage.css';
 
 export interface CartItem {
+  cartItemId?: number;
   wine: WineProduct;
   quantity: number;
 }
@@ -14,6 +15,7 @@ interface CartPageProps {
   onRemoveItem: (wineId: string | number) => void;
   onContinueShopping: () => void;
   onProceedToCheckout: () => void;
+  isLoading?: boolean;
 }
 
 export const CartPage: React.FC<CartPageProps> = ({
@@ -22,6 +24,7 @@ export const CartPage: React.FC<CartPageProps> = ({
   onRemoveItem,
   onContinueShopping,
   onProceedToCheckout,
+  isLoading = false,
 }) => {
   const formatVnd = (amount: number) => {
     return new Intl.NumberFormat('vi-VN').format(amount) + '₫';
@@ -56,10 +59,25 @@ export const CartPage: React.FC<CartPageProps> = ({
         <span>Cart items are not reserved until checkout completion. Complete your order to secure your selection.</span>
       </div>
 
-      {items.length === 0 ? (
+      {isLoading ? (
         <div className="empty-cart-view">
-          <p style={{ color: '#9ca3af', marginBottom: '1.5rem' }}>Your shopping cart is currently empty.</p>
-          <button className="btn-proceed-checkout" onClick={onContinueShopping} style={{ width: 'auto', padding: '0.75rem 2rem' }}>
+          <Loader2 size={32} className="spin-icon" style={{ color: '#d4af37', marginBottom: '1rem' }} />
+          <p style={{ color: '#d4af37', fontSize: '1rem', fontWeight: 500 }}>
+            Đang tải dữ liệu giỏ hàng từ cơ sở dữ liệu...
+          </p>
+        </div>
+      ) : items.length === 0 ? (
+        <div className="empty-cart-view" style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
+          <div style={{ display: 'inline-flex', padding: '16px', borderRadius: '50%', background: 'rgba(212, 175, 55, 0.08)', border: '1px solid rgba(212, 175, 55, 0.2)', marginBottom: '1.25rem', color: '#d4af37' }}>
+            <ShoppingBag size={40} />
+          </div>
+          <h2 style={{ color: '#f7f3ed', fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.65rem', fontFamily: 'Cinzel, Georgia, serif' }}>
+            Giỏ hàng của bạn đang trống
+          </h2>
+          <p style={{ color: '#a1a1aa', maxWidth: '460px', margin: '0 auto 1.75rem auto', fontSize: '0.9rem', lineHeight: 1.6 }}>
+            Không có sản phẩm nào trong giỏ hàng từ Database. Bạn hãy dạo một vòng Wine Cellar để lựa chọn những chai vang hảo hạng nhé.
+          </p>
+          <button className="btn-proceed-checkout" onClick={onContinueShopping} style={{ width: 'auto', padding: '0.85rem 2.25rem' }}>
             EXPLORE WINE CELLAR
           </button>
         </div>
