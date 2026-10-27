@@ -63,20 +63,25 @@ export const HomePage: React.FC = () => {
     });
   };
 
+  // Track navigation redirect after successful authentication
+  const [redirectAfterLogin, setRedirectAfterLogin] = useState<CurrentView | null>(null);
+
   // Fetch real cart from Database
   const fetchUserCart = async () => {
     const token = localStorage.getItem('urbanwine_token');
     if (!token) {
-      setCartItems([]);
+      // Guest: keep any locally selected items intact
       return;
     }
     try {
       setIsCartLoading(true);
       const data = await cartApi.getCart();
-      setCartItems(mapBackendCartToItems(data));
+      const mapped = mapBackendCartToItems(data);
+      if (mapped.length > 0) {
+        setCartItems(mapped);
+      }
     } catch (err) {
       console.error('Error fetching real cart from backend:', err);
-      setCartItems([]);
     } finally {
       setIsCartLoading(false);
     }
@@ -85,6 +90,15 @@ export const HomePage: React.FC = () => {
   useEffect(() => {
     fetchUserCart();
   }, [currentUser]);
+
+  // Prevent accessing CHECKOUT view without an authenticated customer
+  useEffect(() => {
+    if (view === 'CHECKOUT' && !currentUser) {
+      setView('CART');
+      setRedirectAfterLogin('CHECKOUT');
+      setIsAuthOpen(true);
+    }
+  }, [view, currentUser]);
 
   const [activeNav, setActiveNav] = useState<string>('home');
 
@@ -180,8 +194,14 @@ export const HomePage: React.FC = () => {
   // Placed Order Code for confirmation screen
   const [placedOrderCode, setPlacedOrderCode] = useState<string>('#UWE-8911');
 
-  // Proceed to checkout: Open Checkout page
+  // Proceed to checkout: Open Checkout page or prompt customer login
   const handleProceedToCheckout = () => {
+    if (!currentUser) {
+      // Prompt customer to register/sign in, preserving cartItems intact
+      setRedirectAfterLogin('CHECKOUT');
+      setIsAuthOpen(true);
+      return;
+    }
     setView('CHECKOUT');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -401,9 +421,38 @@ export const HomePage: React.FC = () => {
       {/* Luxury Authentication Modal */}
       <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        onLoginSuccess={(user) => {
+        onClose={() => {
+          setIsAuthOpen(false);
+          setRedirectAfterLogin(null);
+        }}
+        onLoginSuccess={async (user) => {
           setCurrentUser(user);
+          setIsAuthOpen(false);
+
+          // Synchronize any items picked by guest into the newly authenticated user's cart
+          if (cartItems.length > 0) {
+            try {
+              for (const it of cartItems) {
+                if (!it.cartItemId) {
+                  await cartApi.addItem(Number(it.wine.id), it.quantity);
+                }
+              }
+              const updated = await cartApi.getCart();
+              const mapped = mapBackendCartToItems(updated);
+              if (mapped.length > 0) {
+                setCartItems(mapped);
+              }
+            } catch (err) {
+              console.warn('Error syncing guest cart after login:', err);
+            }
+          }
+
+          // If user was heading to checkout, seamlessly navigate to Checkout
+          if (redirectAfterLogin === 'CHECKOUT') {
+            setRedirectAfterLogin(null);
+            setView('CHECKOUT');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
         }}
       />
     </div>

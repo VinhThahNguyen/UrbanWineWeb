@@ -25,17 +25,26 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   // Autofill account toggle
   const [useAccountInfo, setUseAccountInfo] = useState<boolean>(true);
 
-  // Form Fields
+  // Form Fields - strictly initialized from authenticated currentUser (0 hardcoded data)
   const [recipientName, setRecipientName] = useState<string>(
-    currentUser?.fullName || 'Lê Thế Vinh'
+    currentUser?.fullName || ''
   );
   const [recipientPhone, setRecipientPhone] = useState<string>(
-    currentUser?.phone || '0901234567'
+    currentUser?.phone || ''
   );
   const [deliveryAddress, setDeliveryAddress] = useState<string>(
-    '12 Tràng Thi, Hoàn Kiếm, Hà Nội'
+    currentUser?.address || ''
   );
   const [deliveryNote, setDeliveryNote] = useState<string>('');
+
+  // Sync with currentUser if loaded
+  React.useEffect(() => {
+    if (currentUser) {
+      if (currentUser.fullName && !recipientName) setRecipientName(currentUser.fullName);
+      if (currentUser.phone && !recipientPhone) setRecipientPhone(currentUser.phone);
+      if (currentUser.address && !deliveryAddress) setDeliveryAddress(currentUser.address);
+    }
+  }, [currentUser]);
 
   // Payment method: 'COD' | 'VIETQR'
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'VIETQR'>('COD');
@@ -97,10 +106,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   // Toggle account autofill
   const handleToggleAutofill = (checked: boolean) => {
     setUseAccountInfo(checked);
-    if (checked) {
-      setRecipientName(currentUser?.fullName || 'Lê Thế Vinh');
-      setRecipientPhone(currentUser?.phone || '0901234567');
-      setDeliveryAddress('12 Tràng Thi, Hoàn Kiếm, Hà Nội');
+    if (checked && currentUser) {
+      setRecipientName(currentUser.fullName || '');
+      setRecipientPhone(currentUser.phone || '');
+      setDeliveryAddress(currentUser.address || '');
     }
   };
 
@@ -185,9 +194,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             )}
           </button>
 
-          <div className="checkout-user-pill">
-            <span>Xin chào, <strong>{currentUser?.fullName || 'Thế Vinh'}</strong></span>
-            <span className="checkout-user-badge-red">TV</span>
+          <div className="checkout-user-pill" title="Tài khoản khách hàng">
+            <span>
+              Xin chào, <strong>{currentUser?.fullName || currentUser?.email || 'Quý khách'}</strong>
+            </span>
+            <span className="checkout-user-badge-red">
+              {currentUser?.fullName
+                ? (currentUser.fullName.trim().split(/\s+/).length >= 2
+                    ? (currentUser.fullName.trim().split(/\s+/)[0][0] + currentUser.fullName.trim().split(/\s+/).slice(-1)[0][0]).toUpperCase()
+                    : currentUser.fullName.slice(0, 2).toUpperCase())
+                : (currentUser?.email ? currentUser.email.slice(0, 2).toUpperCase() : 'KH')}
+            </span>
           </div>
         </div>
       </header>

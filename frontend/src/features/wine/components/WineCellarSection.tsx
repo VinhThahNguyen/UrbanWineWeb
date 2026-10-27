@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WineProduct, initialWines } from '../data/winesData';
 import { SelectQuantityModal } from './SelectQuantityModal';
+import { wineApi, mapBackendWineToProduct } from '@/shared/api/wineApi';
 import './WineCellarSection.css';
 
 interface WineCellarSectionProps {
@@ -17,13 +18,34 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
   onAddToCart,
 }) => {
   const [quickAddWine, setQuickAddWine] = useState<WineProduct | null>(null);
+  const [winesList, setWinesList] = useState<WineProduct[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    wineApi.getCatalog({ size: 100 })
+      .then((res) => {
+        if (res && res.content && res.content.length > 0) {
+          setWinesList(res.content.map(mapBackendWineToProduct));
+        } else {
+          setWinesList(initialWines);
+        }
+      })
+      .catch((err) => {
+        console.warn('Error fetching database wine catalog:', err);
+        setWinesList(initialWines);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
 
   const formatVnd = (amount: number) => {
     return new Intl.NumberFormat('vi-VN').format(amount) + '₫';
   };
 
-  // Filter wines
-  const filteredWines = initialWines.filter((wine) => {
+  // Filter wines from real database
+  const filteredWines = winesList.filter((wine) => {
     if (selectedCategory === 'ALL') return true;
     return wine.category === selectedCategory;
   });
@@ -48,7 +70,7 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
             className={`filter-chip ${selectedCategory === 'ALL' ? 'active' : ''}`}
             onClick={() => onSelectCategory('ALL')}
           >
-            All Wines ({initialWines.length})
+            All Wines ({winesList.length})
           </button>
           <button
             className={`filter-chip ${selectedCategory === 'RED' ? 'active' : ''}`}

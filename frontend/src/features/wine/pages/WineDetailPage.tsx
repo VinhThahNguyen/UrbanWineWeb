@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WineProduct } from '../data/winesData';
 import { Truck, ShieldCheck, Snowflake, ChevronRight, Minus, Plus } from 'lucide-react';
-
+import { wineApi, BackendWineDetail } from '@/shared/api/wineApi';
 import './WineDetailPage.css';
 
 interface WineDetailPageProps {
@@ -17,20 +17,47 @@ export const WineDetailPage: React.FC<WineDetailPageProps> = ({
   onAddToCart,
   onProceedToCheckout,
 }) => {
+  const [detail, setDetail] = useState<WineProduct>(wine);
+  const [realStock, setRealStock] = useState<number>(wine.stock);
   const [selectedPack, setSelectedPack] = useState<number>(1); // 1, 2, or 6
   const [activeThumb, setActiveThumb] = useState(0);
+
+  useEffect(() => {
+    if (wine?.id) {
+      wineApi.getDetail(wine.id)
+        .then((res: BackendWineDetail) => {
+          if (res) {
+            setRealStock(res.stockQuantity);
+            setDetail((prev) => ({
+              ...prev,
+              name: res.wineName || prev.name,
+              winery: res.wineryName || prev.winery,
+              vintage: res.vintageYear || prev.vintage,
+              region: res.origin || prev.region,
+              price: Number(res.price) || prev.price,
+              abv: res.abv || prev.abv,
+              stock: res.stockQuantity,
+              description: res.description || prev.description,
+            }));
+          }
+        })
+        .catch((err) => {
+          console.warn('Error fetching live wine detail from backend:', err);
+        });
+    }
+  }, [wine?.id]);
 
   const formatVnd = (amount: number) => {
     return new Intl.NumberFormat('vi-VN').format(amount) + '₫';
   };
 
   const images = [
-    wine.imageUrl,
+    detail.imageUrl || wine.imageUrl,
     'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=800&q=80',
     'https://images.unsplash.com/photo-1558001373-7b93ee48ffa0?auto=format&fit=crop&w=800&q=80',
   ];
 
-  const totalAmount = wine.price * selectedPack;
+  const totalAmount = detail.price * selectedPack;
 
   return (
     <div className="product-detail-page">
@@ -134,25 +161,35 @@ export const WineDetailPage: React.FC<WineDetailPageProps> = ({
               <button
                 className="qty-btn"
                 onClick={() => setSelectedPack((prev) => Math.max(1, prev - 1))}
-                disabled={selectedPack <= 1}
+                disabled={selectedPack <= 1 || realStock <= 0}
               >
                 <Minus size={16} />
               </button>
-              <span className="qty-value">{selectedPack}</span>
+              <span className="qty-value">{realStock <= 0 ? 0 : selectedPack}</span>
               <button
                 className="qty-btn"
-                onClick={() => setSelectedPack((prev) => Math.min(wine.stock, prev + 1))}
-                disabled={selectedPack >= wine.stock}
+                onClick={() => setSelectedPack((prev) => Math.min(realStock, prev + 1))}
+                disabled={selectedPack >= realStock || realStock <= 0}
               >
                 <Plus size={16} />
               </button>
             </div>
           </div>
 
+          {/* Stock indication from Database */}
+          <div style={{ color: '#d4af37', fontSize: '0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: realStock <= 0 ? '#ef4444' : realStock <= 3 ? '#eab308' : '#22c55e', display: 'inline-block' }}></span>
+            {realStock <= 0 ? (
+              <span style={{ color: '#ef4444', fontWeight: 600 }}>Tạm thời hết hàng trong hầm</span>
+            ) : (
+              <span>Tồn kho hiện có trong hầm: <strong style={{ color: '#ffffff' }}>{realStock} chai</strong></span>
+            )}
+          </div>
+
           {/* Live Calculation Bar */}
           <div className="detail-calc-bar">
             <span className="calc-formula">
-              {selectedPack} × {formatVnd(wine.price)}
+              {selectedPack} × {formatVnd(detail.price)}
             </span>
             <span className="calc-total">{formatVnd(totalAmount)}</span>
           </div>
@@ -162,13 +199,15 @@ export const WineDetailPage: React.FC<WineDetailPageProps> = ({
           <div className="detail-actions-row">
             <button
               className="btn-detail-add-cart"
-              onClick={() => onAddToCart(wine, selectedPack)}
+              disabled={realStock <= 0}
+              onClick={() => onAddToCart({ ...detail, stock: realStock }, selectedPack)}
             >
-              ADD TO CART
+              {realStock <= 0 ? 'HẾT HÀNG' : 'ADD TO CART'}
             </button>
             <button
               className="btn-detail-checkout"
-              onClick={() => onProceedToCheckout(wine, selectedPack)}
+              disabled={realStock <= 0}
+              onClick={() => onProceedToCheckout({ ...detail, stock: realStock }, selectedPack)}
             >
               PROCEED TO CHECKOUT
             </button>

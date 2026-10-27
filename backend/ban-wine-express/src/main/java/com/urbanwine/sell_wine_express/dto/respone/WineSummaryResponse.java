@@ -21,5 +21,8 @@ public class WineSummaryResponse {
     private BigDecimal price;
     private Double abv;
     private String imageUrl;
+    private String origin;
+    private Integer vintageYear;
+    private Integer stockQuantity;
     private boolean isOutOfStock; // Exception E2: Stock availability flag
 }

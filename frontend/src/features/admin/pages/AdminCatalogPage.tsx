@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { Wine, Search, ShoppingBag, LogOut, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Wine, Search, ShoppingBag, LogOut, RotateCcw, Loader2 } from 'lucide-react';
 import { WineProduct, initialWines } from '@/features/wine/data/winesData';
 import { SelectQuantityModal } from '@/features/wine/components/SelectQuantityModal';
+import { wineApi, mapBackendWineToProduct } from '@/shared/api/wineApi';
 import '@/features/wine/components/WineCellarSection.css';
 import './AdminCatalogPage.css';
 
@@ -24,6 +25,29 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
   onViewCart,
   onViewOrders,
 }) => {
+  // Real wines loaded from Database
+  const [winesList, setWinesList] = useState<WineProduct[]>([]);
+  const [isLoadingWines, setIsLoadingWines] = useState<boolean>(true);
+
+  useEffect(() => {
+    setIsLoadingWines(true);
+    wineApi.getCatalog({ size: 100 })
+      .then((res) => {
+        if (res && res.content && res.content.length > 0) {
+          setWinesList(res.content.map(mapBackendWineToProduct));
+        } else {
+          setWinesList(initialWines);
+        }
+      })
+      .catch((err) => {
+        console.warn('Error fetching database wine catalog:', err);
+        setWinesList(initialWines);
+      })
+      .finally(() => {
+        setIsLoadingWines(false);
+      });
+  }, []);
+
   // Search state
   const [searchKeyword, setSearchKeyword] = useState('');
 
@@ -62,20 +86,20 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
     );
   };
 
-  // Dynamic counts for styles
+  // Dynamic counts for styles calculated from Database
   const styleCounts = useMemo(() => {
     return {
-      Red: initialWines.filter((w) => w.category === 'RED').length,
-      White: initialWines.filter((w) => w.category === 'WHITE').length,
-      Sparkling: initialWines.filter((w) => w.category === 'SPARKLING').length,
-      Rosé: initialWines.filter((w) => w.category === 'ROSE').length,
-      Fortified: initialWines.filter((w) => w.category === 'FORTIFIED').length,
+      Red: winesList.filter((w) => w.category === 'RED').length,
+      White: winesList.filter((w) => w.category === 'WHITE').length,
+      Sparkling: winesList.filter((w) => w.category === 'SPARKLING').length,
+      Rosé: winesList.filter((w) => w.category === 'ROSE').length,
+      Fortified: winesList.filter((w) => w.category === 'FORTIFIED').length,
     };
-  }, []);
+  }, [winesList]);
 
   // Filtered Wines
   const filteredWines = useMemo(() => {
-    return initialWines.filter((wine) => {
+    return winesList.filter((wine) => {
       // 1. Keyword search (name, winery, region, vintage)
       if (searchKeyword.trim()) {
         const query = searchKeyword.toLowerCase();
@@ -304,7 +328,7 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
 
           {/* Footer count indicator */}
           <div className="sidebar-count-footer">
-            Showing <strong>{sortedWines.length}</strong> of {initialWines.length} wines
+            Showing <strong>{sortedWines.length}</strong> of {winesList.length} wines
           </div>
         </aside>
 
