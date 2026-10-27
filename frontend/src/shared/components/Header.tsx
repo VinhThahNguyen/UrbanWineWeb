@@ -95,7 +95,6 @@ export const Header: React.FC<HeaderProps> = ({
             {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
           </button>
 
-
           {/* Sign In CTA Button or Logged-in Customer Badge with Icon */}
           {currentUser ? (
             <div className="user-profile-badge">

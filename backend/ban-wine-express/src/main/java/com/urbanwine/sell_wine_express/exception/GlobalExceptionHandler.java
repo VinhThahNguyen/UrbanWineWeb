@@ -30,10 +30,12 @@ public class GlobalExceptionHandler {
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             errors.put(error.getField(), error.getDefaultMessage());
         }
+        String firstMessage = errors.values().stream().findFirst().orElse("Dữ liệu không hợp lệ");
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "Validation Failed");
+        body.put("message", firstMessage);
         body.put("errors", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }

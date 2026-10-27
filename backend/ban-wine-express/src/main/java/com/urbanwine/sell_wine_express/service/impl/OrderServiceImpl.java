@@ -774,7 +774,23 @@ public class OrderServiceImpl implements OrderService {
         log.info("Quản lý đã PHÊ DUYỆT thành công đơn hàng #{}, chuyển trạng thái sang PROCESSING", orderId);
 
         // Gửi email xác nhận đơn hàng thành công cho khách hàng
-        orderEmailService.sendOrderApprovedEmail(order);
+        try {
+            orderEmailService.sendOrderApprovedEmail(order);
+        } catch (Exception e) {
+            log.warn("Không thể gửi email phê duyệt đơn hàng #{}: {}", orderId, e.getMessage());
+        }
+
+        // Gửi thông báo In-App + WebSocket thời gian thực cho Khách hàng
+        try {
+            if (order.getCustomer() != null) {
+                String orderCode = "#UWE-" + order.getOrderId();
+                String title = "Đơn hàng " + orderCode + " đã được phê duyệt";
+                String msg = "Cửa hàng đã phê duyệt đơn hàng " + orderCode + " và đang đóng gói sản phẩm.";
+                notificationService.sendNotification(order.getCustomer(), title, msg, NotificationType.ORDER_APPROVED, order.getOrderId());
+            }
+        } catch (Exception e) {
+            log.warn("Không thể gửi thông báo in-app phê duyệt đơn hàng #{}: {}", orderId, e.getMessage());
+        }
 
         return mapToOrderResponse(order);
     }
@@ -814,7 +830,23 @@ public class OrderServiceImpl implements OrderService {
         log.info("Quản lý đã TỪ CHỐI đơn hàng #{} với lý do: '{}'. Đã hoàn kho và xử lý hoàn tiền nếu có.", orderId, reason);
 
         // Gửi email thông báo từ chối đơn hàng cho khách hàng
-        orderEmailService.sendOrderRejectedEmail(order, reason, isPrepaid);
+        try {
+            orderEmailService.sendOrderRejectedEmail(order, reason, isPrepaid);
+        } catch (Exception e) {
+            log.warn("Không thể gửi email từ chối đơn hàng #{}: {}", orderId, e.getMessage());
+        }
+
+        // Gửi thông báo In-App + WebSocket thời gian thực cho Khách hàng kèm lý do hủy
+        try {
+            if (order.getCustomer() != null) {
+                String orderCode = "#UWE-" + order.getOrderId();
+                String title = "Đơn hàng " + orderCode + " đã bị hủy";
+                String msg = "Cửa hàng đã từ chối đơn hàng " + orderCode + ". Lý do: \"" + reason + "\". Tồn kho và tiền đã được hoàn trả.";
+                notificationService.sendNotification(order.getCustomer(), title, msg, NotificationType.ORDER_REJECTED, order.getOrderId());
+            }
+        } catch (Exception e) {
+            log.warn("Không thể gửi thông báo in-app từ chối đơn hàng #{}: {}", orderId, e.getMessage());
+        }
 
         return mapToOrderResponse(order);
     }
@@ -1296,6 +1328,14 @@ public class OrderServiceImpl implements OrderService {
         String notifMsg = String.format("Bạn vừa được phân công giao đơn hàng #%d. Người nhận: %s (%s). Địa chỉ giao: %s. Tổng tiền thu: %,.0f VNĐ.",
                 order.getOrderId(), order.getRecipientName(), order.getRecipientPhone(), order.getDeliveryAddress(), order.getTotalAmount());
         notificationService.sendNotification(shipper, "Nhiệm vụ giao hàng mới #" + order.getOrderId(), notifMsg, NotificationType.ORDER_ASSIGNED, order.getOrderId());
+
+        // Gửi thông báo thời gian thực cho Khách hàng
+        if (order.getCustomer() != null) {
+            String orderCode = "#UWE-" + order.getOrderId();
+            String custMsg = String.format("Đơn hàng %s đang được giao bởi Shipper %s (%s).",
+                    orderCode, shipper.getFullName(), shipper.getPhoneNumber() != null ? shipper.getPhoneNumber() : "");
+            notificationService.sendNotification(order.getCustomer(), "Đơn hàng đang được giao", custMsg, NotificationType.ORDER_SHIPPING, order.getOrderId());
+        }
 
         return mapToOrderResponse(order);
     }

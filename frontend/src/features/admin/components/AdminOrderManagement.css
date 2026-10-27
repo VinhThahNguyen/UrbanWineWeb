@@ -789,3 +789,230 @@
   font-weight: 600;
 }
 
+/* 9. REJECT ORDER MODAL STYLES */
+.order-reject-modal-card {
+  background-color: #161311;
+  border: 1px solid #3d221c;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+  animation: modalFadeIn 0.2s ease;
+}
+
+.order-reject-modal-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f87171;
+  margin: 0;
+}
+
+.order-reject-modal-body {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reject-modal-desc {
+  font-size: 0.88rem;
+  color: #c4bbb0;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.reject-modal-desc strong {
+  color: #f87171;
+}
+
+.reject-error-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.quick-reason-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chips-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8a8279;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reason-chip {
+  background-color: #1b1715;
+  border: 1px solid #383028;
+  color: #c4bbb0;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.reason-chip:hover {
+  border-color: #f87171;
+  color: #ffffff;
+  background-color: #241c19;
+}
+
+.reason-chip.active {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #fca5a5;
+  font-weight: 600;
+}
+
+.reject-input-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #c4bbb0;
+}
+
+.reject-textarea {
+  background-color: #100e0c;
+  border: 1px solid #383028;
+  border-radius: 8px;
+  color: #f7f3ed;
+  padding: 11px 14px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-height: 90px;
+}
+
+.reject-textarea:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+}
+
+.btn-confirm-reject-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.btn-confirm-reject-danger:hover:not(:disabled) {
+  background-color: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.btn-confirm-reject-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==========================================================================
+   SUCCESS ACTION POPUP MODAL
+   ========================================================================== */
+
+.action-popup-card {
+  background-color: #171513;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  width: 320px;
+  max-width: 90vw;
+  padding: 30px 24px 24px;
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+  animation: modal-enter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.action-popup-icon-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  margin-bottom: 20px;
+}
+
+.action-popup-icon-wrap.success {
+  background-color: #22c55e;
+  box-shadow: 0 4px 18px rgba(34, 197, 94, 0.4);
+}
+
+.action-popup-icon-wrap.error {
+  background-color: #ef4444;
+  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.4);
+}
+
+.action-popup-title {
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 22px;
+  letter-spacing: -0.01em;
+}
+
+.action-popup-message {
+  font-size: 0.85rem;
+  color: #f87171;
+  line-height: 1.45;
+  margin: -10px 0 20px;
+  max-width: 260px;
+  word-break: break-word;
+}
+
+.btn-popup-close {
+  background-color: #2c2824;
+  color: #f5f0eb;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 8px 30px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 96px;
+  letter-spacing: 0.02em;
+}
+
+.btn-popup-close:hover {
+  background-color: #3b352f;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+
+

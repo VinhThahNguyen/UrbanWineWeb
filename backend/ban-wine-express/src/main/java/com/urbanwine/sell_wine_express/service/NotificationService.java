@@ -12,5 +12,9 @@ public interface NotificationService {
 
     List<NotificationResponse> getShipperNotifications(User shipper);
 
-    void markAsRead(User shipper, Long notificationId);
+    List<NotificationResponse> getUserNotifications(User user);
+
+    void markAsRead(User user, Long notificationId);
+
+    void markAllAsRead(User user);
 }

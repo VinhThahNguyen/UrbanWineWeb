@@ -52,6 +52,12 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
+		<!-- Spring WebSocket for Real-time Notifications -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
+
 		<!-- DevTools -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -98,6 +104,16 @@
 			<artifactId>jjwt-jackson</artifactId>
 			<version>0.12.5</version>
 			<scope>runtime</scope>
+		</dependency>
+
+		<!-- Jackson Databind & Java 8 DateTime -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
 		</dependency>
 	</dependencies>
 

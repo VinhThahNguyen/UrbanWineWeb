@@ -12,6 +12,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Order, OrderStatus, orderApi } from '@/shared/api/orderApi';
+import { websocketService } from '@/realtime/websocketService';
 import './MyOrdersPage.css';
 
 interface MyOrdersPageProps {
@@ -61,6 +62,34 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
 
   useEffect(() => {
     fetchOrders();
+
+    // Lắng nghe cập nhật realtime từ WebSocket để tự động reload và cập nhật trạng thái đơn hàng ngay lập tức
+    const unsubscribe = websocketService.subscribe((msg) => {
+      console.log('Realtime order update received in MyOrdersPage:', msg);
+      if (msg.orderId) {
+        setOrders((prev) =>
+          prev.map((order) => {
+            if (order.orderId === msg.orderId) {
+              let updatedStatus = order.orderStatus;
+              if (msg.type === 'ORDER_REJECTED') updatedStatus = 'CANCELLED';
+              else if (msg.type === 'ORDER_APPROVED') updatedStatus = 'PROCESSING';
+              else if (msg.type === 'ORDER_SHIPPING') updatedStatus = 'SHIPPING';
+              return {
+                ...order,
+                orderStatus: updatedStatus,
+                cancellationReason: msg.reason || order.cancellationReason,
+              };
+            }
+            return order;
+          })
+        );
+      }
+      fetchOrders();
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // Format currency: 18.730.000₫
@@ -393,9 +422,16 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
 
                     {/* Status: CANCELLED -> Stock restored note */}
                     {order.orderStatus === 'CANCELLED' && (
-                      <span className="text-stock-restored">
-                        Order cancelled · Stock restored
-                      </span>
+                      <div className="order-cancelled-block" style={{ textAlign: 'right' }}>
+                        <span className="text-stock-restored">
+                          Order cancelled · Stock restored
+                        </span>
+                        {(order.cancellationReason || (order as any).adminNote) && (
+                          <div style={{ fontSize: '0.78rem', color: '#f87171', marginTop: '4px', fontStyle: 'italic' }}>
+                            Lý do: &ldquo;{order.cancellationReason || (order as any).adminNote}&rdquo;
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

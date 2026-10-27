@@ -26,6 +26,10 @@ public class OrderEmailService {
      * Gửi email thông báo khi Admin phê duyệt đơn hàng PENDING -> PROCESSING
      */
     public void sendOrderApprovedEmail(Order order) {
+        if (order == null || order.getCustomer() == null || order.getCustomer().getEmail() == null) {
+            log.info("Bỏ qua gửi email phê duyệt: Đơn hàng không có thông tin email khách hàng.");
+            return;
+        }
         String toEmail = order.getCustomer().getEmail();
         String orderCode = String.format("ORD-%06d", order.getOrderId());
         String subject = String.format("[Urban Wine Express] Đơn hàng #%s đã được phê duyệt thành công", orderCode);
@@ -46,6 +50,10 @@ public class OrderEmailService {
      * Gửi email thông báo khi Admin từ chối đơn hàng PENDING
      */
     public void sendOrderRejectedEmail(Order order, String reason, boolean isPrepaid) {
+        if (order == null || order.getCustomer() == null || order.getCustomer().getEmail() == null) {
+            log.info("Bỏ qua gửi email từ chối: Đơn hàng không có thông tin email khách hàng.");
+            return;
+        }
         String toEmail = order.getCustomer().getEmail();
         String orderCode = String.format("ORD-%06d", order.getOrderId());
         String subject = String.format("[Urban Wine Express] Đơn hàng #%s đã bị từ chối phục vụ", orderCode);
@@ -68,6 +76,10 @@ public class OrderEmailService {
      * Gửi email thông báo khi Admin chấp thuận yêu cầu hủy đơn hàng PROCESSING của khách
      */
     public void sendCancellationApprovedEmail(Order order, String adminNote, boolean isPrepaid) {
+        if (order == null || order.getCustomer() == null || order.getCustomer().getEmail() == null) {
+            log.info("Bỏ qua gửi email xác nhận hủy: Đơn hàng không có thông tin email khách hàng.");
+            return;
+        }
         String toEmail = order.getCustomer().getEmail();
         String orderCode = String.format("ORD-%06d", order.getOrderId());
         String subject = String.format("[Urban Wine Express] Yêu cầu hủy đơn hàng #%s đã được chấp thuận", orderCode);
@@ -94,6 +106,10 @@ public class OrderEmailService {
      * Gửi email thông báo khi Admin từ chối yêu cầu hủy đơn hàng PROCESSING của khách (do hàng đã đóng gói)
      */
     public void sendCancellationRejectedEmail(Order order, String adminNote) {
+        if (order == null || order.getCustomer() == null || order.getCustomer().getEmail() == null) {
+            log.info("Bỏ qua gửi email phản hồi từ chối hủy: Đơn hàng không có thông tin email khách hàng.");
+            return;
+        }
         String toEmail = order.getCustomer().getEmail();
         String orderCode = String.format("ORD-%06d", order.getOrderId());
         String subject = String.format("[Urban Wine Express] Phản hồi về yêu cầu hủy đơn hàng #%s", orderCode);

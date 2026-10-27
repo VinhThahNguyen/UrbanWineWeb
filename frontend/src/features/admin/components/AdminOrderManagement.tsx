@@ -5,6 +5,7 @@ import {
   RefreshCw,
   Loader2,
   X,
+  Check,
   CheckCircle2,
   Package,
   Calendar,
@@ -59,6 +60,27 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
   const [isLoadingShippers, setIsLoadingShippers] = useState<boolean>(false);
   const [selectedShipperId, setSelectedShipperId] = useState<number | null>(null);
   const [isAssigningShipper, setIsAssigningShipper] = useState<boolean>(false);
+
+  // Reject Order Modal State
+  const [rejectModalOrder, setRejectModalOrder] = useState<AdminOrderSummary | null>(null);
+  const [rejectReason, setRejectReason] = useState<string>('');
+  const [rejectReasonError, setRejectReasonError] = useState<string | null>(null);
+
+  // Action Feedback Popup Modal State (thành công / thất bại)
+  const [actionPopup, setActionPopup] = useState<{
+    type: 'success' | 'error';
+    title: string;
+    message?: string;
+    targetTab?: OrderStatusFilter;
+  } | null>(null);
+
+  const COMMON_REJECT_REASONS = [
+    'Hết hàng trong kho',
+    'Không thể liên hệ được số điện thoại người nhận',
+    'Địa chỉ nhận hàng nằm ngoài khu vực hỗ trợ',
+    'Khách hàng chủ động yêu cầu hủy đơn',
+    'Nghi ngờ đơn hàng ảo / Thông tin không hợp lệ',
+  ];
 
   // 1. Fetch Counts from Database
   const fetchCounts = useCallback(async () => {
@@ -264,43 +286,155 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
     }
   };
 
+  // Close Action Popup & switch to target tab to show updated order immediately
+  const handleCloseActionPopup = () => {
+    if (actionPopup?.type === 'success' && actionPopup.targetTab) {
+      const tabToGo = actionPopup.targetTab;
+      setSelectedStatus(tabToGo);
+      fetchCounts();
+      fetchOrders(tabToGo);
+    }
+    setActionPopup(null);
+  };
+
   // Approve Order
   const handleApprove = async (orderId: number) => {
-    if (!window.confirm('Xác nhận phê duyệt đơn hàng này chuyển sang trạng thái PROCESSING?')) return;
     setIsProcessingAction(true);
     try {
       await adminApi.approveOrder(orderId);
-      setActionSuccessMsg('Đã phê duyệt đơn hàng thành công!');
+      
+      // Thoát ngay khỏi modal chi tiết đơn
+      setSelectedOrder(null);
+      
+      // Cập nhật trạng thái tức thì trên giao diện
+      setOrders((prev) =>
+        selectedStatus === 'ALL'
+          ? prev.map((o) => (o.orderId === orderId ? { ...o, orderStatus: 'PROCESSING' } : o))
+          : prev.filter((o) => o.orderId !== orderId)
+      );
+      setCounts((prev) => ({
+        ...prev,
+        PENDING: Math.max(0, prev.PENDING - 1),
+        PROCESSING: prev.PROCESSING + 1,
+      }));
+
+      setActionPopup({
+        type: 'success',
+        title: 'Phê duyệt thành công',
+        targetTab: 'PROCESSING',
+      });
+
       fetchCounts();
       fetchOrders(selectedStatus);
-      setTimeout(() => {
-        setSelectedOrder(null);
-        setActionSuccessMsg(null);
-      }, 1500);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Không thể phê duyệt đơn hàng. Vui lòng kiểm tra lại.');
+      const errorMsg =
+        err?.response?.data?.message ||
+        'Không thể phê duyệt đơn hàng. Vui lòng kiểm tra lại.';
+      setActionPopup({
+        type: 'error',
+        title: 'Phê duyệt thất bại',
+        message: errorMsg,
+      });
     } finally {
       setIsProcessingAction(false);
     }
   };
 
-  // Reject Order
-  const handleReject = async (orderId: number) => {
-    const reason = window.prompt('Nhập lý do từ chối đơn hàng (bắt buộc):');
-    if (!reason || !reason.trim()) return;
+  // Open Reject Modal
+  const handleOpenRejectModal = (order: AdminOrderSummary) => {
+    setRejectModalOrder(order);
+    setRejectReason('');
+    setRejectReasonError(null);
+  };
+
+  // Confirm Reject Order
+  const handleConfirmReject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectModalOrder) return;
+    if (!rejectReason.trim()) {
+      setRejectReasonError('Vui lòng nhập hoặc chọn lý do từ chối đơn hàng.');
+      return;
+    }
 
     setIsProcessingAction(true);
+    setRejectReasonError(null);
+    const targetOrderId = rejectModalOrder.orderId;
+    const reasonText = rejectReason.trim();
+
     try {
-      await adminApi.rejectOrder(orderId, reason.trim());
-      setActionSuccessMsg('Đã từ chối đơn hàng thành công và hoàn trả kho!');
+      await adminApi.rejectOrder(targetOrderId, reasonText);
+
+      // Thoát ngay lập tức khỏi cả màn hình nhập lý do và màn hình chi tiết đơn hàng
+      setRejectModalOrder(null);
+      setSelectedOrder(null);
+
+      // Cập nhật trạng thái tức thì trên giao diện (Optimistic UI)
+      setOrders((prev) =>
+        selectedStatus === 'ALL'
+          ? prev.map((o) =>
+              o.orderId === targetOrderId
+                ? { ...o, orderStatus: 'CANCELLED', cancellationReason: reasonText }
+                : o
+            )
+          : prev.filter((o) => o.orderId !== targetOrderId)
+      );
+      setCounts((prev) => ({
+        ...prev,
+        PENDING: Math.max(0, prev.PENDING - 1),
+        CANCELLED: prev.CANCELLED + 1,
+      }));
+
+      // Hiển thị Popup màn hình nhỏ thông báo từ chối thành công
+      setActionPopup({
+        type: 'success',
+        title: 'Từ chối thành công',
+        targetTab: 'CANCELLED',
+      });
+
+      // Reload từ server để đảm bảo dữ liệu đồng bộ
       fetchCounts();
       fetchOrders(selectedStatus);
-      setTimeout(() => {
-        setSelectedOrder(null);
-        setActionSuccessMsg(null);
-      }, 1500);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Không thể từ chối đơn hàng. Vui lòng thử lại.');
+      const errorMsg =
+        err?.response?.data?.message ||
+        (err?.response?.data?.errors ? Object.values(err.response.data.errors)[0] : null) ||
+        'Không thể từ chối đơn hàng. Vui lòng thử lại.';
+
+      const errStr = String(errorMsg);
+      // Nếu đơn hàng thực tế trên máy chủ đã chuyển sang CANCELLED rồi
+      if (errStr.includes('CANCELLED') || errStr.includes('Trạng thái hiện tại') || errStr.includes('đã ở trạng thái')) {
+        setRejectModalOrder(null);
+        setSelectedOrder(null);
+        setOrders((prev) =>
+          selectedStatus === 'ALL'
+            ? prev.map((o) =>
+                o.orderId === targetOrderId
+                  ? { ...o, orderStatus: 'CANCELLED', cancellationReason: reasonText }
+                  : o
+              )
+            : prev.filter((o) => o.orderId !== targetOrderId)
+        );
+        setCounts((prev) => ({
+          ...prev,
+          PENDING: Math.max(0, prev.PENDING - 1),
+          CANCELLED: prev.CANCELLED + 1,
+        }));
+        setActionPopup({
+          type: 'success',
+          title: 'Từ chối thành công',
+          targetTab: 'CANCELLED',
+        });
+        fetchCounts();
+        fetchOrders(selectedStatus);
+        return;
+      }
+
+      setRejectModalOrder(null);
+      setActionPopup({
+        type: 'error',
+        title: 'Từ chối thất bại',
+        message: errStr,
+      });
     } finally {
       setIsProcessingAction(false);
     }
@@ -736,9 +870,9 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                     type="button"
                     className="btn-detail-reject"
                     disabled={isProcessingAction}
-                    onClick={() => handleReject(selectedOrder.orderId)}
+                    onClick={() => handleOpenRejectModal(selectedOrder)}
                   >
-                    {isProcessingAction ? 'Đang xử lý...' : 'Từ chối đơn'}
+                    Từ chối đơn
                   </button>
                 </>
               )}
@@ -750,6 +884,125 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                 Đóng
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Reject Order Modal (Màn hình nhập lý do từ chối) */}
+      {rejectModalOrder && (
+        <div className="order-detail-backdrop" onClick={() => setRejectModalOrder(null)}>
+          <div className="order-reject-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="order-detail-header">
+              <div className="order-detail-header-left">
+                <AlertTriangle size={20} className="text-danger" style={{ color: '#ef4444' }} />
+                <h3 className="order-reject-modal-title">
+                  Từ chối đơn hàng {formatOrderCode(rejectModalOrder.orderCode, rejectModalOrder.orderId)}
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="order-detail-close"
+                onClick={() => setRejectModalOrder(null)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmReject}>
+              <div className="order-reject-modal-body">
+                <p className="reject-modal-desc">
+                  Vui lòng cung cấp lý do từ chối. Hệ thống sẽ <strong>gửi thông báo kèm lý do này đến khách hàng ngay lập tức qua WebSocket</strong> và tự động hoàn trả số lượng chai rượu vào kho:
+                </p>
+
+                {rejectReasonError && (
+                  <div className="reject-error-alert">
+                    <AlertTriangle size={16} />
+                    <span>{rejectReasonError}</span>
+                  </div>
+                )}
+
+                <div className="quick-reason-chips">
+                  <span className="chips-label">Lý do phổ biến (Bấm để chọn nhanh):</span>
+                  <div className="chips-list">
+                    {COMMON_REJECT_REASONS.map((r, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        className={`reason-chip ${rejectReason === r ? 'active' : ''}`}
+                        onClick={() => {
+                          setRejectReason(r);
+                          setRejectReasonError(null);
+                        }}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label className="reject-input-label" htmlFor="reject-textarea">
+                    Chi tiết lý do từ chối *
+                  </label>
+                  <textarea
+                    id="reject-textarea"
+                    rows={4}
+                    required
+                    className="reject-textarea"
+                    placeholder="Nhập chi tiết lý do từ chối đơn hàng..."
+                    value={rejectReason}
+                    onChange={(e) => {
+                      setRejectReason(e.target.value);
+                      if (e.target.value.trim()) setRejectReasonError(null);
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="order-detail-actions">
+                <button
+                  type="button"
+                  className="btn-detail-close"
+                  disabled={isProcessingAction}
+                  onClick={() => setRejectModalOrder(null)}
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="btn-confirm-reject-danger"
+                  disabled={isProcessingAction}
+                >
+                  {isProcessingAction ? 'Đang hủy đơn...' : 'Xác nhận từ chối đơn'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Action Feedback Popup Modal (Phê duyệt thành công / Từ chối thành công theo mẫu) */}
+      {actionPopup && (
+        <div className="order-detail-backdrop" onClick={handleCloseActionPopup}>
+          <div className="action-popup-card" onClick={(e) => e.stopPropagation()}>
+            <div className={`action-popup-icon-wrap ${actionPopup.type}`}>
+              {actionPopup.type === 'success' ? (
+                <Check size={32} strokeWidth={3} />
+              ) : (
+                <X size={32} strokeWidth={3} />
+              )}
+            </div>
+            <h3 className="action-popup-title">{actionPopup.title}</h3>
+            {actionPopup.message && (
+              <p className="action-popup-message">{actionPopup.message}</p>
+            )}
+            <button
+              type="button"
+              className="btn-popup-close"
+              onClick={handleCloseActionPopup}
+            >
+              Đóng
+            </button>
           </div>
         </div>
       )}

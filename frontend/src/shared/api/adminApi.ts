@@ -147,7 +147,10 @@ export const adminApi = {
 
   // Từ chối đơn hàng kèm lý do
   rejectOrder: async (orderId: number, rejectionReason: string) => {
-    const response = await apiClient.post(`/admin/orders/${orderId}/reject`, { rejectionReason });
+    const response = await apiClient.post(`/admin/orders/${orderId}/reject`, {
+      reason: rejectionReason,
+      rejectionReason: rejectionReason,
+    });
     return response.data;
   },
 

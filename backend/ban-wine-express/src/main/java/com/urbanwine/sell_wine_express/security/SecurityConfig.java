@@ -53,6 +53,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/wines/**").permitAll()
                 .requestMatchers("/api/payment/**").permitAll()
+                .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )

@@ -1,5 +1,6 @@
 package com.urbanwine.sell_wine_express.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -15,5 +16,6 @@ public class RejectOrderRequest {
 
     @NotBlank(message = "Vui lòng nhập lý do từ chối đơn hàng")
     @Size(max = 500, message = "Lý do từ chối không được vượt quá 500 ký tự")
+    @JsonAlias({"rejectionReason", "reason"})
     private String reason;
 }
