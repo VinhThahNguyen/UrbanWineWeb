@@ -9,12 +9,9 @@ import {
   X,
   CheckCircle2,
   Wine as WineIcon,
-  Eye,
+  ChevronLeft,
+  ChevronRight,
   Edit2,
-  Package,
-  Layers,
-  Globe,
-  SlidersHorizontal,
 } from 'lucide-react';
 import {
   adminApi,
@@ -29,6 +26,9 @@ interface AdminWineCatalogProps {
   externalSearchQuery?: string;
 }
 
+// Fixed 9 bottles per page according to requirement
+const PAGE_SIZE = 9;
+
 export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
   onOpenAddWine,
   externalSearchQuery = '',
@@ -38,6 +38,15 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Pagination States (9 items per page)
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [totalElements, setTotalElements] = useState<number>(0);
+
+  // Dynamic Category Stats across entire database
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+  const [totalAllWines, setTotalAllWines] = useState<number>(0);
 
   // Filters
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | 'ALL'>('ALL');
@@ -68,6 +77,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
   useEffect(() => {
     if (externalSearchQuery) {
       setLocalSearchQuery(externalSearchQuery);
+      setCurrentPage(0);
     }
   }, [externalSearchQuery]);
 
@@ -81,45 +91,79 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
     }
   }, []);
 
-  // 2. Fetch Wine Catalog from Database
+  // 2. Fetch Category Counts across entire Database
+  const fetchCategoryCounts = useCallback(async () => {
+    try {
+      const res = await adminApi.getAdminWines({ page: 0, size: 500 });
+      if (res && Array.isArray(res.content)) {
+        setTotalAllWines(res.totalElements || res.content.length);
+        const counts: Record<string, number> = {};
+        res.content.forEach((w: WineAdminResponse) => {
+          const cat = w.categoryName || 'Other';
+          counts[cat] = (counts[cat] || 0) + 1;
+        });
+        setCategoryCounts(counts);
+      }
+    } catch (err) {
+      console.warn('Lỗi khi tải số lượng danh mục:', err);
+    }
+  }, []);
+
+  // 3. Fetch Paginated Wine Catalog from Database (9 bottles per page)
   const fetchWines = useCallback(async () => {
     setIsLoading(true);
     setFetchError(null);
     try {
       if (isStockAlertFilter) {
-        // Fetch low stock items only (threshold <= 5 bottles)
-        const alertRes = await adminApi.getStockAlerts(0, 100);
+        // Fetch low stock items only (threshold <= 5 bottles), paginated by 9
+        const alertRes = await adminApi.getStockAlerts(
+          currentPage,
+          PAGE_SIZE,
+          localSearchQuery.trim() || undefined
+        );
         if (alertRes && alertRes.wines && Array.isArray(alertRes.wines.content)) {
           setWines(alertRes.wines.content);
+          setTotalPages(alertRes.wines.totalPages || 0);
+          setTotalElements(alertRes.wines.totalElements || 0);
         } else {
           setWines([]);
+          setTotalPages(0);
+          setTotalElements(0);
         }
       } else {
-        // Fetch all wines for admin
+        // Fetch wines for admin with 9 items per page
         const categoryParam = selectedCategoryId === 'ALL' ? undefined : selectedCategoryId;
         const res = await adminApi.getAdminWines({
+          keyword: localSearchQuery.trim() || undefined,
           categoryId: categoryParam,
-          page: 0,
-          size: 100,
+          page: currentPage,
+          size: PAGE_SIZE,
         });
         if (res && Array.isArray(res.content)) {
           setWines(res.content);
+          setTotalPages(res.totalPages || 0);
+          setTotalElements(res.totalElements || 0);
         } else {
           setWines([]);
+          setTotalPages(0);
+          setTotalElements(0);
         }
       }
     } catch (err: any) {
       console.error('Lỗi khi tải danh mục rượu từ cơ sở dữ liệu:', err);
       setFetchError('Không thể kết nối đến máy chủ cơ sở dữ liệu để tải danh mục rượu. Vui lòng kiểm tra lại backend.');
       setWines([]);
+      setTotalPages(0);
+      setTotalElements(0);
     } finally {
       setIsLoading(false);
     }
-  }, [isStockAlertFilter, selectedCategoryId]);
+  }, [isStockAlertFilter, selectedCategoryId, currentPage, localSearchQuery]);
 
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+    fetchCategoryCounts();
+  }, [fetchCategories, fetchCategoryCounts]);
 
   useEffect(() => {
     fetchWines();
@@ -129,30 +173,6 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
   const formatVnd = (amount: number) => {
     return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
   };
-
-  // Dynamic Category Counts from active wines dataset
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    wines.forEach((w) => {
-      const cat = w.categoryName || 'Other';
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-    return counts;
-  }, [wines]);
-
-  // Filtered Wines by search query
-  const filteredWines = useMemo(() => {
-    const q = localSearchQuery.trim().toLowerCase();
-    if (!q) return wines;
-    return wines.filter((w) => {
-      const matchName = w.wineName?.toLowerCase().includes(q);
-      const matchWinery = w.wineryName?.toLowerCase().includes(q);
-      const matchOrigin = w.origin?.toLowerCase().includes(q);
-      const matchCategory = w.categoryName?.toLowerCase().includes(q);
-      const matchGrape = w.grapeVariety?.toLowerCase().includes(q);
-      return matchName || matchWinery || matchOrigin || matchCategory || matchGrape;
-    });
-  }, [wines, localSearchQuery]);
 
   // Category Pill Badge Class Helper
   const getCategoryBadgeClass = (categoryName?: string) => {
@@ -202,6 +222,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
       setWines((prev) =>
         prev.map((w) => (w.wineId === updated.wineId ? updated : w))
       );
+      fetchCategoryCounts();
 
       setTimeout(() => {
         setEditingWine(null);
@@ -226,6 +247,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
       if (selectedDetailWine && selectedDetailWine.wineId === wineId) {
         setSelectedDetailWine(updated);
       }
+      fetchCategoryCounts();
     } catch (err: any) {
       alert('Không thể đổi trạng thái sản phẩm: ' + (err.response?.data?.message || err.message));
     }
@@ -248,14 +270,20 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
               type="text"
               placeholder="Search & Filter"
               value={localSearchQuery}
-              onChange={(e) => setLocalSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setLocalSearchQuery(e.target.value);
+                setCurrentPage(0);
+              }}
               className="catalog-search-input"
             />
             {localSearchQuery && (
               <button
                 type="button"
                 className="catalog-search-clear"
-                onClick={() => setLocalSearchQuery('')}
+                onClick={() => {
+                  setLocalSearchQuery('');
+                  setCurrentPage(0);
+                }}
               >
                 <X size={14} />
               </button>
@@ -266,7 +294,10 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
           <button
             type="button"
             className="btn-catalog-icon"
-            onClick={fetchWines}
+            onClick={() => {
+              fetchWines();
+              fetchCategoryCounts();
+            }}
             title="Làm mới danh sách từ Database"
           >
             <RefreshCw size={16} className={isLoading ? 'spin-icon' : ''} />
@@ -276,7 +307,10 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
           <button
             type="button"
             className={`btn-catalog-stock-alerts ${isStockAlertFilter ? 'active' : ''}`}
-            onClick={() => setIsStockAlertFilter((prev) => !prev)}
+            onClick={() => {
+              setIsStockAlertFilter((prev) => !prev);
+              setCurrentPage(0);
+            }}
           >
             <Bell size={16} />
             <span>Stock Alerts</span>
@@ -300,10 +334,13 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
           <button
             type="button"
             className={`category-pill-btn ${selectedCategoryId === 'ALL' ? 'active-all' : ''}`}
-            onClick={() => setSelectedCategoryId('ALL')}
+            onClick={() => {
+              setSelectedCategoryId('ALL');
+              setCurrentPage(0);
+            }}
           >
             <span>All</span>
-            <span className="pill-count">{wines.length}</span>
+            <span className="pill-count">{totalAllWines}</span>
           </button>
 
           {categories.map((cat) => {
@@ -314,7 +351,10 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                 key={cat.categoryId}
                 type="button"
                 className={`category-pill-btn ${isSelected ? 'active-cat' : ''}`}
-                onClick={() => setSelectedCategoryId(cat.categoryId)}
+                onClick={() => {
+                  setSelectedCategoryId(cat.categoryId);
+                  setCurrentPage(0);
+                }}
               >
                 <span>{cat.categoryName}</span>
                 <span className="pill-count">{count}</span>
@@ -333,7 +373,10 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
           <button
             type="button"
             className="btn-exit-alert-filter"
-            onClick={() => setIsStockAlertFilter(false)}
+            onClick={() => {
+              setIsStockAlertFilter(false);
+              setCurrentPage(0);
+            }}
           >
             Xem toàn bộ sản phẩm
           </button>
@@ -357,7 +400,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
               <span>Thử lại</span>
             </button>
           </div>
-        ) : filteredWines.length === 0 ? (
+        ) : wines.length === 0 ? (
           <div className="catalog-empty-notice">
             <WineIcon size={40} className="empty-icon" />
             <h4>Chưa có dữ liệu sản phẩm rượu nào</h4>
@@ -381,113 +424,183 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
             )}
           </div>
         ) : (
-          <table className="catalog-data-table">
-            <thead>
-              <tr>
-                <th>WINE / WINERY</th>
-                <th>CATEGORY</th>
-                <th style={{ textAlign: 'right' }}>UNIT PRICE</th>
-                <th style={{ textAlign: 'center' }}>ABV</th>
-                <th style={{ textAlign: 'center' }}>VINTAGE</th>
-                <th style={{ textAlign: 'center' }}>STOCK</th>
-                <th style={{ textAlign: 'center' }}>STATUS</th>
-                <th style={{ textAlign: 'center' }}>ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredWines.map((wine) => {
-                const isLowStock = wine.stockQuantity <= 5;
-                return (
-                  <tr key={wine.wineId} className={!wine.isActive ? 'tr-inactive' : ''}>
-                    {/* WINE / WINERY */}
-                    <td>
-                      <div className="wine-winery-cell">
-                        <div className="wine-thumbnail">
-                          {wine.imageUrl ? (
-                            <img
-                              src={wine.imageUrl}
-                              alt={wine.wineName}
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <WineIcon size={20} className="wine-thumb-placeholder" />
-                          )}
+          <>
+            <table className="catalog-data-table">
+              <thead>
+                <tr>
+                  <th>WINE / WINERY</th>
+                  <th>CATEGORY</th>
+                  <th style={{ textAlign: 'right' }}>UNIT PRICE</th>
+                  <th style={{ textAlign: 'center' }}>ABV</th>
+                  <th style={{ textAlign: 'center' }}>VINTAGE</th>
+                  <th style={{ textAlign: 'center' }}>STOCK</th>
+                  <th style={{ textAlign: 'center' }}>STATUS</th>
+                  <th style={{ textAlign: 'center' }}>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {wines.map((wine) => {
+                  const isLowStock = wine.stockQuantity <= 5;
+                  return (
+                    <tr key={wine.wineId} className={!wine.isActive ? 'tr-inactive' : ''}>
+                      {/* WINE / WINERY */}
+                      <td>
+                        <div className="wine-winery-cell">
+                          <div className="wine-thumbnail">
+                            {wine.imageUrl ? (
+                              <img
+                                src={wine.imageUrl}
+                                alt={wine.wineName}
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <WineIcon size={20} className="wine-thumb-placeholder" />
+                            )}
+                          </div>
+                          <div className="wine-name-block">
+                            <span className="wine-name" title={wine.wineName}>
+                              {wine.wineName}
+                            </span>
+                            <span className="wine-winery">{wine.wineryName}</span>
+                          </div>
                         </div>
-                        <div className="wine-name-block">
-                          <span className="wine-name" title={wine.wineName}>
-                            {wine.wineName}
+                      </td>
+
+                      {/* CATEGORY */}
+                      <td>
+                        <span className={getCategoryBadgeClass(wine.categoryName)}>
+                          {wine.categoryName || 'Wine'}
+                        </span>
+                      </td>
+
+                      {/* UNIT PRICE */}
+                      <td style={{ textAlign: 'right', fontWeight: 600, color: '#f7f3ed' }}>
+                        {formatVnd(wine.price)}
+                      </td>
+
+                      {/* ABV */}
+                      <td style={{ textAlign: 'center', color: '#c4bbb0' }}>
+                        {wine.abv ? `${wine.abv}%` : 'N/A'}
+                      </td>
+
+                      {/* VINTAGE */}
+                      <td style={{ textAlign: 'center', color: '#c4bbb0' }}>
+                        {wine.vintageYear || 'NV'}
+                      </td>
+
+                      {/* STOCK */}
+                      <td style={{ textAlign: 'center' }}>
+                        <span className={`stock-pill ${isLowStock ? 'stock-low' : 'stock-ok'}`}>
+                          {wine.stockQuantity} bottles
+                        </span>
+                      </td>
+
+                      {/* STATUS */}
+                      <td style={{ textAlign: 'center' }}>
+                        <span className={`status-pill ${wine.isActive ? 'status-active' : 'status-inactive'}`}>
+                          {wine.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+
+                      {/* ACTIONS */}
+                      <td style={{ textAlign: 'center' }}>
+                        <div className="actions-cell">
+                          <button
+                            type="button"
+                            className="btn-action-view"
+                            onClick={() => setSelectedDetailWine(wine)}
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-action-edit"
+                            onClick={() => handleOpenEdit(wine)}
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {/* 4. Pagination Bar (Exact 9 bottles per page) */}
+            {totalPages > 0 && (
+              <div className="catalog-pagination-bar">
+                <div className="pagination-info">
+                  Hiển thị <strong>{currentPage * PAGE_SIZE + 1}</strong> –{' '}
+                  <strong>{Math.min((currentPage + 1) * PAGE_SIZE, totalElements)}</strong> trên tổng số{' '}
+                  <strong>{totalElements}</strong> chai rượu
+                </div>
+
+                <div className="pagination-controls">
+                  <button
+                    type="button"
+                    className="btn-page-nav"
+                    disabled={currentPage === 0 || isLoading}
+                    onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                    title="Trang trước"
+                  >
+                    <ChevronLeft size={16} />
+                    <span>Trước</span>
+                  </button>
+
+                  <div className="pagination-numbers">
+                    {Array.from({ length: totalPages }, (_, i) => i).map((pageNum) => {
+                      if (
+                        totalPages <= 7 ||
+                        pageNum === 0 ||
+                        pageNum === totalPages - 1 ||
+                        (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                      ) {
+                        return (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            className={`btn-page-number ${currentPage === pageNum ? 'active' : ''}`}
+                            disabled={isLoading}
+                            onClick={() => setCurrentPage(pageNum)}
+                          >
+                            {pageNum + 1}
+                          </button>
+                        );
+                      } else if (
+                        pageNum === currentPage - 2 ||
+                        pageNum === currentPage + 2
+                      ) {
+                        return (
+                          <span key={pageNum} className="pagination-ellipsis">
+                            ...
                           </span>
-                          <span className="wine-winery">{wine.wineryName}</span>
-                        </div>
-                      </div>
-                    </td>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
 
-                    {/* CATEGORY */}
-                    <td>
-                      <span className={getCategoryBadgeClass(wine.categoryName)}>
-                        {wine.categoryName || 'Wine'}
-                      </span>
-                    </td>
-
-                    {/* UNIT PRICE */}
-                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#f7f3ed' }}>
-                      {formatVnd(wine.price)}
-                    </td>
-
-                    {/* ABV */}
-                    <td style={{ textAlign: 'center', color: '#c4bbb0' }}>
-                      {wine.abv ? `${wine.abv}%` : 'N/A'}
-                    </td>
-
-                    {/* VINTAGE */}
-                    <td style={{ textAlign: 'center', color: '#c4bbb0' }}>
-                      {wine.vintageYear || 'NV'}
-                    </td>
-
-                    {/* STOCK */}
-                    <td style={{ textAlign: 'center' }}>
-                      <span className={`stock-pill ${isLowStock ? 'stock-low' : 'stock-ok'}`}>
-                        {wine.stockQuantity} bottles
-                      </span>
-                    </td>
-
-                    {/* STATUS */}
-                    <td style={{ textAlign: 'center' }}>
-                      <span className={`status-pill ${wine.isActive ? 'status-active' : 'status-inactive'}`}>
-                        {wine.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-
-                    {/* ACTIONS */}
-                    <td style={{ textAlign: 'center' }}>
-                      <div className="actions-cell">
-                        <button
-                          type="button"
-                          className="btn-action-view"
-                          onClick={() => setSelectedDetailWine(wine)}
-                        >
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-action-edit"
-                          onClick={() => handleOpenEdit(wine)}
-                        >
-                          Edit
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  <button
+                    type="button"
+                    className="btn-page-nav"
+                    disabled={currentPage >= totalPages - 1 || isLoading}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                    title="Trang sau"
+                  >
+                    <span>Sau</span>
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* 4. Detail View Modal */}
+      {/* 5. Detail View Modal */}
       {selectedDetailWine && (
         <div className="catalog-modal-backdrop" onClick={() => setSelectedDetailWine(null)}>
           <div className="catalog-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -599,7 +712,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
         </div>
       )}
 
-      {/* 5. Edit Wine Modal */}
+      {/* 6. Edit Wine Modal */}
       {editingWine && (
         <div className="catalog-modal-backdrop" onClick={() => setEditingWine(null)}>
           <div className="catalog-modal-card edit-card" onClick={(e) => e.stopPropagation()}>
