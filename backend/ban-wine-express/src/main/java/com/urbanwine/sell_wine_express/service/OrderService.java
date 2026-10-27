@@ -37,8 +37,15 @@ public interface OrderService {
 
     OrderResponse reviewCancellationRequest(Long orderId, boolean approve, String adminNote);
 
-    // UC_2.1.2 Process Order: Admin xem danh sách đơn hàng cần xử lý
-    PageResponse<OrderResponse> getAdminOrders(OrderStatus status, CancelStatus cancelStatus, int page, int size);
+    // UC_2.1.2 Process Order: Admin xem danh sách đơn hàng cần xử lý hoặc toàn bộ đơn
+    default PageResponse<OrderResponse> getAdminOrders(OrderStatus status, CancelStatus cancelStatus, int page, int size) {
+        return getAdminOrders(status, cancelStatus, false, page, size);
+    }
+
+    PageResponse<OrderResponse> getAdminOrders(OrderStatus status, CancelStatus cancelStatus, boolean all, int page, int size);
+
+    // Lấy số lượng đơn hàng theo từng trạng thái cho Admin Dashboard / Order Management
+    java.util.Map<String, Long> getOrderCounts();
 
     // UC_2.1.2 Process Order: Admin xem chi tiết toàn bộ thông tin đơn hàng
     OrderResponse getAdminOrderDetail(Long orderId);

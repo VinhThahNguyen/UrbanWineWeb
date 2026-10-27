@@ -1,0 +1,588 @@
+/* ==========================================================================
+   URBAN WINE EXPRESS - ORDER MANAGEMENT (ADMIN)
+   Luxury Dark, Wine Red & Gold Palette
+   ========================================================================== */
+
+.order-mgmt-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: adminFadeIn 0.3s ease-out;
+}
+
+@keyframes adminFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 1. TOP HEADER */
+.order-mgmt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.order-mgmt-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.order-mgmt-heading {
+  font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #f7f3ed;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.order-mgmt-subheading {
+  font-size: 0.88rem;
+  color: #8f8880;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.order-mgmt-subheading strong {
+  color: #d4af37;
+  font-weight: 600;
+}
+
+.btn-new-order {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #e5a93c;
+  color: #120e0b;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(229, 169, 60, 0.25);
+}
+
+.btn-new-order:hover {
+  background-color: #f3b94e;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(229, 169, 60, 0.35);
+}
+
+.btn-new-order:active {
+  transform: translateY(0);
+}
+
+/* 2. FILTER TABS BAR */
+.order-mgmt-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.order-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid #28231f;
+  background-color: #161311;
+  color: #a19a91;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.order-tab-btn:hover {
+  background-color: #1f1a16;
+  border-color: #3d352e;
+  color: #f7f3ed;
+}
+
+.order-tab-btn.active {
+  background: linear-gradient(135deg, #781622 0%, #560e17 100%);
+  color: #ffffff;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 4px 14px rgba(120, 22, 34, 0.4);
+}
+
+.tab-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.12);
+  color: inherit;
+}
+
+.order-tab-btn.active .tab-badge {
+  background-color: rgba(0, 0, 0, 0.25);
+  color: #f7f3ed;
+}
+
+/* Tab status color hints when inactive */
+.order-tab-btn[data-status="PENDING"]:not(.active) .tab-name {
+  color: #f59e0b;
+}
+.order-tab-btn[data-status="PROCESSING"]:not(.active) .tab-name {
+  color: #3b82f6;
+}
+.order-tab-btn[data-status="SHIPPING"]:not(.active) .tab-name {
+  color: #a855f7;
+}
+.order-tab-btn[data-status="COMPLETED"]:not(.active) .tab-name {
+  color: #22c55e;
+}
+.order-tab-btn[data-status="CANCELLED"]:not(.active) .tab-name {
+  color: #ef4444;
+}
+
+/* 3. TABLE SURFACE */
+.order-mgmt-table-surface {
+  background-color: #141210;
+  border: 1px solid #26211c;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.order-mgmt-table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.order-mgmt-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.order-mgmt-table th {
+  padding: 16px 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #78716c;
+  text-transform: uppercase;
+  border-bottom: 1px solid #231e19;
+  white-space: nowrap;
+  background-color: #12100e;
+}
+
+.order-mgmt-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #1e1915;
+  color: #d6cfbe;
+  vertical-align: middle;
+}
+
+.order-mgmt-row {
+  transition: background-color 0.15s ease;
+}
+
+.order-mgmt-row:hover {
+  background-color: #1a1714;
+}
+
+/* Column Specific Styles */
+.cell-order-id {
+  font-weight: 700;
+  color: #d4af37 !important;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.cell-customer {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.customer-name {
+  color: #f7f3ed;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.customer-phone {
+  color: #827b73;
+  font-size: 0.78rem;
+}
+
+.cell-date {
+  color: #bfb7ad !important;
+  white-space: nowrap;
+  font-size: 0.84rem;
+}
+
+.cell-amount {
+  color: #e5a93c !important;
+  font-weight: 700;
+  white-space: nowrap;
+  font-size: 0.92rem;
+}
+
+.cell-payment {
+  color: #d6cfbe;
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+/* 4. STATUS BADGES */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pill-pending {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.pill-processing {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.pill-shipping {
+  background-color: rgba(168, 85, 247, 0.12);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.pill-completed {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.pill-cancelled {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* 5. ACTION BUTTON */
+.btn-view-order {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: #d4af37;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-view-order:hover {
+  background-color: rgba(212, 175, 55, 0.1);
+  color: #f3b94e;
+  transform: translateX(2px);
+}
+
+/* 6. EMPTY / LOADING / NOTICE STATES */
+.order-notice-box {
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #8a8279;
+}
+
+.order-notice-icon {
+  color: #d4af37;
+  opacity: 0.7;
+}
+
+.order-notice-text {
+  font-size: 0.95rem;
+  color: #bfb7ad;
+  max-width: 480px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.order-notice-subtext {
+  font-size: 0.8rem;
+  color: #716a62;
+  margin: 0;
+}
+
+.order-notice-retry-btn {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(212, 175, 55, 0.15);
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.order-notice-retry-btn:hover {
+  background-color: rgba(212, 175, 55, 0.25);
+  color: #ffffff;
+}
+
+/* 7. ORDER DETAIL MODAL */
+.order-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+  animation: adminFadeIn 0.2s ease;
+}
+
+.order-detail-card {
+  background-color: #161311;
+  border: 1px solid #2d2620;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.order-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #241e18;
+  background-color: #12100e;
+}
+
+.order-detail-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.order-detail-code {
+  font-family: 'Cinzel', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #d4af37;
+}
+
+.order-detail-close {
+  background: transparent;
+  border: none;
+  color: #8a8279;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.order-detail-close:hover {
+  color: #f7f3ed;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.order-detail-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: #8f8880;
+  text-transform: uppercase;
+  margin: 0 0 10px 0;
+}
+
+.detail-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  background-color: #1a1714;
+  border: 1px solid #28211a;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.detail-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-info-label {
+  font-size: 0.74rem;
+  color: #7a736a;
+}
+
+.detail-info-val {
+  font-size: 0.88rem;
+  color: #f7f3ed;
+  font-weight: 500;
+}
+
+/* Order Detail Items List */
+.detail-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+}
+
+.detail-items-table th {
+  padding: 8px 10px;
+  font-size: 0.68rem;
+  color: #716a62;
+  text-transform: uppercase;
+  border-bottom: 1px solid #241e18;
+}
+
+.detail-items-table td {
+  padding: 10px;
+  border-bottom: 1px solid #201a14;
+  font-size: 0.85rem;
+  color: #d6cfbe;
+}
+
+/* Financial summary */
+.detail-financial-box {
+  background-color: #1a1714;
+  border: 1px solid #28211a;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-financial-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #a39c91;
+}
+
+.detail-financial-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f7f3ed;
+  padding-top: 8px;
+  border-top: 1px solid #28211a;
+}
+
+.detail-financial-total strong {
+  color: #e5a93c;
+}
+
+/* Modal Actions */
+.order-detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  background-color: #12100e;
+  border-top: 1px solid #241e18;
+}
+
+.btn-detail-approve {
+  background-color: #16a34a;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-detail-approve:hover {
+  background-color: #15803d;
+}
+
+.btn-detail-reject {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-detail-reject:hover {
+  background-color: #b91c1c;
+}
+
+.btn-detail-close {
+  background-color: #26211c;
+  color: #d6cfbe;
+  border: 1px solid #383028;
+  border-radius: 6px;
+  padding: 9px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-detail-close:hover {
+  background-color: #312b24;
+  color: #ffffff;
+}

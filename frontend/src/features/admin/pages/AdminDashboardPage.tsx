@@ -18,6 +18,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { adminApi, AdminOrderSummary, LowStockAlertItem } from '@/shared/api/adminApi';
+import { AdminOrderManagement } from '../components/AdminOrderManagement';
 import './AdminDashboardPage.css';
 
 interface AdminDashboardPageProps {
@@ -68,6 +69,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [quickOrderQty, setQuickOrderQty] = useState<number>(1);
   const [quickCustomerName, setQuickCustomerName] = useState('');
   const [quickCustomerPhone, setQuickCustomerPhone] = useState('');
+  const [quickPaymentMethod, setQuickPaymentMethod] = useState<'CASH' | 'VIETQR'>('CASH');
+  const [amountTendered, setAmountTendered] = useState<number | ''>('');
   const [isSubmittingQuickOrder, setIsSubmittingQuickOrder] = useState(false);
   const [quickOrderSuccessMsg, setQuickOrderSuccessMsg] = useState<string | null>(null);
 
@@ -256,11 +259,15 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     setIsSubmittingQuickOrder(true);
     setQuickOrderSuccessMsg(null);
 
+    const unitPrice = selectedQuickWine?.price || 0;
+    const grandTotal = unitPrice * quickOrderQty;
+
     try {
       const response = await adminApi.createOfflineOrder({
         customerName: quickCustomerName || 'Khách mua tại quầy',
         customerPhone: quickCustomerPhone || '0900000000',
-        paymentMethod: 'CASH',
+        paymentMethod: quickPaymentMethod,
+        amountTendered: quickPaymentMethod === 'CASH' ? (amountTendered !== '' ? Number(amountTendered) : grandTotal) : undefined,
         items: [
           {
             wineId: quickOrderWineId,
@@ -269,7 +276,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         ],
       });
 
-      setQuickOrderSuccessMsg(`Tạo đơn hàng thành công! Mã đơn: ${response?.orderCode || 'Thành công'}`);
+      setQuickOrderSuccessMsg(
+        `Tạo đơn hàng thành công! Mã đơn: ${response?.orderCode || 'Thành công'} (${quickPaymentMethod === 'CASH' ? 'Tiền mặt' : 'VietQR'})`
+      );
 
       // Refresh data from backend to ensure 100% sync
       await fetchDashboardData();
@@ -280,6 +289,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         setQuickCustomerName('');
         setQuickCustomerPhone('');
         setQuickOrderQty(1);
+        setAmountTendered('');
       }, 1400);
     } catch (error: any) {
       const errMsg = error?.response?.data?.message || error?.message || 'Có lỗi xảy ra khi tạo đơn tại quầy';
@@ -392,8 +402,17 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           </button>
         </nav>
 
-        {/* Bottom Logout */}
+        {/* Bottom Profile & Logout */}
         <div className="admin-sidebar-footer">
+          <div className="admin-sidebar-profile-card">
+            <div className="admin-avatar-circle">
+              <span>{adminInitials}</span>
+            </div>
+            <div className="admin-user-details">
+              <span className="admin-user-name">{adminName}</span>
+              <span className="admin-user-subrole">Store Manager</span>
+            </div>
+          </div>
           <button
             type="button"
             className="admin-footer-btn btn-logout"
@@ -458,171 +477,180 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         {/* Dashboard Content Area */}
         <main className="admin-content-view">
-          {/* Dashboard Header Bar */}
-          <div className="admin-dashboard-title-row">
-            <div>
-              <h1 className="admin-dashboard-heading">Dashboard Overview</h1>
-              <p className="admin-dashboard-subheading">
-                Hanoi Operations Center — Dữ liệu thời gian thực
-              </p>
-            </div>
+          {activeTab === 'orders' ? (
+            <AdminOrderManagement
+              onOpenNewOrder={() => setIsQuickOrderOpen(true)}
+              searchKeyword={searchQuery}
+            />
+          ) : (
+            <>
+              {/* Dashboard Header Bar */}
+              <div className="admin-dashboard-title-row">
+                <div>
+                  <h1 className="admin-dashboard-heading">Dashboard Overview</h1>
+                  <p className="admin-dashboard-subheading">
+                    Hanoi Operations Center — Dữ liệu thời gian thực
+                  </p>
+                </div>
 
-            {/* + Quick Order button */}
-            <button
-              type="button"
-              className="admin-quick-order-btn"
-              onClick={() => setIsQuickOrderOpen(true)}
-            >
-              <Plus size={18} strokeWidth={2.5} />
-              <span>+ Quick Order</span>
-            </button>
-          </div>
-
-          {/* Row of 4 KPI Metric Cards */}
-          <div className="admin-kpi-grid">
-            {/* KPI 1: Total Revenue (MTD) */}
-            <div className="admin-kpi-card">
-              <div className="kpi-card-header">
-                <span className="kpi-label">Total Revenue (MTD)</span>
-                <span className="kpi-badge badge-green">
-                  <TrendingUp size={12} />
-                  +12.4%
-                </span>
-              </div>
-              <div className="kpi-value gold-text">
-                {isLoading ? '...' : formatVnd(metrics.totalRevenue)}
-              </div>
-            </div>
-
-            {/* KPI 2: Active Orders */}
-            <div className="admin-kpi-card">
-              <div className="kpi-card-header">
-                <span className="kpi-label">Active Orders</span>
-                <span className="kpi-badge badge-alert-red">
-                  {metrics.pendingOrdersCount} pending
-                </span>
-              </div>
-              <div className="kpi-value white-text">
-                {isLoading ? '...' : metrics.activeOrders}
-              </div>
-            </div>
-
-            {/* KPI 3: Low Stock Items */}
-            <div className="admin-kpi-card">
-              <div className="kpi-card-header">
-                <span className="kpi-label">Low Stock Items</span>
-                <span className="kpi-badge badge-alert-red">
-                  {metrics.criticalStockCount} critical
-                </span>
-              </div>
-              <div className="kpi-value red-alert-text">
-                {isLoading ? '...' : metrics.lowStockCount}
-              </div>
-            </div>
-
-            {/* KPI 4: Registered Customers */}
-            <div className="admin-kpi-card">
-              <div className="kpi-card-header">
-                <span className="kpi-label">Registered Customers</span>
-                <span className="kpi-badge badge-green">
-                  +{metrics.registeredCustomers} active
-                </span>
-              </div>
-              <div className="kpi-value green-text">
-                {isLoading ? '...' : metrics.registeredCustomers}
-              </div>
-            </div>
-          </div>
-
-          {/* Lower Two-Column Section */}
-          <div className="admin-split-grid">
-            {/* Left: Recent Orders Table */}
-            <section className="admin-card-surface recent-orders-card">
-              <div className="card-surface-header">
-                <h2 className="card-surface-title">Recent Orders</h2>
+                {/* + Quick Order button */}
                 <button
                   type="button"
-                  className="card-surface-link"
-                  onClick={() => setActiveTab('orders')}
+                  className="admin-quick-order-btn"
+                  onClick={() => setIsQuickOrderOpen(true)}
                 >
-                  All Orders ({recentOrders.length}) →
+                  <Plus size={18} strokeWidth={2.5} />
+                  <span>+ Quick Order</span>
                 </button>
               </div>
 
-              <div className="admin-table-container">
-                <table className="admin-orders-table">
-                  <thead>
-                    <tr>
-                      <th>ORDER ID</th>
-                      <th>CUSTOMER</th>
-                      <th>AMOUNT</th>
-                      <th>STATUS</th>
-                      <th>TIME</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredOrders.length > 0 ? (
-                      filteredOrders.slice(0, 8).map((order) => (
-                        <tr key={order.orderId}>
-                          <td className="order-id-cell">{order.orderCode}</td>
-                          <td className="customer-cell">{order.recipientName}</td>
-                          <td className="amount-cell">{formatVnd(order.totalAmount)}</td>
-                          <td className="status-cell">{renderStatusBadge(order.orderStatus)}</td>
-                          <td className="time-cell">{order.createdAt}</td>
+              {/* Row of 4 KPI Metric Cards */}
+              <div className="admin-kpi-grid">
+                {/* KPI 1: Total Revenue (MTD) */}
+                <div className="admin-kpi-card">
+                  <div className="kpi-card-header">
+                    <span className="kpi-label">Total Revenue (MTD)</span>
+                    <span className="kpi-badge badge-green">
+                      <TrendingUp size={12} />
+                      +12.4%
+                    </span>
+                  </div>
+                  <div className="kpi-value gold-text">
+                    {isLoading ? '...' : formatVnd(metrics.totalRevenue)}
+                  </div>
+                </div>
+
+                {/* KPI 2: Active Orders */}
+                <div className="admin-kpi-card">
+                  <div className="kpi-card-header">
+                    <span className="kpi-label">Active Orders</span>
+                    <span className="kpi-badge badge-alert-red">
+                      {metrics.pendingOrdersCount} pending
+                    </span>
+                  </div>
+                  <div className="kpi-value white-text">
+                    {isLoading ? '...' : metrics.activeOrders}
+                  </div>
+                </div>
+
+                {/* KPI 3: Low Stock Items */}
+                <div className="admin-kpi-card">
+                  <div className="kpi-card-header">
+                    <span className="kpi-label">Low Stock Items</span>
+                    <span className="kpi-badge badge-alert-red">
+                      {metrics.criticalStockCount} critical
+                    </span>
+                  </div>
+                  <div className="kpi-value red-alert-text">
+                    {isLoading ? '...' : metrics.lowStockCount}
+                  </div>
+                </div>
+
+                {/* KPI 4: Registered Customers */}
+                <div className="admin-kpi-card">
+                  <div className="kpi-card-header">
+                    <span className="kpi-label">Registered Customers</span>
+                    <span className="kpi-badge badge-green">
+                      +{metrics.registeredCustomers} active
+                    </span>
+                  </div>
+                  <div className="kpi-value green-text">
+                    {isLoading ? '...' : metrics.registeredCustomers}
+                  </div>
+                </div>
+              </div>
+
+              {/* Lower Two-Column Section */}
+              <div className="admin-split-grid">
+                {/* Left: Recent Orders Table */}
+                <section className="admin-card-surface recent-orders-card">
+                  <div className="card-surface-header">
+                    <h2 className="card-surface-title">Recent Orders</h2>
+                    <button
+                      type="button"
+                      className="card-surface-link"
+                      onClick={() => setActiveTab('orders')}
+                    >
+                      All Orders ({recentOrders.length}) →
+                    </button>
+                  </div>
+
+                  <div className="admin-table-container">
+                    <table className="admin-orders-table">
+                      <thead>
+                        <tr>
+                          <th>ORDER ID</th>
+                          <th>CUSTOMER</th>
+                          <th>AMOUNT</th>
+                          <th>STATUS</th>
+                          <th>TIME</th>
                         </tr>
+                      </thead>
+                      <tbody>
+                        {filteredOrders.length > 0 ? (
+                          filteredOrders.slice(0, 8).map((order) => (
+                            <tr key={order.orderId}>
+                              <td className="order-id-cell">{order.orderCode}</td>
+                              <td className="customer-cell">{order.recipientName}</td>
+                              <td className="amount-cell">{formatVnd(order.totalAmount)}</td>
+                              <td className="status-cell">{renderStatusBadge(order.orderStatus)}</td>
+                              <td className="time-cell">{order.createdAt}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={5} style={{ textAlign: 'center', padding: '36px', color: '#8b857d' }}>
+                              {isLoading
+                                ? 'Đang tải danh sách đơn hàng từ máy chủ...'
+                                : 'Chưa có đơn hàng nào trong hệ thống backend.'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                {/* Right: Low Stock Warnings */}
+                <section className="admin-card-surface low-stock-card">
+                  <div className="card-surface-header">
+                    <h2 className="card-surface-title">Low Stock Warnings</h2>
+                    <button
+                      type="button"
+                      className="card-surface-link"
+                      onClick={() => setActiveTab('alerts')}
+                    >
+                      View all ({lowStockList.length}) →
+                    </button>
+                  </div>
+
+                  <div className="low-stock-list">
+                    {lowStockList.length > 0 ? (
+                      lowStockList.slice(0, 6).map((item) => (
+                        <div key={item.wineId} className="low-stock-item-row">
+                          <div className="low-stock-info">
+                            <h4 className="low-stock-wine-name">{item.wineName}</h4>
+                            <p className="low-stock-category">
+                              {item.categoryName} · {item.storageLocation}
+                            </p>
+                          </div>
+                          <div className="low-stock-count-badge">
+                            {item.stockQuantity} left
+                          </div>
+                        </div>
                       ))
                     ) : (
-                      <tr>
-                        <td colSpan={5} style={{ textAlign: 'center', padding: '36px', color: '#8b857d' }}>
-                          {isLoading
-                            ? 'Đang tải danh sách đơn hàng từ máy chủ...'
-                            : 'Chưa có đơn hàng nào trong hệ thống backend.'}
-                        </td>
-                      </tr>
+                      <div style={{ textAlign: 'center', padding: '36px 16px', color: '#8b857d', fontSize: '0.88rem' }}>
+                        {isLoading
+                          ? 'Đang kiểm tra tồn kho...'
+                          : stockAlertMessage || 'Tồn kho an toàn — Không có sản phẩm nào chạm ngưỡng thiếu hàng (<= 5 chai).'}
+                      </div>
                     )}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            {/* Right: Low Stock Warnings */}
-            <section className="admin-card-surface low-stock-card">
-              <div className="card-surface-header">
-                <h2 className="card-surface-title">Low Stock Warnings</h2>
-                <button
-                  type="button"
-                  className="card-surface-link"
-                  onClick={() => setActiveTab('alerts')}
-                >
-                  View all ({lowStockList.length}) →
-                </button>
-              </div>
-
-              <div className="low-stock-list">
-                {lowStockList.length > 0 ? (
-                  lowStockList.slice(0, 6).map((item) => (
-                    <div key={item.wineId} className="low-stock-item-row">
-                      <div className="low-stock-info">
-                        <h4 className="low-stock-wine-name">{item.wineName}</h4>
-                        <p className="low-stock-category">
-                          {item.categoryName} · {item.storageLocation}
-                        </p>
-                      </div>
-                      <div className="low-stock-count-badge">
-                        {item.stockQuantity} left
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ textAlign: 'center', padding: '36px 16px', color: '#8b857d', fontSize: '0.88rem' }}>
-                    {isLoading
-                      ? 'Đang kiểm tra tồn kho...'
-                      : stockAlertMessage || 'Tồn kho an toàn — Không có sản phẩm nào chạm ngưỡng thiếu hàng (<= 5 chai).'}
                   </div>
-                )}
+                </section>
               </div>
-            </section>
-          </div>
+            </>
+          )}
         </main>
       </div>
 
@@ -706,9 +734,69 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   </div>
                 </div>
 
+                {/* Chọn phương thức thanh toán tại quầy */}
+                <div className="form-group">
+                  <label className="form-label">Phương thức thanh toán tại quầy:</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <button
+                      type="button"
+                      style={{
+                        padding: '10px',
+                        borderRadius: '8px',
+                        border: quickPaymentMethod === 'CASH' ? '2px solid #d4af37' : '1px solid #332d27',
+                        background: quickPaymentMethod === 'CASH' ? 'rgba(212, 175, 55, 0.15)' : '#1a1714',
+                        color: quickPaymentMethod === 'CASH' ? '#f7f3ed' : '#8f8880',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onClick={() => setQuickPaymentMethod('CASH')}
+                    >
+                      💵 Tiền mặt (Cash)
+                    </button>
+                    <button
+                      type="button"
+                      style={{
+                        padding: '10px',
+                        borderRadius: '8px',
+                        border: quickPaymentMethod === 'VIETQR' ? '2px solid #d4af37' : '1px solid #332d27',
+                        background: quickPaymentMethod === 'VIETQR' ? 'rgba(212, 175, 55, 0.15)' : '#1a1714',
+                        color: quickPaymentMethod === 'VIETQR' ? '#f7f3ed' : '#8f8880',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onClick={() => setQuickPaymentMethod('VIETQR')}
+                    >
+                      📱 Quét mã VietQR
+                    </button>
+                  </div>
+                </div>
+
+                {quickPaymentMethod === 'CASH' && (
+                  <div className="form-group">
+                    <label className="form-label">Tiền khách đưa (VNĐ):</label>
+                    <input
+                      type="number"
+                      min={0}
+                      className="form-input"
+                      placeholder={`VD: ${formatVnd((selectedQuickWine?.price || 0) * quickOrderQty)}`}
+                      value={amountTendered}
+                      onChange={(e) => setAmountTendered(e.target.value ? Number(e.target.value) : '')}
+                    />
+                    {amountTendered !== '' && Number(amountTendered) >= (selectedQuickWine?.price || 0) * quickOrderQty && (
+                      <p style={{ color: '#22c55e', fontSize: '0.82rem', marginTop: '6px', margin: 0 }}>
+                        Tiền thối lại khách: <strong>{formatVnd(Number(amountTendered) - (selectedQuickWine?.price || 0) * quickOrderQty)}</strong>
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="modal-summary-box">
                   <div className="summary-row">
-                    <span>Tổng tiền thanh toán (Tiền mặt):</span>
+                    <span>Tổng tiền thanh toán ({quickPaymentMethod === 'CASH' ? 'Tiền mặt' : 'VietQR'}):</span>
                     <strong className="summary-total-amount">
                       {formatVnd((selectedQuickWine?.price || 0) * quickOrderQty)}
                     </strong>

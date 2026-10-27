@@ -699,7 +699,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<OrderResponse> getAdminOrders(OrderStatus status, CancelStatus cancelStatus, int page, int size) {
+    public PageResponse<OrderResponse> getAdminOrders(OrderStatus status, CancelStatus cancelStatus, boolean all, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Order> orderPage;
 
@@ -707,6 +707,8 @@ public class OrderServiceImpl implements OrderService {
             orderPage = orderRepository.findByOrderStatus(status, pageable);
         } else if (cancelStatus != null) {
             orderPage = orderRepository.findByCancelStatus(cancelStatus, pageable);
+        } else if (all) {
+            orderPage = orderRepository.findAll(pageable);
         } else {
             // Mặc định: Lấy các đơn hàng cần sự chú ý của Quản lý (PENDING hoặc PROCESSING có yêu cầu hủy)
             orderPage = orderRepository.findRequiringAttentionOrders(OrderStatus.PENDING, CancelStatus.REQUESTED, pageable);
@@ -724,6 +726,19 @@ public class OrderServiceImpl implements OrderService {
                 .totalPages(orderPage.getTotalPages())
                 .isLast(orderPage.isLast())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Long> getOrderCounts() {
+        java.util.Map<String, Long> counts = new java.util.HashMap<>();
+        counts.put("ALL", orderRepository.count());
+        counts.put("PENDING", orderRepository.countByOrderStatus(OrderStatus.PENDING));
+        counts.put("PROCESSING", orderRepository.countByOrderStatus(OrderStatus.PROCESSING));
+        counts.put("SHIPPING", orderRepository.countByOrderStatus(OrderStatus.SHIPPING));
+        counts.put("COMPLETED", orderRepository.countByOrderStatus(OrderStatus.COMPLETED));
+        counts.put("CANCELLED", orderRepository.countByOrderStatus(OrderStatus.CANCELLED));
+        return counts;
     }
 
     @Override

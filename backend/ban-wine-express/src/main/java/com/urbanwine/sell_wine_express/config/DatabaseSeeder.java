@@ -33,9 +33,23 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
     private void seedCategoriesAndWines() {
-        if (wineRepository.count() > 0) return;
+        List<Wine> existingWines = wineRepository.findAll();
+        if (!existingWines.isEmpty()) {
+            boolean hasLowStock = existingWines.stream().anyMatch(w -> w.getStockQuantity() <= 5);
+            if (hasLowStock) {
+                log.info("========== [DATABASE SEED] TỰ ĐỘNG BỔ SUNG TỒN KHO: NẠP LẠI 40 CHAI CHO MỖI LOẠI RƯỢU ==========");
+                for (Wine w : existingWines) {
+                    if (Boolean.TRUE.equals(w.getIsActive())) {
+                        w.setStockQuantity(40);
+                    }
+                }
+                wineRepository.saveAll(existingWines);
+                log.info("========== [DATABASE SEED] ĐÃ NẠP LẠI THÀNH CÔNG 40 CHAI TỒN KHO CHO {} LOẠI RƯỢU ==========", existingWines.size());
+            }
+            return;
+        }
 
-        log.info("========== [DATABASE SEED] STARTING ENGLISH SAMPLE DATA SEEDING ==========");
+        log.info("========== [DATABASE SEED] STARTING ENGLISH SAMPLE DATA SEEDING (40 BOTTLES EACH) ==========");
 
         // 1. Categories in English
         Category redWine = buildCategory("Red Wine", "Rich, full-bodied and robust red wines fermented from dark-skinned grapes.");
@@ -46,7 +60,7 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         categoryRepository.saveAll(List.of(redWine, whiteWine, sparklingWine, roseWine, dessertWine));
 
-        // 2. Comprehensive Wine List in English (covering various countries, grapes, stock status, active status)
+        // 2. Comprehensive Wine List in English (mỗi loại tầm 40 chai)
         List<Wine> sampleWines = List.of(
                 // --- Red Wines ---
                 Wine.builder()
@@ -58,7 +72,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("Extraordinary elegance featuring expressive aromas of ripe blackcurrant, dark violets, subtle cedar, and refined velvety tannins.")
                         .price(new BigDecimal("1850.00"))
                         .abv(13.5)
-                        .stockQuantity(12)
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=500")
                         .isActive(true)
                         .category(redWine)
@@ -73,7 +87,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("Iconic Australian powerhouse displaying intense dark plum, savory licorice, espresso roast, and monumental complexity.")
                         .price(new BigDecimal("950.00"))
                         .abv(14.5)
-                        .stockQuantity(0) // E2: Out of stock
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1558001373-7b93ee48ffa0?w=500")
                         .isActive(true)
                         .category(redWine)
@@ -88,7 +102,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("Opulent and lush with layers of ripe blackberry, cassis, rich vanilla bean, and silky cocoa nuances.")
                         .price(new BigDecimal("125.00"))
                         .abv(14.6)
-                        .stockQuantity(25)
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=500")
                         .isActive(true)
                         .category(redWine)
@@ -103,7 +117,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("A benchmark Super Tuscan showing vibrant sour cherry, crushed herbs, tobacco leaf, and mineral precision.")
                         .price(new BigDecimal("165.00"))
                         .abv(14.0)
-                        .stockQuantity(18)
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1569919659476-f0852f6834b7?w=500")
                         .isActive(true)
                         .category(redWine)
@@ -118,7 +132,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("High-altitude brilliance offering blue floral aromas, ripe black cherries, flinty minerality, and fine-grained structure.")
                         .price(new BigDecimal("140.00"))
                         .abv(14.0)
-                        .stockQuantity(0) // E2: Out of stock
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1584916201218-f4242ceb4809?w=500")
                         .isActive(true)
                         .category(redWine)
@@ -133,7 +147,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("Peerless ethereal Pinot Noir revealing wild strawberries, rose petals, truffle, and endless harmonious finish.")
                         .price(new BigDecimal("4900.00"))
                         .abv(13.0)
-                        .stockQuantity(3)
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=500")
                         .isActive(true)
                         .category(redWine)
@@ -164,7 +178,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("Crisp, bone-dry and pure expression of limestone terroir with notes of green apple, wet stone, and lemon zest.")
                         .price(new BigDecimal("55.00"))
                         .abv(12.5)
-                        .stockQuantity(20)
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1568213816046-0ee1c42bd559?w=500")
                         .isActive(true)
                         .category(whiteWine)
@@ -179,7 +193,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("Delicately balanced off-dry Riesling bursting with white peach, slate minerality, and vibrant natural acidity.")
                         .price(new BigDecimal("32.00"))
                         .abv(8.5)
-                        .stockQuantity(15)
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1558001373-7b93ee48ffa0?w=500")
                         .isActive(true)
                         .category(whiteWine)
@@ -194,7 +208,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("Clean and crisp straw-yellow white wine with refreshing golden delicious apple aromas and a clean citrus finish.")
                         .price(new BigDecimal("26.00"))
                         .abv(12.5)
-                        .stockQuantity(0) // E2: Out of stock
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=500")
                         .isActive(true)
                         .category(whiteWine)
@@ -210,7 +224,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("Remarkable precision and tension with lingering toasted brioche, white flowers, citrus peel, and silken effervescence.")
                         .price(new BigDecimal("280.00"))
                         .abv(12.5)
-                        .stockQuantity(14)
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1560512823-829485b8bf24?w=500")
                         .isActive(true)
                         .category(sparklingWine)
@@ -225,7 +239,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("Iconic Champagne offering strength and silkiness with aromas of yellow and white fruits, vanilla, and brioche.")
                         .price(new BigDecimal("72.00"))
                         .abv(12.0)
-                        .stockQuantity(35)
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1560512823-829485b8bf24?w=500")
                         .isActive(true)
                         .category(sparklingWine)
@@ -240,7 +254,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("Sparkling Italian delight featuring ripe honeysuckle, golden apple, fresh peach, and a light refreshing sparkle.")
                         .price(new BigDecimal("22.00"))
                         .abv(11.0)
-                        .stockQuantity(50)
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=500")
                         .isActive(true)
                         .category(sparklingWine)
@@ -256,7 +270,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("World-renowned pale pink rosé featuring delicate red currant, citrus blossom, and a round, crisp dry profile.")
                         .price(new BigDecimal("28.00"))
                         .abv(13.0)
-                        .stockQuantity(28)
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1558001373-7b93ee48ffa0?w=500")
                         .isActive(true)
                         .category(roseWine)
@@ -271,7 +285,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("Elegant pale pink with aromas of fresh red berries, delicate white flowers, and refreshing salinity.")
                         .price(new BigDecimal("30.00"))
                         .abv(13.0)
-                        .stockQuantity(0) // E2: Out of stock
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1569919659476-f0852f6834b7?w=500")
                         .isActive(true)
                         .category(roseWine)
@@ -287,7 +301,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("The pinnacle of sweet wines with unmatched layers of apricot confit, candied citrus, acacia honey, and infinite length.")
                         .price(new BigDecimal("520.00"))
                         .abv(14.0)
-                        .stockQuantity(6)
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=500")
                         .isActive(true)
                         .category(dessertWine)
@@ -302,7 +316,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .description("Matured in seasoned oak casks, showing opulent aromas of dried figs, walnuts, toffee, and warm spice.")
                         .price(new BigDecimal("68.00"))
                         .abv(20.0)
-                        .stockQuantity(16)
+                        .stockQuantity(40)
                         .imageUrl("https://images.unsplash.com/photo-1584916201218-f4242ceb4809?w=500")
                         .isActive(true)
                         .category(dessertWine)

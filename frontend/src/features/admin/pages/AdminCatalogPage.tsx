@@ -130,14 +130,14 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
       if (wine.price > maxPrice) return false;
 
       // 4. ABV
-      if (wine.abv > maxAbv) return false;
+      if (maxAbv < 15 && wine.abv > maxAbv) return false;
 
       // 5. Country
       if (selectedCountry !== 'All' && wine.country !== selectedCountry) return false;
 
       return true;
     });
-  }, [searchKeyword, selectedStyles, maxPrice, maxAbv, selectedCountry]);
+  }, [winesList, searchKeyword, selectedStyles, maxPrice, maxAbv, selectedCountry]);
 
   // Sorted Wines
   const sortedWines = useMemo(() => {
@@ -359,43 +359,69 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
 
           {/* Grid of Wine Cards */}
           <div className="wines-grid">
-            {sortedWines.map((wine) => (
-              <div
-                key={wine.id}
-                className="wine-card"
-                onClick={() => onWineClick(wine)}
-              >
-                <div className="wine-card-media">
-                  <img src={wine.imageUrl} alt={wine.name} className="wine-card-img" />
-                  <span className="card-badge-abv">{wine.abv}% ABV</span>
-                  <span className={`card-badge-stock ${wine.stock <= 0 ? 'out-of-stock' : ''}`}>
-                    {wine.stock > 0 ? 'In Stock' : 'Out of Stock'}
-                  </span>
-                </div>
-
-                <div className="wine-card-body">
-                  <span className="wine-type-tag">{wine.category}</span>
-                  <div className="wine-vintage-producer">
-                    {wine.vintage} · {wine.winery}
-                  </div>
-                  <h3 className="wine-card-name">{wine.name}</h3>
-                  <div className="wine-origin-region">{wine.region}</div>
-
-                  <div className="wine-card-footer">
-                    <div className="wine-card-price">{formatVnd(wine.price)}</div>
-                    <button
-                      className="btn-quick-add"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setQuickAddWine(wine);
-                      }}
-                    >
-                      QUICK ADD
-                    </button>
-                  </div>
-                </div>
+            {isLoadingWines ? (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: '#d4af37' }}>
+                <Loader2 size={36} className="spin-icon" style={{ animation: 'spin 1s linear infinite' }} />
+                <p style={{ marginTop: '12px', color: '#bfb7ad', fontSize: '0.95rem' }}>Đang nạp danh sách vang hảo hạng từ hầm rượu...</p>
               </div>
-            ))}
+            ) : sortedWines.length === 0 ? (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: '#8a8279' }}>
+                <p style={{ fontSize: '1.05rem', color: '#f7f3ed', marginBottom: '10px' }}>Không có chai rượu nào phù hợp với bộ lọc hiện tại.</p>
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  style={{
+                    backgroundColor: '#d4af37',
+                    color: '#120e0b',
+                    border: 'none',
+                    padding: '8px 18px',
+                    borderRadius: '6px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Đặt lại bộ lọc (Reset)
+                </button>
+              </div>
+            ) : (
+              sortedWines.map((wine) => (
+                <div
+                  key={wine.id}
+                  className="wine-card"
+                  onClick={() => onWineClick(wine)}
+                >
+                  <div className="wine-card-media">
+                    <img src={wine.imageUrl} alt={wine.name} className="wine-card-img" />
+                    <span className="card-badge-abv">{wine.abv}% ABV</span>
+                    <span className={`card-badge-stock ${wine.stock <= 0 ? 'out-of-stock' : ''}`}>
+                      {wine.stock > 0 ? 'In Stock' : 'Out of Stock'}
+                    </span>
+                  </div>
+
+                  <div className="wine-card-body">
+                    <span className="wine-type-tag">{wine.category}</span>
+                    <div className="wine-vintage-producer">
+                      {wine.vintage} · {wine.winery}
+                    </div>
+                    <h3 className="wine-card-name">{wine.name}</h3>
+                    <div className="wine-origin-region">{wine.region}</div>
+
+                    <div className="wine-card-footer">
+                      <div className="wine-card-price">{formatVnd(wine.price)}</div>
+                      <button
+                        className="btn-quick-add"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setQuickAddWine(wine);
+                        }}
+                      >
+                        QUICK ADD
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </main>
       </div>

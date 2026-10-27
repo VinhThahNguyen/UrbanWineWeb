@@ -32,17 +32,26 @@ public class AdminOrderController {
      * UC_2.1.2 Normal Flow - Bước 1 & 2:
      * Xem danh sách các đơn hàng cần xử lý trong hệ thống.
      * Mặc định hiển thị các đơn PENDING hoặc đơn PROCESSING có yêu cầu hủy (CancelStatus = REQUESTED).
-     * Hỗ trợ lọc theo trạng thái đơn hàng (status) hoặc trạng thái yêu cầu hủy (cancelStatus) và phân trang.
+     * Hỗ trợ lọc theo trạng thái đơn hàng (status) hoặc trạng thái yêu cầu hủy (cancelStatus), all (lấy tất cả) và phân trang.
      */
     @GetMapping
     public ResponseEntity<PageResponse<OrderResponse>> getAdminOrders(
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(required = false) CancelStatus cancelStatus,
+            @RequestParam(required = false, defaultValue = "false") boolean all,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        PageResponse<OrderResponse> response = orderService.getAdminOrders(status, cancelStatus, page, size);
+        PageResponse<OrderResponse> response = orderService.getAdminOrders(status, cancelStatus, all, page, size);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Lấy tổng số lượng đơn hàng theo từng trạng thái (ALL, PENDING, PROCESSING, SHIPPING, COMPLETED, CANCELLED)
+     */
+    @GetMapping("/counts")
+    public ResponseEntity<java.util.Map<String, Long>> getOrderCounts() {
+        return ResponseEntity.ok(orderService.getOrderCounts());
     }
 
     /**

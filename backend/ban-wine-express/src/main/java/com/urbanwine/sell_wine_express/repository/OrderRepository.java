@@ -26,6 +26,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Page<Order> findByCancelStatus(CancelStatus cancelStatus, Pageable pageable);
 
+    long countByOrderStatus(OrderStatus orderStatus);
+
     @Query("SELECT o FROM Order o WHERE o.orderStatus = :orderStatus OR o.cancelStatus = :cancelStatus")
     Page<Order> findRequiringAttentionOrders(@Param("orderStatus") OrderStatus orderStatus,
                                             @Param("cancelStatus") CancelStatus cancelStatus,
