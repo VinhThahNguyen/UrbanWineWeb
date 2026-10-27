@@ -586,3 +586,206 @@
   background-color: #312b24;
   color: #ffffff;
 }
+
+/* 8. SHIPPER ASSIGNMENT & ALERT STYLES (UC_2.1.4) */
+.detail-shipper-section {
+  background-color: #1a1613;
+  border: 1px solid #2d2620;
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.detail-shipper-section.assigned {
+  border-color: rgba(56, 189, 248, 0.3);
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.05) 0%, rgba(22, 19, 17, 0.8) 100%);
+}
+
+.detail-shipper-section.completed {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.05) 0%, rgba(22, 19, 17, 0.8) 100%);
+}
+
+.detail-shipper-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detail-shipper-icon {
+  color: #d4af37;
+  flex-shrink: 0;
+}
+
+.detail-shipper-icon.text-shipping {
+  color: #38bdf8;
+}
+
+.detail-shipper-icon.text-completed {
+  color: #22c55e;
+}
+
+.shipper-loading-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #8a8279;
+  font-size: 0.88rem;
+  padding: 12px 14px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+}
+
+/* Shipper Empty Alert (When no shipper is online in DB) */
+.shipper-empty-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background-color: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+
+.shipper-alert-icon {
+  color: #f87171;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.shipper-alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shipper-alert-title {
+  color: #fca5a5;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.shipper-alert-desc {
+  color: #d6cfbe;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Shipper Assign Form */
+.shipper-assign-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shipper-select-label {
+  color: #c4bbb0;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.shipper-select-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.shipper-dropdown-select {
+  flex: 1;
+  background-color: #12100e;
+  border: 1px solid #383028;
+  border-radius: 8px;
+  color: #f7f3ed;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.shipper-dropdown-select:focus {
+  border-color: #d4af37;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
+}
+
+.shipper-dropdown-select option {
+  background-color: #161311;
+  color: #f7f3ed;
+  padding: 8px;
+}
+
+.shipper-dropdown-select option:disabled {
+  color: #6b6359;
+}
+
+.btn-confirm-assign-shipper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #d4af37;
+  color: #12100e;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.btn-confirm-assign-shipper:hover:not(:disabled) {
+  background-color: #e5be48;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.25);
+}
+
+.btn-confirm-assign-shipper:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.shipper-assign-note {
+  color: #8a8279;
+  font-size: 0.78rem;
+  margin: 0;
+  font-style: italic;
+}
+
+.shipper-assign-note strong {
+  color: #38bdf8;
+  font-style: normal;
+}
+
+/* Assigned Shipper Details */
+.detail-assigned-shipper-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background-color: #12100e;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid #28211a;
+}
+
+.detail-assigned-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+}
+
+.detail-assigned-label {
+  color: #8a8279;
+}
+
+.detail-assigned-value {
+  color: #f7f3ed;
+  font-weight: 600;
+}
+

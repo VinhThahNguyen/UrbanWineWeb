@@ -12,9 +12,11 @@ import {
   CreditCard,
   MapPin,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Truck,
+  AlertTriangle
 } from 'lucide-react';
-import { adminApi, AdminOrderSummary, AdminOrderCounts } from '@/shared/api/adminApi';
+import { adminApi, AdminOrderSummary, AdminOrderCounts, ShipperWorkloadItem } from '@/shared/api/adminApi';
 import './AdminOrderManagement.css';
 
 interface AdminOrderManagementProps {
@@ -51,6 +53,12 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
   const [isLoadingDetail, setIsLoadingDetail] = useState<boolean>(false);
   const [isProcessingAction, setIsProcessingAction] = useState<boolean>(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+
+  // Shipper Assignment State (UC_2.1.4)
+  const [shippers, setShippers] = useState<ShipperWorkloadItem[]>([]);
+  const [isLoadingShippers, setIsLoadingShippers] = useState<boolean>(false);
+  const [selectedShipperId, setSelectedShipperId] = useState<number | null>(null);
+  const [isAssigningShipper, setIsAssigningShipper] = useState<boolean>(false);
 
   // 1. Fetch Counts from Database
   const fetchCounts = useCallback(async () => {
@@ -178,6 +186,29 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
     setSelectedOrder(orderSummary);
     setIsLoadingDetail(true);
     setActionSuccessMsg(null);
+    setShippers([]);
+    setSelectedShipperId(null);
+
+    // Nếu đơn đang PROCESSING hoặc SHIPPING, tự động tải danh sách Shipper online từ database
+    if (orderSummary.orderStatus === 'PROCESSING' || orderSummary.orderStatus === 'SHIPPING') {
+      setIsLoadingShippers(true);
+      adminApi.getAvailableShippers()
+        .then((list) => {
+          setShippers(list);
+          const firstAssignable = list.find((s) => s.canAssign) || list[0];
+          if (firstAssignable) {
+            setSelectedShipperId(firstAssignable.shipperId);
+          }
+        })
+        .catch((err) => {
+          console.warn('Không thể tải danh sách shipper trực tuyến:', err);
+          setShippers([]);
+        })
+        .finally(() => {
+          setIsLoadingShippers(false);
+        });
+    }
+
     try {
       const detail = await adminApi.getAdminOrderDetail(orderSummary.orderId);
       if (detail) {
@@ -187,6 +218,49 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
       console.warn('Không thể tải chi tiết sâu của đơn hàng, hiển thị dữ liệu tóm tắt:', err);
     } finally {
       setIsLoadingDetail(false);
+    }
+  };
+
+  // Assign Order to Shipper (UC_2.1.4: PROCESSING -> SHIPPING)
+  const handleAssignShipper = async (orderId: number) => {
+    if (!selectedShipperId) {
+      alert('Vui lòng chọn một nhân viên giao hàng đang trực tuyến');
+      return;
+    }
+    const chosen = shippers.find((s) => s.shipperId === selectedShipperId);
+    if (!chosen) return;
+
+    if (!window.confirm(`Xác nhận phân công đơn hàng này cho Shipper '${chosen.fullName}'? Đơn sẽ chuyển sang trạng thái SHIPPING (Đang giao).`)) {
+      return;
+    }
+
+    setIsAssigningShipper(true);
+    try {
+      const updated = await adminApi.assignShipper(orderId, selectedShipperId);
+      setActionSuccessMsg(`Đã phân công đơn hàng cho Shipper '${chosen.fullName}' thành công!`);
+
+      if (updated) {
+        setSelectedOrder(updated);
+      } else {
+        setSelectedOrder((prev) => prev ? {
+          ...prev,
+          orderStatus: 'SHIPPING',
+          shipperName: chosen.fullName,
+          shipperPhone: chosen.phoneNumber,
+        } : null);
+      }
+
+      fetchCounts();
+      fetchOrders(selectedStatus);
+
+      setTimeout(() => {
+        setActionSuccessMsg(null);
+      }, 2500);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Không thể gán Shipper cho đơn hàng này. Vui lòng thử lại.';
+      alert(`Lỗi: ${msg}`);
+    } finally {
+      setIsAssigningShipper(false);
     }
   };
 
@@ -544,6 +618,106 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                   <strong>{formatVnd(selectedOrder.totalAmount)}</strong>
                 </div>
               </div>
+
+              {/* Shipper Assignment Section (UC_2.1.4: PROCESSING -> SHIPPING) */}
+              {selectedOrder.orderStatus === 'PROCESSING' && (
+                <div className="detail-shipper-section">
+                  <div className="detail-shipper-header">
+                    <Truck size={18} className="detail-shipper-icon" />
+                    <h4 className="detail-section-title" style={{ margin: 0 }}>Phân công nhân viên giao hàng (Shipper)</h4>
+                  </div>
+
+                  {isLoadingShippers ? (
+                    <div className="shipper-loading-box">
+                      <Loader2 className="spinner-rotate" size={18} />
+                      <span>Đang kiểm tra danh sách Shipper trực tuyến từ hệ thống...</span>
+                    </div>
+                  ) : shippers.length === 0 ? (
+                    <div className="shipper-empty-alert">
+                      <AlertTriangle className="shipper-alert-icon" size={24} />
+                      <div className="shipper-alert-content">
+                        <strong className="shipper-alert-title">Hiện tại chưa có Shipper nào đang trực tuyến</strong>
+                        <p className="shipper-alert-desc">
+                          Hệ thống không tìm thấy nhân viên giao hàng nào đang bật trạng thái trực tuyến (online). Vui lòng thông báo cho đội giao hàng bật ca trực hoặc quay lại phân công sau.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="shipper-assign-card">
+                      <label className="shipper-select-label" htmlFor="shipper-select">
+                        Chọn Shipper đang trực tuyến để điều phối đơn hàng:
+                      </label>
+                      <div className="shipper-select-row">
+                        <select
+                          id="shipper-select"
+                          className="shipper-dropdown-select"
+                          value={selectedShipperId || ''}
+                          onChange={(e) => setSelectedShipperId(Number(e.target.value))}
+                          disabled={isAssigningShipper}
+                        >
+                          {shippers.map((s) => (
+                            <option key={s.shipperId} value={s.shipperId} disabled={!s.canAssign}>
+                              {s.fullName} ({s.phoneNumber}) — {s.canAssign ? `Đang giao: ${s.currentActiveOrders}/${s.maxOrders} đơn` : `Quá tải (${s.currentActiveOrders}/${s.maxOrders})`}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="btn-confirm-assign-shipper"
+                          disabled={!selectedShipperId || isAssigningShipper}
+                          onClick={() => handleAssignShipper(selectedOrder.orderId)}
+                        >
+                          <Truck size={16} />
+                          <span>{isAssigningShipper ? 'Đang điều phối...' : 'Xác nhận gán Shipper'}</span>
+                        </button>
+                      </div>
+                      <p className="shipper-assign-note">
+                        * Sau khi gán Shipper, trạng thái đơn sẽ tự động chuyển sang <strong>SHIPPING (Out for Delivery)</strong>.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Already Assigned Shipper Info (SHIPPING) */}
+              {selectedOrder.orderStatus === 'SHIPPING' && (
+                <div className="detail-shipper-section assigned">
+                  <div className="detail-shipper-header">
+                    <Truck size={18} className="detail-shipper-icon text-shipping" />
+                    <h4 className="detail-section-title" style={{ margin: 0, color: '#38bdf8' }}>Thông tin Shipper đang giao hàng</h4>
+                    <span className="status-pill pill-shipping" style={{ marginLeft: 'auto' }}>OUT FOR DELIVERY</span>
+                  </div>
+                  <div className="detail-assigned-shipper-card">
+                    <div className="detail-assigned-item">
+                      <span className="detail-assigned-label">Nhân viên phụ trách:</span>
+                      <strong className="detail-assigned-value">{selectedOrder.shipperName || 'Shipper Urban Wine Express'}</strong>
+                    </div>
+                    <div className="detail-assigned-item">
+                      <span className="detail-assigned-label">Số điện thoại:</span>
+                      <span className="detail-assigned-value">{selectedOrder.shipperPhone || 'Chưa cập nhật'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Assigned Shipper Info for Completed orders */}
+              {selectedOrder.orderStatus === 'COMPLETED' && selectedOrder.shipperName && (
+                <div className="detail-shipper-section completed">
+                  <div className="detail-shipper-header">
+                    <CheckCircle2 size={18} className="detail-shipper-icon text-completed" />
+                    <h4 className="detail-section-title" style={{ margin: 0, color: '#22c55e' }}>Đơn hàng đã được giao bởi</h4>
+                  </div>
+                  <div className="detail-assigned-shipper-card">
+                    <div className="detail-assigned-item">
+                      <span className="detail-assigned-label">Shipper:</span>
+                      <strong className="detail-assigned-value">{selectedOrder.shipperName}</strong>
+                      {selectedOrder.shipperPhone && (
+                        <span style={{ color: '#8a8279', fontSize: '0.85rem', marginLeft: '6px' }}>({selectedOrder.shipperPhone})</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Footer Actions */}

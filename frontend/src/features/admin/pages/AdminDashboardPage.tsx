@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { adminApi, AdminOrderSummary, LowStockAlertItem } from '@/shared/api/adminApi';
 import { AdminOrderManagement } from '../components/AdminOrderManagement';
+import { AdminWineCatalog } from '../components/AdminWineCatalog';
+import { AdminAddWine } from '../components/AdminAddWine';
 import './AdminDashboardPage.css';
 
 interface AdminDashboardPageProps {
@@ -39,6 +41,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 }) => {
   // Navigation active tab
   const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'catalog' | 'alerts' | 'users' | 'reports' | 'settings'>('dashboard');
+
+  // Wine Catalog sub-view mode ('list' | 'add')
+  const [catalogViewMode, setCatalogViewMode] = useState<'list' | 'add'>('list');
 
   // Search input state
   const [searchQuery, setSearchQuery] = useState('');
@@ -353,7 +358,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           <button
             type="button"
             className={`admin-nav-item ${activeTab === 'catalog' ? 'active' : ''}`}
-            onClick={() => setActiveTab('catalog')}
+            onClick={() => {
+              setActiveTab('catalog');
+              setCatalogViewMode('list');
+            }}
           >
             <Wine size={18} className="nav-item-icon" />
             <span>Wine Catalog</span>
@@ -481,6 +489,29 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             <AdminOrderManagement
               onOpenNewOrder={() => setIsQuickOrderOpen(true)}
               searchKeyword={searchQuery}
+            />
+          ) : activeTab === 'catalog' ? (
+            catalogViewMode === 'add' ? (
+              <AdminAddWine
+                onBack={() => setCatalogViewMode('list')}
+                onSuccess={() => {
+                  setCatalogViewMode('list');
+                  fetchDashboardData();
+                }}
+              />
+            ) : (
+              <AdminWineCatalog
+                onOpenAddWine={() => setCatalogViewMode('add')}
+                externalSearchQuery={searchQuery}
+              />
+            )
+          ) : activeTab === 'alerts' ? (
+            <AdminWineCatalog
+              onOpenAddWine={() => {
+                setActiveTab('catalog');
+                setCatalogViewMode('add');
+              }}
+              externalSearchQuery={searchQuery}
             />
           ) : (
             <>
