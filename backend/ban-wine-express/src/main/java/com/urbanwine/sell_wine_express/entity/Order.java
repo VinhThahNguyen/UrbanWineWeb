@@ -29,13 +29,13 @@ public class Order {
     @JoinColumn(name = "shipper_id")
     private User shipper;
 
-    @Column(name = "recipient_name", nullable = false, length = 100)
+    @Column(name = "recipient_name", nullable = false, columnDefinition = "NVARCHAR(150)")
     private String recipientName;
 
     @Column(name = "recipient_phone", nullable = false, length = 20)
     private String recipientPhone;
 
-    @Column(name = "delivery_address", nullable = false, length = 255)
+    @Column(name = "delivery_address", nullable = false, columnDefinition = "NVARCHAR(500)")
     private String deliveryAddress;
 
     @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
@@ -53,7 +53,7 @@ public class Order {
     @Column(name = "cancel_status", length = 20)
     private CancelStatus cancelStatus = CancelStatus.NONE;
 
-    @Column(name = "cancellation_reason", length = 500)
+    @Column(name = "cancellation_reason", columnDefinition = "NVARCHAR(500)")
     private String cancellationReason;
 
     @Column(name = "cancel_requested_at")
@@ -69,13 +69,13 @@ public class Order {
     @Column(name = "shipper_reject_status", length = 20)
     private com.urbanwine.sell_wine_express.enums.ShipperRejectStatus shipperRejectStatus = com.urbanwine.sell_wine_express.enums.ShipperRejectStatus.NONE;
 
-    @Column(name = "shipper_reject_reason", length = 500)
+    @Column(name = "shipper_reject_reason", columnDefinition = "NVARCHAR(500)")
     private String shipperRejectReason;
 
     @Column(name = "shipper_reject_requested_at")
     private LocalDateTime shipperRejectRequestedAt;
 
-    @Column(name = "admin_note", length = 500)
+    @Column(name = "admin_note", columnDefinition = "NVARCHAR(500)")
     private String adminNote;
 
     @Column(name = "completed_at")

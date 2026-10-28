@@ -24,10 +24,10 @@ public class Notification {
     @JoinColumn(name = "recipient_id", nullable = false)
     private User recipient;
 
-    @Column(name = "title", nullable = false, length = 150)
+    @Column(name = "title", nullable = false, columnDefinition = "NVARCHAR(200)")
     private String title;
 
-    @Column(name = "message", nullable = false, length = 500)
+    @Column(name = "message", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String message;
 
     @Enumerated(EnumType.STRING)

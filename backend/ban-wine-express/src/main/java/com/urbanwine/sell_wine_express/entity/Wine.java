@@ -18,16 +18,16 @@ public class Wine {
     @Column(name = "wine_id")
     private Long wineId;
 
-    @Column(name = "wine_name", nullable = false, length = 150)
+    @Column(name = "wine_name", nullable = false, columnDefinition = "NVARCHAR(200)")
     private String wineName;
 
-    @Column(name = "winery_name", nullable = false, length = 150)
+    @Column(name = "winery_name", nullable = false, columnDefinition = "NVARCHAR(200)")
     private String wineryName;
 
-    @Column(name = "origin", length = 100)
+    @Column(name = "origin", columnDefinition = "NVARCHAR(150)")
     private String origin;
 
-    @Column(name = "grape_variety", length = 100)
+    @Column(name = "grape_variety", columnDefinition = "NVARCHAR(150)")
     private String grapeVariety;
 
     @Column(name = "vintage_year")

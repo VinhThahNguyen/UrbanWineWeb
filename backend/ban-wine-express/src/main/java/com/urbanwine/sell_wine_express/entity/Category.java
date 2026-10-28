@@ -17,7 +17,7 @@ public class Category {
     @Column(name = "category_id")
     private Integer categoryId;
 
-    @Column(name = "category_name", nullable = false, length = 100)
+    @Column(name = "category_name", nullable = false, columnDefinition = "NVARCHAR(150)")
     private String categoryName;
 
     @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
