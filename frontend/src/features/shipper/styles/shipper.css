@@ -1,0 +1,1576 @@
+/* ==========================================================================
+   SHIPPER MOBILE APP SHELL & THEME (Dark Luxury Gold)
+   Exact match with Mockup Screenshots
+   ========================================================================== */
+
+.shipper-viewport-container {
+  min-height: 100vh;
+  background-color: #0d0c0a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 1rem 0;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+}
+
+/* Khung hiển thị mô phỏng thiết bị di động chuẩn tỉ lệ smartphone */
+.shipper-app-frame {
+  width: 100%;
+  max-width: 420px;
+  min-height: 860px;
+  background-color: #12100e;
+  border-radius: 40px;
+  border: 4px solid #2a241f;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(212, 175, 55, 0.15);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Header di động & Status bar */
+.shipper-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem 0.25rem 1.5rem;
+  color: #ffffff;
+  font-size: 0.825rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.shipper-status-island {
+  width: 90px;
+  height: 22px;
+  background: #000000;
+  border-radius: 20px;
+}
+
+.shipper-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #c7c3be;
+}
+
+/* Header thương hiệu Urban Wine */
+.shipper-brand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.25rem 1rem 1.25rem;
+}
+
+.shipper-brand-avatar-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gold-primary, #d4af37);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #221d19;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.shipper-brand-avatar-btn:hover {
+  transform: scale(1.05);
+}
+
+.shipper-brand-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shipper-brand-center {
+  text-align: center;
+}
+
+.shipper-brand-name {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+}
+
+.shipper-brand-sub {
+  font-size: 0.65rem;
+  color: #c7c3be;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin-top: 1px;
+}
+
+.shipper-bell-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.shipper-bell-btn:hover {
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--gold-primary, #d4af37);
+}
+
+.shipper-bell-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background-color: #ef4444;
+  border-radius: 50%;
+}
+
+/* Scrollable Content */
+.shipper-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 1.25rem 5.5rem 1.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: #2a241f transparent;
+}
+
+.shipper-content-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.shipper-content-scroll::-webkit-scrollbar-thumb {
+  background: #2a241f;
+  border-radius: 4px;
+}
+
+/* Greeting Section */
+.shipper-greeting-section {
+  margin-top: 0.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.shipper-date-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #8b857d;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.35rem;
+}
+
+.shipper-greeting-title {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.shipper-greeting-title span {
+  color: var(--gold-primary, #d4af37);
+}
+
+.shipper-greeting-sub {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-top: 0.35rem;
+}
+
+/* Shift Status Card */
+.shipper-duty-card {
+  background: linear-gradient(135deg, rgba(24, 21, 18, 0.9) 0%, rgba(34, 29, 25, 0.8) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 16px;
+  padding: 0.85rem 1.1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.shipper-duty-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.shipper-duty-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+}
+
+.shipper-duty-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.shipper-duty-right {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Section Header (Title & Priority tag) */
+.shipper-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.shipper-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.01em;
+}
+
+.shipper-priority-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--gold-primary, #d4af37);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Next Delivery Card */
+.shipper-next-card {
+  background: #181512;
+  border: 1.5px solid rgba(138, 30, 43, 0.6);
+  border-radius: 20px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.shipper-next-card:hover {
+  border-color: var(--gold-primary, #d4af37);
+}
+
+.shipper-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.shipper-badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--gold-primary, #d4af37);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.shipper-badge-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--gold-primary, #d4af37);
+}
+
+.shipper-pin-icon-btn {
+  color: var(--gold-primary, #d4af37);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 4px;
+  transition: transform 0.2s ease;
+}
+
+.shipper-pin-icon-btn:hover {
+  transform: scale(1.15);
+}
+
+.shipper-order-code {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.shipper-collection-type {
+  font-size: 0.68rem;
+  color: #8b857d;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0.15rem;
+}
+
+.shipper-total-amount {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--gold-primary, #d4af37);
+  margin: 0.4rem 0 1rem 0;
+  letter-spacing: -0.02em;
+}
+
+.shipper-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0.85rem 0;
+}
+
+/* Recipient Info */
+.shipper-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.65rem;
+}
+
+.shipper-info-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.shipper-phone-action {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.shipper-call-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(138, 30, 43, 0.25);
+  border: 1px solid rgba(138, 30, 43, 0.5);
+  color: #e5be3e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.shipper-call-circle:hover {
+  background: rgba(138, 30, 43, 0.5);
+}
+
+.shipper-address-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.shipper-address-icon {
+  color: #8b857d;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.shipper-address-text {
+  font-size: 0.825rem;
+  color: #c7c3be;
+  line-height: 1.4;
+}
+
+/* Wine Item Preview */
+.shipper-wine-preview-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1.2rem;
+}
+
+.shipper-wine-img-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: #221d19;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  flex-shrink: 0;
+}
+
+.shipper-wine-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shipper-wine-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.shipper-wine-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shipper-wine-sub {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-top: 2px;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.shipper-wine-care-tag {
+  color: var(--gold-primary, #d4af37);
+  font-weight: 600;
+}
+
+/* Action Button */
+.shipper-action-btn-primary {
+  width: 100%;
+  background: linear-gradient(135deg, #d4af37 0%, #b89628 100%);
+  color: #0d0c0a;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.95rem;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+  border: none;
+  cursor: pointer;
+}
+
+.shipper-action-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.45);
+}
+
+.shipper-btn-warning-outline {
+  width: 100%;
+  background: rgba(229, 190, 62, 0.08);
+  border: 1px solid rgba(229, 190, 62, 0.4);
+  color: #e5be3e;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.75rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.shipper-btn-warning-outline:hover {
+  background: rgba(229, 190, 62, 0.18);
+}
+
+.shipper-btn-danger-outline {
+  width: 100%;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.75rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.shipper-btn-danger-outline:hover {
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.shipper-action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 1.5rem;
+}
+
+/* Empty Delivery Card */
+.shipper-empty-delivery {
+  background: #181512;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.shipper-empty-icon {
+  color: #8b857d;
+  margin-bottom: 0.75rem;
+}
+
+.shipper-empty-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.35rem;
+}
+
+.shipper-empty-sub {
+  font-size: 0.75rem;
+  color: #8b857d;
+}
+
+/* Shift Statistics Grid (3 Columns) */
+.shipper-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.shipper-stat-box {
+  background: #181512;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 0.85rem 0.65rem;
+  text-align: left;
+}
+
+.shipper-stat-header {
+  color: var(--gold-primary, #d4af37);
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+}
+
+.shipper-stat-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.shipper-stat-value span {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #8b857d;
+  margin-left: 2px;
+}
+
+.shipper-stat-label {
+  font-size: 0.68rem;
+  color: #8b857d;
+  margin-top: 0.35rem;
+  text-transform: capitalize;
+}
+
+/* Assigned Orders Queue Card */
+.shipper-queue-card {
+  background: #181512;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1rem 1.15rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  margin-bottom: 1.25rem;
+}
+
+.shipper-queue-card:hover {
+  background: #221d19;
+  border-color: rgba(212, 175, 55, 0.3);
+}
+
+.shipper-queue-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.shipper-queue-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(212, 175, 55, 0.1);
+  color: var(--gold-primary, #d4af37);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shipper-queue-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.shipper-queue-sub {
+  font-size: 0.72rem;
+  color: #8b857d;
+  margin-top: 2px;
+}
+
+.shipper-queue-arrow {
+  color: #8b857d;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.shipper-queue-card:hover .shipper-queue-arrow {
+  transform: translateX(3px);
+  color: var(--gold-primary, #d4af37);
+}
+
+/* Slogan Footer */
+.shipper-brand-slogan {
+  text-align: center;
+  font-size: 0.65rem;
+  color: #55504a;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-top: 1rem;
+}
+
+/* Bottom Navigation Bar (Fixed in Mobile Frame) */
+.shipper-bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: rgba(18, 16, 14, 0.95);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 1rem;
+  z-index: 50;
+}
+
+.shipper-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  color: #8b857d;
+  font-size: 0.68rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  position: relative;
+  background: none;
+  border: none;
+  padding: 0.4rem 0.8rem;
+}
+
+.shipper-nav-item:hover {
+  color: #ffffff;
+}
+
+.shipper-nav-item.active {
+  color: var(--gold-primary, #d4af37);
+}
+
+.shipper-nav-item.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 2px;
+  background-color: var(--gold-primary, #d4af37);
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   ORDER DETAIL & ASSIGNED ORDERS LIST SPECIFIC STYLES
+   ========================================================================== */
+
+.shipper-detail-topbar {
+  padding: 0.65rem 1.25rem 0.85rem 1.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.shipper-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #c7c3be;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.shipper-back-btn:hover {
+  color: var(--gold-primary, #d4af37);
+}
+
+.shipper-detail-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.shipper-detail-card {
+  background: #181512;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 1.15rem;
+}
+
+.shipper-avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: var(--gold-primary, #d4af37);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.shipper-note-box {
+  background: rgba(24, 21, 18, 0.8);
+  border-left: 3px solid var(--gold-primary, #d4af37);
+  padding: 0.65rem 0.85rem;
+  border-radius: 0 10px 10px 0;
+  margin-top: 0.75rem;
+}
+
+.shipper-note-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #8b857d;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.shipper-note-content {
+  font-size: 0.78rem;
+  color: #f3e5ab;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* Wine row and Accordion */
+.shipper-wine-single-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.shipper-wine-accordion-toggle {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  margin-top: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--gold-primary, #d4af37);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.shipper-wine-accordion-toggle:hover {
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.shipper-wine-expanded-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.shipper-wine-subitem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0;
+}
+
+.shipper-fragile-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+/* Collect card */
+.shipper-collect-card {
+  background: #181512;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 18px;
+  padding: 1.15rem;
+  margin-bottom: 1.25rem;
+}
+
+.shipper-warning-banner {
+  background: rgba(229, 190, 62, 0.15);
+  border: 1px solid rgba(229, 190, 62, 0.4);
+  color: #f3e5ab;
+  padding: 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shipper-error-banner {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Assigned Orders List Card */
+.shipper-order-list-card {
+  background: #181512;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 1.15rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.shipper-order-list-card:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  transform: translateY(-2px);
+}
+
+.shipper-order-list-card.pinned {
+  border: 1.5px solid rgba(138, 30, 43, 0.8);
+}
+
+.shipper-list-num {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #8b857d;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* ==========================================================================
+   MODAL BOTTOM SHEET STYLES
+   ========================================================================== */
+
+.shipper-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.shipper-modal-sheet {
+  background: #181512;
+  border-top: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 28px 28px 0 0;
+  padding: 1.25rem 1.5rem 2rem 1.5rem;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shipper-modal-handle {
+  width: 44px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  margin: 0 auto 1rem auto;
+}
+
+.shipper-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.shipper-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shipper-modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.shipper-modal-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}
+
+.shipper-modal-sub {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  line-height: 1.4;
+  margin-bottom: 1.25rem;
+}
+
+.shipper-quick-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.shipper-quick-pill {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #c7c3be;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.shipper-quick-pill:hover,
+.shipper-quick-pill.active {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: var(--gold-primary, #d4af37);
+  color: #fff;
+}
+
+.shipper-form-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #8b857d;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+.shipper-textarea {
+  width: 100%;
+  background: #0d0c0a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0.75rem;
+  color: #fff;
+  font-size: 0.825rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.shipper-textarea:focus {
+  outline: none;
+  border-color: var(--gold-primary, #d4af37);
+}
+
+.shipper-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.shipper-btn-secondary {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  padding: 0.85rem;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 0.825rem;
+  cursor: pointer;
+}
+
+.shipper-btn-danger {
+  flex: 2;
+  background: #dc2626;
+  border: none;
+  color: #fff;
+  padding: 0.85rem;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 0.825rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   PAYMENT SETTLEMENT MODAL SPECIFIC (Tabs, Cash & VietQR)
+   ========================================================================== */
+
+.shipper-settlement-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.shipper-settlement-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #8b857d;
+  margin: 0.35rem 0 1.25rem 0;
+}
+
+.shipper-settlement-total strong {
+  color: var(--gold-primary, #d4af37);
+  font-size: 0.85rem;
+}
+
+.shipper-payment-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px;
+  border-radius: 14px;
+  margin-bottom: 1.25rem;
+}
+
+.shipper-payment-tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #8b857d;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.shipper-payment-tab-btn.active {
+  background: rgba(138, 30, 43, 0.6);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.shipper-cash-presets {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+  overflow-x: auto;
+}
+
+.shipper-cash-pill {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.65rem 0.5rem;
+  border-radius: 10px;
+  color: #c7c3be;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shipper-cash-pill.active {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: var(--gold-primary, #d4af37);
+  color: var(--gold-primary, #d4af37);
+}
+
+.shipper-cash-input-wrap {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.shipper-cash-input {
+  width: 100%;
+  background: #0d0c0a;
+  border: 1.5px solid rgba(212, 175, 55, 0.3);
+  border-radius: 14px;
+  padding: 0.85rem 2.5rem 0.85rem 1rem;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--gold-primary, #d4af37);
+}
+
+.shipper-cash-input:focus {
+  outline: none;
+  border-color: var(--gold-primary, #d4af37);
+}
+
+.shipper-cash-unit {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #8b857d;
+}
+
+.shipper-change-due-box {
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.shipper-change-left {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.shipper-change-amount {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #22c55e;
+}
+
+.shipper-settlement-note {
+  font-size: 0.68rem;
+  color: #8b857d;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* VietQR specific card */
+.shipper-qr-card {
+  background: #0d0c0a;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 20px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.shipper-qr-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.shipper-qr-image-box {
+  width: 190px;
+  height: 190px;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.shipper-qr-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.shipper-qr-amount {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--gold-primary, #d4af37);
+  margin-top: 0.85rem;
+}
+
+.shipper-qr-memo {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.shipper-qr-status-indicator {
+  padding: 0.65rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.shipper-simulate-link {
+  font-size: 0.72rem;
+  color: #8b857d;
+  text-decoration: underline;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.shipper-simulate-link:hover {
+  color: var(--gold-primary, #d4af37);
+}
+
+/* ==========================================================================
+   COURIER PROFILE PAGE SPECIFIC
+   ========================================================================== */
+
+.shipper-profile-card {
+  background: linear-gradient(135deg, rgba(34, 29, 25, 0.9) 0%, rgba(24, 21, 18, 0.9) 100%);
+  border: 1.5px solid rgba(138, 30, 43, 0.6);
+  border-radius: 24px;
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.shipper-profile-avatar-wrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 0.85rem auto;
+}
+
+.shipper-profile-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #221d19;
+  border: 2px solid var(--gold-primary, #d4af37);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shipper-profile-check {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  background: var(--gold-primary, #d4af37);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #12100e;
+}
+
+.shipper-profile-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.shipper-profile-id {
+  font-size: 0.72rem;
+  color: #8b857d;
+  letter-spacing: 0.08em;
+  margin-top: 0.25rem;
+}
+
+.shipper-profile-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #c7c3be;
+  letter-spacing: 0.1em;
+}
+
+/* Duty Toggle Switch */
+.shipper-toggle-switch {
+  width: 48px;
+  height: 26px;
+  border-radius: 20px;
+  background: #2a241f;
+  position: relative;
+  border: none;
+  cursor: pointer;
+  transition: background 0.25s ease;
+}
+
+.shipper-toggle-switch.active {
+  background: var(--gold-primary, #d4af37);
+}
+
+.shipper-toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.25s ease;
+}
+
+.shipper-toggle-switch.active .shipper-toggle-knob {
+  transform: translateX(22px);
+}
+
+/* Account Settings Menu */
+.shipper-menu-group {
+  background: #181512;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.shipper-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.shipper-menu-item:hover {
+  background: #221d19;
+}
+
+.shipper-menu-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   PREPAID ONLINE HIGHLIGHT BOX (VNPAY / PAID - 0 VNĐ)
+   ========================================================================== */
+.shipper-prepaid-highlight-box {
+  background: rgba(34, 197, 94, 0.08);
+  border: 1.5px solid rgba(34, 197, 94, 0.4);
+  border-radius: 18px;
+  padding: 1.25rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  text-align: left;
+}
+
+.shipper-prepaid-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  margin-bottom: 0.85rem;
+}
+
+.shipper-prepaid-amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.65rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: #c7c3be;
+}
+
+.shipper-prepaid-zero {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #22c55e;
+}
+
+.shipper-prepaid-desc {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ==========================================================================
+   SHIPPER ACTION POPUP CONFIRMATION MODAL (NO LOCALHOST ALERTS)
+   ========================================================================== */
+.shipper-action-popup-card {
+  background-color: #161311;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 24px;
+  width: 90%;
+  max-width: 360px;
+  padding: 1.85rem 1.4rem;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+  margin: auto;
+  position: relative;
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shipper-action-popup-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin: 0 auto 1.15rem auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shipper-action-popup-icon.success {
+  background: rgba(34, 197, 94, 0.15);
+  border: 2px solid rgba(34, 197, 94, 0.4);
+}
+
+.shipper-action-popup-icon.warning {
+  background: rgba(229, 190, 62, 0.15);
+  border: 2px solid rgba(229, 190, 62, 0.4);
+}
+
+.shipper-action-popup-icon.error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 2px solid rgba(239, 68, 68, 0.4);
+}
+
+.shipper-action-popup-icon.info {
+  background: rgba(212, 175, 55, 0.15);
+  border: 2px solid rgba(212, 175, 55, 0.4);
+}
+
+.shipper-action-popup-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.shipper-action-popup-msg {
+  font-size: 0.8rem;
+  color: #c7c3be;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.shipper-action-popup-buttons {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: center;
+}
+

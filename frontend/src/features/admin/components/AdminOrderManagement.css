@@ -385,7 +385,7 @@
   border: 1px solid #2d2620;
   border-radius: 14px;
   width: 100%;
-  max-width: 680px;
+  max-width: 840px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -725,16 +725,18 @@
 .btn-confirm-assign-shipper {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   background-color: #d4af37;
   color: #12100e;
   border: none;
   border-radius: 8px;
-  padding: 10px 20px;
+  padding: 10px 22px;
   font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.2s;
 }
 

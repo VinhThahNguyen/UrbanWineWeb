@@ -20,6 +20,8 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
   const [quickAddWine, setQuickAddWine] = useState<WineProduct | null>(null);
   const [winesList, setWinesList] = useState<WineProduct[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 9; // 3 dòng x 3 cột = 9 sản phẩm mỗi trang
 
   useEffect(() => {
     setIsLoading(true);
@@ -40,6 +42,11 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
       });
   }, []);
 
+  // Khi đổi danh mục, tự động quay về trang 1
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory]);
+
   const formatVnd = (amount: number) => {
     return new Intl.NumberFormat('vi-VN').format(amount) + '₫';
   };
@@ -49,6 +56,20 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
     if (selectedCategory === 'ALL') return true;
     return wine.category === selectedCategory;
   });
+
+  const totalPages = Math.ceil(filteredWines.length / itemsPerPage) || 1;
+  const paginatedWines = filteredWines.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    const element = document.getElementById('wine-cellar');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <section className="wine-cellar-section" id="wine-cellar">
@@ -94,7 +115,7 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
 
         {/* Wines Cards Grid */}
         <div className="wines-grid">
-          {filteredWines.map((wine) => (
+          {paginatedWines.map((wine) => (
             <div
               key={wine.id}
               className="wine-card"
@@ -132,6 +153,42 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
             </div>
           ))}
         </div>
+
+        {/* Luxury Pagination Controls (Chuyển trang khi quá 3 dòng) */}
+        {totalPages > 1 && (
+          <div className="wine-pagination-wrap">
+            <button
+              type="button"
+              className="wine-page-btn nav-btn"
+              disabled={currentPage === 1}
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              ‹ Trước
+            </button>
+
+            <div className="wine-page-numbers">
+              {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNum) => (
+                <button
+                  type="button"
+                  key={pageNum}
+                  className={`wine-page-num ${currentPage === pageNum ? 'active' : ''}`}
+                  onClick={() => handlePageChange(pageNum)}
+                >
+                  {pageNum}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="wine-page-btn nav-btn"
+              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              Sau ›
+            </button>
+          </div>
+        )}
 
       </div>
 

@@ -12,6 +12,7 @@ import { AdminDashboardPage } from '@/features/admin/pages/AdminDashboardPage';
 import { MyOrdersPage } from '@/features/order/pages/MyOrdersPage';
 import { CheckoutPage } from '@/features/checkout/pages/CheckoutPage';
 import { OrderPlacedPage } from '@/features/checkout/pages/OrderPlacedPage';
+import { ShipperApp } from '@/features/shipper/pages/ShipperApp';
 import { cartApi, BackendCartResponse } from '@/shared/api/cartApi';
 
 type CurrentView = 'HOME' | 'DETAIL' | 'CART' | 'CHECKOUT' | 'ORDER_PLACED' | 'ORDERS';
@@ -226,7 +227,23 @@ export const HomePage: React.FC = () => {
   }
 
   // =========================================================================
-  // 2. DÀNH CHO CUSTOMER HOẶC KHÁCH VÃNG LAI (KHÔNG CÓ QUYỀN ADMIN)
+  // 1.1 NẾU LÀ TÀI KHOẢN SHIPPER: HIỂN THỊ TRỌN VẸN ỨNG DỤNG SHIPPER APP
+  // =========================================================================
+  if (currentUser?.role === 'ROLE_SHIPPER') {
+    return (
+      <ShipperApp
+        onLogout={() => {
+          localStorage.removeItem('urbanwine_token');
+          localStorage.removeItem('urbanwine_user');
+          setCurrentUser(null);
+          setView('HOME');
+        }}
+      />
+    );
+  }
+
+  // =========================================================================
+  // 2. DÀNH CHO CUSTOMER HOẶC KHÁCH VÃNG LAI (KHÔNG CÓ QUYỀN ADMIN / SHIPPER)
   // =========================================================================
   return (
     <div className="home-page-container">
