@@ -406,6 +406,8 @@ public class OrderServiceImpl implements OrderService {
                 .orderId(order.getOrderId())
                 .orderCode(orderCode)
                 .channelType(order.getChannelType() != null ? order.getChannelType() : OrderChannel.ONLINE)
+                .customerId(order.getCustomer() != null ? order.getCustomer().getUserId() : null)
+                .customerEmail(order.getCustomer() != null ? order.getCustomer().getEmail() : null)
                 .recipientName(order.getRecipientName())
                 .recipientPhone(order.getRecipientPhone())
                 .deliveryAddress(order.getDeliveryAddress())

@@ -13,6 +13,8 @@ export interface AdminOrderItemDetail {
 export interface AdminOrderSummary {
   orderId: number;
   orderCode: string;
+  customerId?: number;
+  customerEmail?: string;
   recipientName: string;
   recipientPhone?: string;
   deliveryAddress?: string;

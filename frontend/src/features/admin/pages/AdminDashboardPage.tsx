@@ -96,14 +96,16 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
-      // 1. Fetch Orders from /api/admin/orders
-      const orderRes = await adminApi.getAdminOrders(0, 50);
+      // 1. Fetch Orders from /api/admin/orders (all: true để lấy toàn bộ đơn hàng trong hệ thống)
+      const orderRes = await adminApi.getAdminOrders(0, 100, undefined, true);
       let loadedOrders: AdminOrderSummary[] = [];
 
       if (orderRes && orderRes.content) {
         loadedOrders = orderRes.content.map((item: any) => ({
           orderId: item.orderId,
           orderCode: item.orderCode || `UWE-${item.orderId}`,
+          customerId: item.customerId,
+          customerEmail: item.customerEmail,
           recipientName: item.recipientName || 'Khách vãng lai',
           totalAmount: Number(item.totalAmount) || 0,
           orderStatus: item.orderStatus || 'PENDING',
@@ -171,8 +173,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
       const critical = loadedStockList.filter((item) => item.stockQuantity <= 3).length;
 
-      // Tính tổng số lượng khách hàng từ đơn hàng thực tế
-      const uniqueCustomers = new Set(loadedOrders.map((o) => o.recipientName)).size;
+      // Tính chính xác số lượng tài khoản Khách hàng (Customer) dựa trên Email độc nhất
+      const customerEmails = loadedOrders
+        .map((o) => o.customerEmail)
+        .filter((email): email is string => Boolean(email && email.trim()));
+      
+      const uniqueCustomerCount = new Set(customerEmails).size;
 
       setMetrics({
         totalRevenue: revenue,
@@ -180,7 +186,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         pendingOrdersCount: pending,
         lowStockCount: totalStockAlertCount,
         criticalStockCount: critical,
-        registeredCustomers: uniqueCustomers || (loadedOrders.length > 0 ? loadedOrders.length : 0),
+        registeredCustomers: uniqueCustomerCount > 0 ? uniqueCustomerCount : 1,
       });
     } catch (err) {
       console.error('Error fetching admin dashboard real data:', err);

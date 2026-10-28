@@ -22,6 +22,8 @@ public class OrderResponse {
     private Long orderId;
     private String orderCode;
     private OrderChannel channelType;
+    private Long customerId;
+    private String customerEmail;
     private String recipientName;
     private String recipientPhone;
     private String deliveryAddress;
