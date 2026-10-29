@@ -121,6 +121,7 @@
   .wines-grid {
     grid-template-columns: 1fr;
   }
+
   .wine-cellar-inner {
     padding: 0 1.5rem;
   }
@@ -597,4 +598,3 @@
   font-weight: 800;
   box-shadow: 0 4px 15px rgba(212, 175, 55, 0.35);
 }
-

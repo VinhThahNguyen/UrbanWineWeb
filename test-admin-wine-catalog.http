@@ -1,0 +1,202 @@
+### =========================================================================
+### KỊCH BẢN KIỂM THỬ: UC_2.1.1 MANAGE WINE CATALOG (ADMIN)
+### =========================================================================
+@baseUrl = http://localhost:8080
+
+### -------------------------------------------------------------------------
+### 1. ĐĂNG NHẬP VỚI TÀI KHOẢN ADMIN ĐỂ LẤY JWT TOKEN (BR-05)
+### Tài khoản mặc định: admin@urbanwine.com / Admin@123
+### -------------------------------------------------------------------------
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@urbanwine.com",
+  "password": "Admin@123"
+}
+
+### Lưu token từ kết quả đăng nhập Admin
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+
+
+
+### -------------------------------------------------------------------------
+### 2. NORMAL FLOW - BƯỚC 1 & 2: XEM DANH SÁCH CATALOG CHO ADMIN
+### Hiển thị tất cả sản phẩm (cả Active lẫn Inactive) kèm chi tiết tồn kho
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/wines?page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 2.1 ADMIN TÌM KIẾM THEO TỪ KHÓA & DANH MỤC & TRẠNG THÁI
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/wines?keyword=Cabernet&categoryId=1&isActive=true&page=0&size=5
+Authorization: Bearer {{adminToken}}
+
+
+
+### -------------------------------------------------------------------------
+### 2.2 ADMIN XEM CHI TIẾT MỘT SẢN PHẨM RƯỢU
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/wines/1
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 3. ALTERNATIVE FLOW 1: THÊM MỚI SẢN PHẨM RƯỢU THÀNH CÔNG
+### Đầy đủ tất cả các trường bắt buộc, vintageYear có thể null hoặc có giá trị
+### Trạng thái mặc định sau khi tạo: Active = true
+### -------------------------------------------------------------------------
+# @name createWineSuccess
+POST {{baseUrl}}/api/admin/wines
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "wineName": "Chateau Margaux Premier Grand Cru 2015",
+  "wineryName": "Chateau Margaux",
+  "categoryId": 1,
+  "origin": "Bordeaux, France",
+  "grapeVariety": "Cabernet Sauvignon, Merlot",
+  "vintageYear": 2015,
+  "description": "Rượu vang đỏ thượng hạng đẳng cấp Premier Grand Cru Classe với hương thơm phức hợp của quả mọng đen, hoa violet, gia vị và gỗ sồi tinh tế.",
+  "price": 18500000,
+  "abv": 13.5,
+  "stockQuantity": 20,
+  "imageUrl": "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3"
+}
+
+@newWineId = {{createWineSuccess.response.body.wineId}}
+
+
+### -------------------------------------------------------------------------
+### 3.1 THÊM MỚI RƯỢU CỔ (VINTAGE YEAR = NULL - THEO THỐNG NHẤT VỚI USER)
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/wines
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "wineName": "Centenary Vintage Rare Port Wine",
+  "wineryName": "Taylor Fladgate",
+  "categoryId": 1,
+  "origin": "Douro, Portugal",
+  "grapeVariety": "Touriga Nacional",
+  "vintageYear": null,
+  "description": "Chai rượu vang quý hiếm trăm năm tuổi với chất rượu đậm đặc hương quả khô và caramel cháy.",
+  "price": 45000000,
+  "abv": 20.0,
+  "stockQuantity": 5,
+  "imageUrl": "https://images.unsplash.com/photo-1558001373-a387532f1839"
+}
+
+
+### -------------------------------------------------------------------------
+### 4. NGOẠI LỆ E1: DỮ LIỆU ĐẦU VÀO KHÔNG HỢP LỆ (INVALID DATA)
+### Test: Để trống trường bắt buộc, giá âm, tồn kho âm, abv âm hoặc > 100
+### Kết quả mong đợi: 400 Bad Request kèm chi tiết các trường bị lỗi
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/wines
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "wineName": "",
+  "wineryName": "",
+  "categoryId": null,
+  "origin": "",
+  "grapeVariety": "",
+  "vintageYear": 500,
+  "description": "",
+  "price": -50000,
+  "abv": 150.0,
+  "stockQuantity": -10,
+  "imageUrl": ""
+}
+
+
+### -------------------------------------------------------------------------
+### 5. NGOẠI LỆ E2: TRÙNG LẶP SẢN PHẨM RƯỢU (DUPLICATE ITEM)
+### Test: Tạo sản phẩm mới có cùng wineName với sản phẩm đã có (không phân biệt hoa/thường)
+### Kết quả mong đợi: 400 Bad Request cảnh báo trùng lặp và yêu cầu cập nhật tồn kho
+### -------------------------------------------------------------------------
+POST {{baseUrl}}/api/admin/wines
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "wineName": "chateau margaux premier grand cru 2015",
+  "wineryName": "Khác Hãng",
+  "categoryId": 1,
+  "origin": "France",
+  "grapeVariety": "Merlot",
+  "vintageYear": 2015,
+  "description": "Rượu thử trùng lặp",
+  "price": 1000000,
+  "abv": 13.0,
+  "stockQuantity": 10,
+  "imageUrl": "https://images.unsplash.com/photo-1510812431401"
+}
+
+
+### -------------------------------------------------------------------------
+### 6. NORMAL FLOW - BƯỚC 3, 4, 5, 6: CẬP NHẬT THÔNG TIN & CỘNG DỒN TỒN KHO
+### Tồn kho ban đầu của newWineId là 20.
+### Nhập thêm addedStockQuantity: 15 -> Tồn kho mới sẽ là 35!
+### -------------------------------------------------------------------------
+PUT {{baseUrl}}/api/admin/wines/{{newWineId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "wineName": "Chateau Margaux Premier Grand Cru 2015 (Updated)",
+  "wineryName": "Chateau Margaux",
+  "categoryId": 1,
+  "origin": "Bordeaux, France",
+  "grapeVariety": "Cabernet Sauvignon, Merlot",
+  "vintageYear": 2015,
+  "description": "Mô tả đã được cập nhật thêm: Rượu đạt điểm 99/100 từ Robert Parker Wine Advocate.",
+  "price": 19000000,
+  "abv": 13.5,
+  "addedStockQuantity": 15,
+  "imageUrl": "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3"
+}
+
+
+### -------------------------------------------------------------------------
+### 7. ALTERNATIVE FLOW 2: TOGGLE TRẠNG THÁI KINH DOANH (ẨN SẢN PHẨM)
+### Đổi trạng thái từ Active -> Inactive (Ẩn)
+### -------------------------------------------------------------------------
+PATCH {{baseUrl}}/api/admin/wines/{{newWineId}}/toggle-status
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 8. KIỂM CHỨNG TÍNH NĂNG ẨN: PUBLIC CATALOG KHÔNG CÒN THẤY SẢN PHẨM ĐÓ
+### Kết quả mong đợi: Rượu vừa bị ẩn (newWineId) KHÔNG xuất hiện trong danh sách của khách
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/wines?keyword=Margaux
+
+
+### -------------------------------------------------------------------------
+### 9. ALTERNATIVE FLOW 2 (TIẾP): KÍCH HOẠT LẠI (REACTIVATE) SẢN PHẨM
+### Đổi trạng thái từ Inactive -> Active
+### -------------------------------------------------------------------------
+PATCH {{baseUrl}}/api/admin/wines/{{newWineId}}/toggle-status
+Authorization: Bearer {{adminToken}}
+
+
+### -------------------------------------------------------------------------
+### 10. KIỂM CHỨNG LẠI PUBLIC CATALOG: SẢN PHẨM ĐÃ HIỂN THỊ TRỞ LẠI
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/wines?keyword=Margaux
+
+
+### -------------------------------------------------------------------------
+### 11. BẢO MẬT & PHÂN QUYỀN (BR-05): TỪ CHỐI TRUY CẬP KHI KHÔNG CÓ ROLE_ADMIN
+### Kết quả mong đợi: 401 Unauthorized (nếu không có token) hoặc 403 Forbidden
+### -------------------------------------------------------------------------
+GET {{baseUrl}}/api/admin/wines
