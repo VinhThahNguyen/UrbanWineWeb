@@ -2,7 +2,6 @@
 **Hệ thống Quản lý Kinh doanh & Giao hàng Rượu Vang Nội thành Siêu Tốc**  
 **Dự án môn học:** PRJ301 - FPT University  
 **Sinh viên thực hiện:** Nguyễn Thành Vinh - HE190385  
-
 ---
 
 Hệ thống gồm 2 phân hệ chính:
