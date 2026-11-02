@@ -34,16 +34,16 @@ public class OrderEmailServiceImpl implements OrderEmailService {
         }
         String toEmail = order.getCustomer().getEmail();
         String orderCode = String.format("ORD-%06d", order.getOrderId());
-        String subject = String.format("[Urban Wine Express] Đơn hàng #%s đã được phê duyệt thành công", orderCode);
+        String subject = String.format("[Urban Wine Express] Order #%s Confirmed", orderCode);
         String recipientName = order.getCustomer().getFullName() != null ? order.getCustomer().getFullName() : order.getRecipientName();
 
-        String content = "Kính gửi quý khách " + recipientName + ",\n\n"
-                + "Đơn hàng #" + orderCode + " của quý khách đã được Quản lý cửa hàng phê duyệt thành công!\n"
-                + "Hệ thống đang tiến hành đóng gói và sẵn sàng bàn giao cho nhân viên giao hàng (Shipper).\n\n"
-                + "- Người nhận: " + order.getRecipientName() + " (" + order.getRecipientPhone() + ")\n"
-                + "- Địa chỉ giao hàng: " + order.getDeliveryAddress() + "\n"
-                + "- Tổng giá trị đơn hàng: " + String.format("%,d VNĐ", order.getTotalAmount().longValue()) + "\n\n"
-                + "Cảm ơn quý khách đã tin tưởng và mua sắm tại Urban Wine Express!\n";
+        String content = "Dear " + recipientName + ",\n\n"
+                + "Your order #" + orderCode + " has been confirmed!\n"
+                + "We are packing your wine and preparing it for delivery.\n\n"
+                + "- Recipient: " + order.getRecipientName() + " (" + order.getRecipientPhone() + ")\n"
+                + "- Delivery Address: " + order.getDeliveryAddress() + "\n"
+                + "- Total Amount: " + String.format("%,d VND", order.getTotalAmount().longValue()) + "\n\n"
+                + "Thank you for shopping at Urban Wine Express!\n";
 
         sendEmail(toEmail, subject, content);
     }
@@ -59,18 +59,18 @@ public class OrderEmailServiceImpl implements OrderEmailService {
         }
         String toEmail = order.getCustomer().getEmail();
         String orderCode = String.format("ORD-%06d", order.getOrderId());
-        String subject = String.format("[Urban Wine Express] Đơn hàng #%s đã bị từ chối phục vụ", orderCode);
+        String subject = String.format("[Urban Wine Express] Order #%s Has Been Cancelled", orderCode);
         String recipientName = order.getCustomer().getFullName() != null ? order.getCustomer().getFullName() : order.getRecipientName();
 
         String refundNotice = isPrepaid
-                ? "\n* LƯU Ý HOÀN TIỀN: Vì đơn hàng đã được thanh toán online trước qua VNPay, hệ thống đã kích hoạt quy trình hoàn tiền tự động về tài khoản ngân hàng của quý khách."
+                ? "\n* REFUND NOTICE: As this order was paid online via VNPay, a full refund has been initiated to your bank account."
                 : "";
 
-        String content = "Kính gửi quý khách " + recipientName + ",\n\n"
-                + "Rất tiếc, đơn hàng #" + orderCode + " của quý khách không thể hoàn tất và đã bị từ chối bởi Quản lý cửa hàng.\n\n"
-                + "- Lý do từ chối: " + reason + "\n"
-                + "- Tổng giá trị đơn hàng: " + String.format("%,d VNĐ", order.getTotalAmount().longValue()) + refundNotice + "\n\n"
-                + "Mọi thắc mắc xin vui lòng liên hệ tổng đài hỗ trợ Urban Wine Express để được giải đáp.\n";
+        String content = "Dear " + recipientName + ",\n\n"
+                + "We are sorry to inform you that order #" + orderCode + " could not be fulfilled.\n\n"
+                + "- Reason: " + reason + "\n"
+                + "- Total Amount: " + String.format("%,d VND", order.getTotalAmount().longValue()) + refundNotice + "\n\n"
+                + "Please contact Urban Wine Express support if you have any questions.\n\nBest regards,\nUrban Wine Express Team\n";
 
         sendEmail(toEmail, subject, content);
     }
@@ -86,21 +86,21 @@ public class OrderEmailServiceImpl implements OrderEmailService {
         }
         String toEmail = order.getCustomer().getEmail();
         String orderCode = String.format("ORD-%06d", order.getOrderId());
-        String subject = String.format("[Urban Wine Express] Yêu cầu hủy đơn hàng #%s đã được chấp thuận", orderCode);
+        String subject = String.format("[Urban Wine Express] Cancellation Request Approved for Order #%s", orderCode);
         String recipientName = order.getCustomer().getFullName() != null ? order.getCustomer().getFullName() : order.getRecipientName();
 
         String refundNotice = isPrepaid
-                ? "\n* LƯU Ý HOÀN TIỀN: Vì đơn hàng đã được thanh toán online trước qua VNPay, hệ thống đã kích hoạt quy trình hoàn tiền tự động về tài khoản ngân hàng của quý khách."
+                ? "\n* REFUND NOTICE: A full refund has been initiated to your bank account."
                 : "";
 
         String noteSection = (adminNote != null && !adminNote.trim().isEmpty())
-                ? "\n- Phản hồi từ Quản lý: " + adminNote
+                ? "\n- Store Note: " + adminNote
                 : "";
 
-        String content = "Kính gửi quý khách " + recipientName + ",\n\n"
-                + "Yêu cầu hủy đơn hàng #" + orderCode + " của quý khách đã được Quản lý cửa hàng XÁC NHẬN CHẤP THUẬN.\n"
-                + "Đơn hàng đã được chuyển sang trạng thái HỦY và số lượng sản phẩm đã được hoàn trả về kho." + noteSection + refundNotice + "\n\n"
-                + "Trân trọng cảm ơn quý khách,\n"
+        String content = "Dear " + recipientName + ",\n\n"
+                + "Your cancellation request for order #" + orderCode + " has been approved.\n"
+                + "The order has been cancelled and items returned to stock." + noteSection + refundNotice + "\n\n"
+                + "Best regards,\n"
                 + "Urban Wine Express Team\n";
 
         sendEmail(toEmail, subject, content);
@@ -117,18 +117,18 @@ public class OrderEmailServiceImpl implements OrderEmailService {
         }
         String toEmail = order.getCustomer().getEmail();
         String orderCode = String.format("ORD-%06d", order.getOrderId());
-        String subject = String.format("[Urban Wine Express] Phản hồi về yêu cầu hủy đơn hàng #%s", orderCode);
+        String subject = String.format("[Urban Wine Express] Update on Cancellation Request for Order #%s", orderCode);
         String recipientName = order.getCustomer().getFullName() != null ? order.getCustomer().getFullName() : order.getRecipientName();
 
         String noteSection = (adminNote != null && !adminNote.trim().isEmpty())
                 ? adminNote
-                : "Sản phẩm trong đơn hàng đã hoàn tất đóng gói niêm phong và đang trên đường giao hàng, không thể hủy đơn.";
+                : "Order has already been packed and is on the way for delivery.";
 
-        String content = "Kính gửi quý khách " + recipientName + ",\n\n"
-                + "Yêu cầu hủy đơn hàng #" + orderCode + " của quý khách đã bị TỪ CHỐI bởi Quản lý cửa hàng.\n"
-                + "- Lý do từ chối: " + noteSection + "\n\n"
-                + "Đơn hàng vẫn đang tiếp tục được vận chuyển tới quý khách. Quý khách vui lòng chú ý điện thoại để nhận hàng.\n\n"
-                + "Trân trọng,\n"
+        String content = "Dear " + recipientName + ",\n\n"
+                + "Your cancellation request for order #" + orderCode + " was declined.\n"
+                + "- Reason: " + noteSection + "\n\n"
+                + "Your order is continuing to be delivered. Please keep your phone available to receive your order.\n\n"
+                + "Best regards,\n"
                 + "Urban Wine Express Team\n";
 
         sendEmail(toEmail, subject, content);
@@ -161,15 +161,17 @@ public class OrderEmailServiceImpl implements OrderEmailService {
         }
         String toEmail = order.getCustomer().getEmail();
         String orderCode = String.format("ORD-%06d", order.getOrderId());
-        String subject = String.format("[Urban Wine Express] Đơn hàng #%s đã được giao thành công", orderCode);
+        String subject = String.format("[Urban Wine Express] Order #%s Delivered Successfully", orderCode);
         String recipientName = order.getCustomer().getFullName() != null ? order.getCustomer().getFullName() : order.getRecipientName();
 
-        String content = "Kính gửi quý khách " + recipientName + ",\n\n"
-                + "Đơn hàng #" + orderCode + " của quý khách đã được nhân viên giao hàng (Shipper) giao thành công!\n\n"
-                + "- Người nhận: " + order.getRecipientName() + " (" + order.getRecipientPhone() + ")\n"
-                + "- Địa chỉ nhận: " + order.getDeliveryAddress() + "\n"
-                + "- Tổng tiền đơn hàng: " + String.format("%,d VNĐ", order.getTotalAmount().longValue()) + "\n\n"
-                + "Urban Wine Express chân thành cảm ơn quý khách đã tin tưởng và ủng hộ chúng tôi. Chúc quý khách có những trải nghiệm tuyệt vời khi thưởng thức sản phẩm!\n";
+        String content = "Dear " + recipientName + ",\n\n"
+                + "Your order #" + orderCode + " has been delivered successfully!\n\n"
+                + "- Recipient: " + order.getRecipientName() + " (" + order.getRecipientPhone() + ")\n"
+                + "- Delivery Address: " + order.getDeliveryAddress() + "\n"
+                + "- Total Amount: " + String.format("%,d VND", order.getTotalAmount().longValue()) + "\n\n"
+                + "Thank you for choosing Urban Wine Express. Enjoy your wine!\n\n"
+                + "Best regards,\n"
+                + "Urban Wine Express Team\n";
 
         sendEmail(toEmail, subject, content);
     }
@@ -184,19 +186,19 @@ public class OrderEmailServiceImpl implements OrderEmailService {
         }
         String toEmail = order.getCustomer().getEmail();
         String orderCode = String.format("ORD-%06d", order.getOrderId());
-        String subject = String.format("[Urban Wine Express] Thông báo giao hàng không thành công cho đơn hàng #%s", orderCode);
+        String subject = String.format("[Urban Wine Express] Delivery Unsuccessful for Order #%s", orderCode);
         String recipientName = order.getCustomer().getFullName() != null ? order.getCustomer().getFullName() : order.getRecipientName();
 
         String refundNotice = isPrepaid
-                ? "\n* LƯU Ý HOÀN TIỀN: Vì đơn hàng đã được thanh toán online trước qua VNPay, hệ thống đã tự động kích hoạt quy trình hoàn tiền về tài khoản ngân hàng của quý khách."
+                ? "\n* REFUND NOTICE: A full refund has been initiated to your bank account."
                 : "";
 
-        String content = "Kính gửi quý khách " + recipientName + ",\n\n"
-                + "Rất tiếc, đơn hàng #" + orderCode + " của quý khách không thể hoàn tất giao hàng và đã được chuyển sang trạng thái HỦY.\n\n"
-                + "- Lý do không giao được: " + reason + "\n"
-                + "- Tổng tiền đơn hàng: " + String.format("%,d VNĐ", order.getTotalAmount().longValue()) + refundNotice + "\n\n"
-                + "Nếu quý khách vẫn muốn nhận đơn hàng này hoặc cần hỗ trợ thêm, vui lòng liên hệ ngay với tổng đài CSKH của Urban Wine Express.\n\n"
-                + "Trân trọng,\n"
+        String content = "Dear " + recipientName + ",\n\n"
+                + "We are sorry to inform you that delivery for order #" + orderCode + " could not be completed and the order has been cancelled.\n\n"
+                + "- Reason: " + reason + "\n"
+                + "- Total Amount: " + String.format("%,d VND", order.getTotalAmount().longValue()) + refundNotice + "\n\n"
+                + "If you still wish to receive this order or need assistance, please contact our support team.\n\n"
+                + "Best regards,\n"
                 + "Urban Wine Express Team\n";
 
         sendEmail(toEmail, subject, content);

@@ -17,7 +17,7 @@ public class CheckoutSummaryRequest {
 
     private String deliveryAddress;
 
-    @NotEmpty(message = "Danh sách sản phẩm không được để trống")
+    @NotEmpty(message = "Product items list cannot be empty")
     @Valid
     private List<OrderItemRequest> items;
 }

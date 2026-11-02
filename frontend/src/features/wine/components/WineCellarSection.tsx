@@ -163,7 +163,7 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
               disabled={currentPage === 1}
               onClick={() => handlePageChange(currentPage - 1)}
             >
-              ‹ Trước
+              ‹ Prev
             </button>
 
             <div className="wine-page-numbers">
@@ -185,7 +185,7 @@ export const WineCellarSection: React.FC<WineCellarSectionProps> = ({
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(currentPage + 1)}
             >
-              Sau ›
+              Next ›
             </button>
           </div>
         )}

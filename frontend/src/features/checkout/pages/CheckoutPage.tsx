@@ -116,7 +116,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   // Handle Place Order directly with Backend API
   const handlePlaceOrder = async () => {
     if (!recipientName.trim() || !recipientPhone.trim() || !deliveryAddress.trim()) {
-      alert('Vui lòng điền đầy đủ thông tin người nhận và địa chỉ giao hàng.');
+      alert('Please fill in recipient name, phone number, and delivery address.');
       return;
     }
 
@@ -145,7 +145,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       }
     } catch (error: any) {
       console.error('Backend placeOrder error:', error);
-      alert(error?.response?.data?.message || 'Đặt hàng thất bại. Quý khách vui lòng kiểm tra lại thông tin.');
+      alert(error?.response?.data?.message || 'Failed to place order. Please check your information and try again.');
     } finally {
       setIsPlacingOrder(false);
     }
@@ -187,23 +187,23 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             </button>
           </div>
 
-          <button className="checkout-cart-btn" onClick={onBackToCart} title="Xem giỏ hàng">
+          <button className="checkout-cart-btn" onClick={onBackToCart} title="View cart">
             <ShoppingBag size={19} />
             {totalCartCount > 0 && (
               <span className="checkout-cart-badge">{totalCartCount}</span>
             )}
           </button>
 
-          <div className="checkout-user-pill" title="Tài khoản khách hàng">
+          <div className="checkout-user-pill" title="Customer account">
             <span>
-              Xin chào, <strong>{currentUser?.fullName || currentUser?.email || 'Quý khách'}</strong>
+              Hello, <strong>{currentUser?.fullName || currentUser?.email || 'Guest'}</strong>
             </span>
             <span className="checkout-user-badge-red">
               {currentUser?.fullName
                 ? (currentUser.fullName.trim().split(/\s+/).length >= 2
                     ? (currentUser.fullName.trim().split(/\s+/)[0][0] + currentUser.fullName.trim().split(/\s+/).slice(-1)[0][0]).toUpperCase()
                     : currentUser.fullName.slice(0, 2).toUpperCase())
-                : (currentUser?.email ? currentUser.email.slice(0, 2).toUpperCase() : 'KH')}
+                : (currentUser?.email ? currentUser.email.slice(0, 2).toUpperCase() : 'CU')}
             </span>
           </div>
         </div>
@@ -263,7 +263,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   className="checkout-input-text"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
-                  placeholder="Nhập họ và tên..."
+                  placeholder="Enter recipient full name..."
                 />
               </div>
 
@@ -289,7 +289,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   className="checkout-input-text"
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
-                  placeholder="Số nhà, ngõ, tên đường, quận, Hà Nội..."
+                  placeholder="Street address, building, district, Hanoi..."
                 />
                 <span className="checkout-sub-hint">
                   We currently deliver within Hoàn Kiếm, Đống Đa, Ba Đình, Hai Bà Trưng, Tây Hồ

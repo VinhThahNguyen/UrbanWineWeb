@@ -13,10 +13,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class VerifyOtpRequest {
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email is invalid")
     private String email;
 
-    @NotBlank(message = "Mã OTP không được để trống")
+    @NotBlank(message = "OTP code is required")
     private String otpCode;
 }

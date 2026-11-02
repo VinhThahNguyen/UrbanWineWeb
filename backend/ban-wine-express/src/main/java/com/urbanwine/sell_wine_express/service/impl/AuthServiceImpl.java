@@ -34,16 +34,16 @@ public class AuthServiceImpl implements AuthService {
     public User register(RegisterRequest request) {
         // 1. Kiểm tra xem email đã tồn tại hay chưa
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email đã được sử dụng: " + request.getEmail());
+            throw new RuntimeException("Email is already in use: " + request.getEmail());
         }
 
         // 2. Kiểm tra quy tắc BR-01: Khách hàng phải từ 18 tuổi trở lên
         if (request.getBirthDate() == null) {
-            throw new RuntimeException("Ngày sinh không được để trống");
+            throw new RuntimeException("Date of birth is required");
         }
         int age = Period.between(request.getBirthDate(), LocalDate.now()).getYears();
         if (age < 18) {
-            throw new RuntimeException("Bạn chưa đủ 18 tuổi để mua rượu vang (Quy định BR-01)");
+            throw new RuntimeException("You must be at least 18 years old to purchase wine (Rule BR-01)");
         }
 
         // 3. Tạo tài khoản khách hàng ở trạng thái CHƯA KÍCH HOẠT (isActive = false)
@@ -69,15 +69,15 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void verifyRegisterOtp(VerifyOtpRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email này"));
+                .orElseThrow(() -> new RuntimeException("No account found with this email"));
 
         if (Boolean.TRUE.equals(user.getIsActive())) {
-            throw new RuntimeException("Tài khoản này đã được kích hoạt trước đó");
+            throw new RuntimeException("This account is already activated");
         }
 
         boolean isValid = otpService.verifyOtp(request.getEmail(), request.getOtpCode(), OtpType.REGISTER);
         if (!isValid) {
-            throw new RuntimeException("Mã OTP không chính xác hoặc đã hết hạn");
+            throw new RuntimeException("Invalid or expired OTP code");
         }
 
         // Kích hoạt tài khoản
@@ -89,14 +89,14 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public Object login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Email hoặc mật khẩu không chính xác"));
+                .orElseThrow(() -> new RuntimeException("Incorrect email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new RuntimeException("Email hoặc mật khẩu không chính xác");
+            throw new RuntimeException("Incorrect email or password");
         }
 
         if (Boolean.FALSE.equals(user.getIsActive())) {
-            throw new RuntimeException("Tài khoản chưa được kích hoạt. Vui lòng xác thực mã OTP gửi về email");
+            throw new RuntimeException("Account is not activated. Please verify the OTP sent to your email");
         }
 
         // Đối với ROLE_CUSTOMER: Cần xác thực 2 bước bằng OTP
@@ -118,11 +118,11 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public LoginResponse verifyLoginOtp(VerifyOtpRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email này"));
+                .orElseThrow(() -> new RuntimeException("No account found with this email"));
 
         boolean isValid = otpService.verifyOtp(request.getEmail(), request.getOtpCode(), OtpType.LOGIN);
         if (!isValid) {
-            throw new RuntimeException("Mã OTP không chính xác hoặc đã hết hạn");
+            throw new RuntimeException("Invalid or expired OTP code");
         }
 
         return createTokenResponse(user);
@@ -132,7 +132,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void forgotPassword(String email) {
         userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email này"));
+                .orElseThrow(() -> new RuntimeException("No account found with this email"));
 
         otpService.generateAndSendOtp(email, OtpType.FORGOT_PASSWORD);
     }
@@ -141,15 +141,15 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email này"));
+                .orElseThrow(() -> new RuntimeException("No account found with this email"));
 
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new RuntimeException("Mật khẩu mới và xác nhận mật khẩu không khớp");
+            throw new RuntimeException("New password and confirmation do not match");
         }
 
         boolean isValid = otpService.verifyOtp(request.getEmail(), request.getOtpCode(), OtpType.FORGOT_PASSWORD);
         if (!isValid) {
-            throw new RuntimeException("Mã OTP không chính xác hoặc đã hết hạn");
+            throw new RuntimeException("Invalid or expired OTP code");
         }
 
         // Đổi mật khẩu mới
@@ -164,7 +164,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public User createShipper(CreateShipperRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email đã được sử dụng: " + request.getEmail());
+            throw new RuntimeException("Email is already in use: " + request.getEmail());
         }
 
         User user = new User();
@@ -211,7 +211,7 @@ public class AuthServiceImpl implements AuthService {
                             .tokenType("Bearer")
                             .build();
                 })
-                .orElseThrow(() -> new RuntimeException("Refresh token không tồn tại trong hệ thống!"));
+                .orElseThrow(() -> new RuntimeException("Refresh token does not exist in the system"));
     }
 
     @Override
@@ -230,15 +230,15 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void changePassword(User currentUser, ChangePasswordRequest request) {
         if (!passwordEncoder.matches(request.getCurrentPassword(), currentUser.getPasswordHash())) {
-            throw new RuntimeException("Mật khẩu hiện tại không chính xác");
+            throw new RuntimeException("Current password is incorrect");
         }
 
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new RuntimeException("Mật khẩu mới và xác nhận mật khẩu không khớp");
+            throw new RuntimeException("New password and confirmation do not match");
         }
 
         if (passwordEncoder.matches(request.getNewPassword(), currentUser.getPasswordHash())) {
-            throw new RuntimeException("Mật khẩu mới không được trùng với mật khẩu hiện tại");
+            throw new RuntimeException("New password cannot be the same as current password");
         }
 
         currentUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));

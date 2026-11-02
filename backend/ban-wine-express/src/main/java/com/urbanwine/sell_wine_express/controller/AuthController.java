@@ -29,7 +29,7 @@ public class AuthController {
             User registeredUser = authService.register(request);
 
             Map<String, Object> response = new HashMap<>();
-            response.put("message", "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP kích hoạt tài khoản.");
+            response.put("message", "Registration successful! Please check your email for the OTP code to activate your account.");
             response.put("userId", registeredUser.getUserId());
             response.put("email", registeredUser.getEmail());
             response.put("fullName", registeredUser.getFullName());
@@ -49,7 +49,7 @@ public class AuthController {
         try {
             authService.verifyRegisterOtp(request);
             Map<String, String> response = new HashMap<>();
-            response.put("message", "Kích hoạt tài khoản thành công! Bây giờ bạn có thể đăng nhập.");
+            response.put("message", "Account activated successfully! You can now sign in.");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, String> errorResponse = new HashMap<>();
@@ -68,7 +68,7 @@ public class AuthController {
                 Map<String, Object> response = new HashMap<>();
                 response.put("requiresOtp", true);
                 response.put("email", request.getEmail());
-                response.put("message", "Mã xác thực đăng nhập (OTP) đã được gửi đến email của bạn. Vui lòng nhập OTP để hoàn tất.");
+                response.put("message", "A login verification code (OTP) has been sent to your email. Please enter the OTP to continue.");
                 return ResponseEntity.ok(response);
             }
 
@@ -98,13 +98,13 @@ public class AuthController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         if (email == null || email.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Email không được để trống"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Email cannot be empty"));
         }
 
         try {
             authService.forgotPassword(email);
             Map<String, String> response = new HashMap<>();
-            response.put("message", "Mã OTP khôi phục mật khẩu đã được gửi đến email của bạn.");
+            response.put("message", "Password reset code (OTP) has been sent to your email.");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, String> errorResponse = new HashMap<>();
@@ -119,7 +119,7 @@ public class AuthController {
         try {
             authService.resetPassword(request);
             Map<String, String> response = new HashMap<>();
-            response.put("message", "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.");
+            response.put("message", "Password reset successfully! You can now sign in with your new password.");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, String> errorResponse = new HashMap<>();
@@ -146,13 +146,13 @@ public class AuthController {
     public ResponseEntity<?> logout(@AuthenticationPrincipal User currentUser) {
         if (currentUser == null) {
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Yêu cầu cần token xác thực hợp lệ");
+            errorResponse.put("error", "A valid authentication token is required");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
 
         authService.logout(currentUser);
         Map<String, String> response = new HashMap<>();
-        response.put("message", "Đăng xuất thành công!");
+        response.put("message", "Logged out successfully!");
         return ResponseEntity.ok(response);
     }
 
@@ -163,7 +163,7 @@ public class AuthController {
             @Valid @RequestBody ChangePasswordRequest request) {
         if (currentUser == null) {
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Yêu cầu cần token xác thực hợp lệ");
+            errorResponse.put("error", "A valid authentication token is required");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
 
@@ -171,7 +171,7 @@ public class AuthController {
             authService.changePassword(currentUser, request);
 
             Map<String, String> response = new HashMap<>();
-            response.put("message", "Đổi mật khẩu thành công!");
+            response.put("message", "Password changed successfully!");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, String> errorResponse = new HashMap<>();

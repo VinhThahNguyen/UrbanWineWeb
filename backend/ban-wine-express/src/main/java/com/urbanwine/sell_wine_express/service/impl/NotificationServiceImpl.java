@@ -99,10 +99,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public void markAsRead(User user, Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông báo #" + notificationId));
+                .orElseThrow(() -> new IllegalArgumentException("Notification not found #" + notificationId));
 
         if (!notification.getRecipient().getUserId().equals(user.getUserId())) {
-            throw new IllegalArgumentException("Bạn không có quyền truy cập thông báo này");
+            throw new IllegalArgumentException("You do not have permission to access this notification");
         }
 
         notification.setIsRead(true);

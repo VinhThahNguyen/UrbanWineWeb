@@ -63,7 +63,7 @@ export const CartPage: React.FC<CartPageProps> = ({
         <div className="empty-cart-view">
           <Loader2 size={32} className="spin-icon" style={{ color: '#d4af37', marginBottom: '1rem' }} />
           <p style={{ color: '#d4af37', fontSize: '1rem', fontWeight: 500 }}>
-            Đang tải dữ liệu giỏ hàng từ cơ sở dữ liệu...
+            Loading cart items...
           </p>
         </div>
       ) : items.length === 0 ? (
@@ -72,10 +72,10 @@ export const CartPage: React.FC<CartPageProps> = ({
             <ShoppingBag size={40} />
           </div>
           <h2 style={{ color: '#f7f3ed', fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.65rem', fontFamily: 'Cinzel, Georgia, serif' }}>
-            Giỏ hàng của bạn đang trống
+            Your cart is empty
           </h2>
           <p style={{ color: '#a1a1aa', maxWidth: '460px', margin: '0 auto 1.75rem auto', fontSize: '0.9rem', lineHeight: 1.6 }}>
-            Không có sản phẩm nào trong giỏ hàng từ Database. Bạn hãy dạo một vòng Wine Cellar để lựa chọn những chai vang hảo hạng nhé.
+            There are no items in your cart. Explore our Wine Cellar to find your favorite wines.
           </p>
           <button className="btn-proceed-checkout" onClick={onContinueShopping} style={{ width: 'auto', padding: '0.85rem 2.25rem' }}>
             EXPLORE WINE CELLAR

@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UpdateCartItemRequest {
 
-    @NotNull(message = "Số lượng không được để trống")
+    @NotNull(message = "Quantity is required")
     private Integer quantity;
 }

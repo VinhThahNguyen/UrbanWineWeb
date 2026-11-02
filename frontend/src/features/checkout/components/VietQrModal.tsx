@@ -83,30 +83,30 @@ export const VietQrModal: React.FC<VietQrModalProps> = ({
         {/* 15m Countdown Timer */}
         <div className="vietqr-timer-pill">
           <Clock size={14} />
-          <span>Thời gian thanh toán còn: {timeFormatted}</span>
+          <span>Payment time remaining: {timeFormatted}</span>
         </div>
 
         {/* Real Dynamic QR Image */}
         <div className="vietqr-code-wrapper">
           <img
             src={qrUrl}
-            alt="Mã thanh toán VietQR"
+            alt="VietQR payment code"
             className="vietqr-image"
           />
           <span style={{ fontSize: '0.72rem', color: '#71717a', fontWeight: 500 }}>
-            Hỗ trợ quét qua tất cả ứng dụng Ngân hàng & Ví điện tử
+            Supports all banking apps & e-wallets
           </span>
         </div>
 
         {/* Bank Details */}
         <div className="vietqr-banking-info">
           <div className="banking-info-row">
-            <span className="banking-info-label">Ngân hàng:</span>
+            <span className="banking-info-label">Bank:</span>
             <span className="banking-info-val">{bankName}</span>
           </div>
 
           <div className="banking-info-row">
-            <span className="banking-info-label">Số tài khoản:</span>
+            <span className="banking-info-label">Account Number:</span>
             <span className="banking-info-val">
               {bankAccount}
               <button
@@ -114,23 +114,23 @@ export const VietQrModal: React.FC<VietQrModalProps> = ({
                 onClick={() => handleCopy(bankAccount, 'account')}
               >
                 {copiedField === 'account' ? <Check size={12} /> : <Copy size={12} />}
-                {copiedField === 'account' ? 'Đã chép' : 'Sao chép'}
+                {copiedField === 'account' ? 'Copied' : 'Copy'}
               </button>
             </span>
           </div>
 
           <div className="banking-info-row">
-            <span className="banking-info-label">Chủ tài khoản:</span>
+            <span className="banking-info-label">Account Holder:</span>
             <span className="banking-info-val">{accountHolder}</span>
           </div>
 
           <div className="banking-info-row">
-            <span className="banking-info-label">Số tiền:</span>
+            <span className="banking-info-label">Amount:</span>
             <span className="banking-info-val amount">{formatVnd(amount)}</span>
           </div>
 
           <div className="banking-info-row">
-            <span className="banking-info-label">Nội dung chuyển khoản:</span>
+            <span className="banking-info-label">Payment Note:</span>
             <span className="banking-info-val">
               <strong style={{ color: '#d4af37' }}>{orderCode}</strong>
               <button
@@ -138,7 +138,7 @@ export const VietQrModal: React.FC<VietQrModalProps> = ({
                 onClick={() => handleCopy(orderCode, 'content')}
               >
                 {copiedField === 'content' ? <Check size={12} /> : <Copy size={12} />}
-                {copiedField === 'content' ? 'Đã chép' : 'Sao chép'}
+                {copiedField === 'content' ? 'Copied' : 'Copy'}
               </button>
             </span>
           </div>
@@ -147,13 +147,13 @@ export const VietQrModal: React.FC<VietQrModalProps> = ({
         {/* Listening Indicator */}
         <div className="vietqr-status-indicator">
           <div className="spinner-pulse"></div>
-          <span>Đang tự động nhận diện thanh toán thời gian thực...</span>
+          <span>Checking payment in real-time...</span>
         </div>
 
         {/* Action Confirm Button */}
         <div className="vietqr-actions">
           <button className="btn-done-transfer" onClick={onSuccess}>
-            Tôi đã chuyển khoản thành công
+            I Have Completed the Transfer
           </button>
         </div>
       </div>

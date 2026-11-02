@@ -13,10 +13,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OrderItemRequest {
 
-    @NotNull(message = "ID sản phẩm rượu không được để trống")
+    @NotNull(message = "Wine ID is required")
     private Long wineId;
 
-    @NotNull(message = "Số lượng không được để trống")
-    @Min(value = 1, message = "Số lượng phải lớn hơn hoặc bằng 1")
+    @NotNull(message = "Quantity is required")
+    @Min(value = 1, message = "Quantity must be at least 1")
     private Integer quantity;
 }

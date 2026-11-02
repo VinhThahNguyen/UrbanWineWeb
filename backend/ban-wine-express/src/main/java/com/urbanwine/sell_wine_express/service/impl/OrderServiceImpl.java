@@ -114,7 +114,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public CheckoutSummaryResponse calculateCheckoutSummary(User customer, CheckoutSummaryRequest request) {
         if (request.getItems() == null || request.getItems().isEmpty()) {
-            throw new IllegalArgumentException("Giỏ hàng phải có ít nhất một sản phẩm");
+            throw new IllegalArgumentException("Cart must contain at least one item");
         }
 
         // Kiểm tra địa chỉ có thuộc nội thành Hà Nội (E2, BR-02)
@@ -122,7 +122,7 @@ public class OrderServiceImpl implements OrderService {
         if (request.getDeliveryAddress() != null && !request.getDeliveryAddress().isBlank()) {
             isInnerCity = validateInnerCityAddress(request.getDeliveryAddress());
             if (!isInnerCity) {
-                throw new IllegalArgumentException("Hệ thống chỉ hỗ trợ giao hàng khu vực nội thành Hà Nội");
+                throw new IllegalArgumentException("Delivery is only available in inner Hanoi");
             }
         }
 
@@ -132,15 +132,15 @@ public class OrderServiceImpl implements OrderService {
 
         for (OrderItemRequest itemReq : request.getItems()) {
             Wine wine = wineRepository.findById(itemReq.getWineId())
-                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm rượu với ID: " + itemReq.getWineId()));
+                    .orElseThrow(() -> new IllegalArgumentException("Wine product not found with ID: " + itemReq.getWineId()));
 
             if (!Boolean.TRUE.equals(wine.getIsActive())) {
-                throw new IllegalArgumentException("Sản phẩm '" + wine.getWineName() + "' hiện không còn kinh doanh");
+                throw new IllegalArgumentException("Product '" + wine.getWineName() + "' is currently unavailable");
             }
 
             // Kiểm tra số lượng tồn kho (E1)
             if (wine.getStockQuantity() < itemReq.getQuantity()) {
-                throw new IllegalArgumentException("Sản phẩm '" + wine.getWineName() + "' không đủ số lượng tồn kho. Hiện chỉ còn: " + wine.getStockQuantity());
+                throw new IllegalArgumentException("Product '" + wine.getWineName() + "' does not have enough stock. Remaining: " + wine.getStockQuantity());
             }
 
             BigDecimal lineTotal = wine.getPrice().multiply(BigDecimal.valueOf(itemReq.getQuantity()));
@@ -175,21 +175,21 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderResponse placeOrder(User customer, PlaceOrderRequest request, HttpServletRequest servletRequest) {
         if (request.getItems() == null || request.getItems().isEmpty()) {
-            throw new IllegalArgumentException("Giỏ hàng phải có ít nhất một sản phẩm");
+            throw new IllegalArgumentException("Cart must contain at least one item");
         }
 
         if (customer == null) {
-            throw new IllegalArgumentException("Không xác định được danh tính khách hàng. Vui lòng đăng nhập lại!");
+            throw new IllegalArgumentException("Customer identity not found. Please log in again!");
         }
 
         // 1. Kiểm tra điều kiện tuổi 18+ (PRE-2, BR-01)
         if (customer.getIsOver18() != null && !customer.getIsOver18()) {
-            throw new IllegalArgumentException("Khách hàng phải từ 18 tuổi trở lên để mua rượu vang (Quy định BR-01)");
+            throw new IllegalArgumentException("Customer must be at least 18 years old to purchase wine (Rule BR-01)");
         }
 
         // 2. Kiểm tra địa chỉ nội thành Hà Nội (BR-02, E2)
         if (!validateInnerCityAddress(request.getDeliveryAddress())) {
-            throw new IllegalArgumentException("Địa chỉ giao hàng không hợp lệ. Hệ thống chỉ hỗ trợ giao hàng nội thành Hà Nội");
+            throw new IllegalArgumentException("Delivery address is invalid. Delivery is only available in inner Hanoi");
         }
 
         // 3. Kiểm tra tồn kho thời gian thực (E1) và tạm giữ tồn kho 15 phút (Soft reservation)
@@ -199,15 +199,15 @@ public class OrderServiceImpl implements OrderService {
 
         for (OrderItemRequest itemReq : request.getItems()) {
             Wine wine = wineRepository.findById(itemReq.getWineId())
-                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm rượu với ID: " + itemReq.getWineId()));
+                    .orElseThrow(() -> new IllegalArgumentException("Wine product not found with ID: " + itemReq.getWineId()));
 
             if (!Boolean.TRUE.equals(wine.getIsActive())) {
-                throw new IllegalArgumentException("Sản phẩm '" + wine.getWineName() + "' hiện không còn kinh doanh");
+                throw new IllegalArgumentException("Product '" + wine.getWineName() + "' is currently unavailable");
             }
 
             // E1: Kiểm tra đủ tồn kho
             if (wine.getStockQuantity() < itemReq.getQuantity()) {
-                throw new IllegalArgumentException("Sản phẩm '" + wine.getWineName() + "' không đủ tồn kho. Hiện còn: " + wine.getStockQuantity());
+                throw new IllegalArgumentException("Product '" + wine.getWineName() + "' does not have enough stock. Remaining: " + wine.getStockQuantity());
             }
 
             BigDecimal lineTotal = wine.getPrice().multiply(BigDecimal.valueOf(itemReq.getQuantity()));
@@ -317,10 +317,10 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public OrderResponse getOrderDetail(User customer, Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+                .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + orderId));
 
         if (!order.getCustomer().getUserId().equals(customer.getUserId())) {
-            throw new IllegalArgumentException("Bạn không có quyền xem thông tin đơn hàng này");
+            throw new IllegalArgumentException("You do not have permission to view this order");
         }
 
         return mapToOrderResponse(order);
@@ -330,10 +330,10 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public PaymentStatusResponse getPaymentStatus(User customer, Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+                .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + orderId));
 
         if (!order.getCustomer().getUserId().equals(customer.getUserId())) {
-            throw new IllegalArgumentException("Bạn không có quyền xem thông tin thanh toán của đơn hàng này");
+            throw new IllegalArgumentException("You do not have permission to view payment info for this order");
         }
 
         PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
@@ -506,25 +506,25 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderResponse cancelOrder(User customer, Long orderId, CancelOrderRequest request) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+                .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + orderId));
 
         if (!order.getCustomer().getUserId().equals(customer.getUserId())) {
-            throw new IllegalArgumentException("Bạn không có quyền thao tác trên đơn hàng này");
+            throw new IllegalArgumentException("You do not have permission to modify this order");
         }
 
         if (order.getOrderStatus() == OrderStatus.CANCELLED) {
-            throw new IllegalArgumentException("Đơn hàng này đã được hủy trước đó");
+            throw new IllegalArgumentException("This order has already been cancelled");
         }
 
         if (order.getOrderStatus() == OrderStatus.COMPLETED) {
-            throw new IllegalArgumentException("Không thể hủy đơn hàng đã hoàn thành");
+            throw new IllegalArgumentException("Cannot cancel a completed order");
         }
 
         if (order.getOrderStatus() == OrderStatus.SHIPPING) {
-            throw new IllegalArgumentException("Đơn hàng đang trong quá trình vận chuyển. Quý khách vui lòng liên hệ tổng đài hoặc trao đổi trực tiếp với nhân viên giao hàng để được hỗ trợ (Quy định BR-04)");
+            throw new IllegalArgumentException("Order is out for delivery. Please contact customer support or your shipper directly for assistance (Rule BR-04)");
         }
 
-        String reason = (request != null && request.getReason() != null) ? request.getReason().trim() : "Khách hàng yêu cầu hủy";
+        String reason = (request != null && request.getReason() != null) ? request.getReason().trim() : "Customer requested cancellation";
 
         // Normal Flow: Hủy trực tiếp khi đơn ở trạng thái PENDING
         if (order.getOrderStatus() == OrderStatus.PENDING) {
@@ -544,7 +544,7 @@ public class OrderServiceImpl implements OrderService {
         // Alternative Flow: Gửi yêu cầu hủy khi đơn ở trạng thái PROCESSING
         if (order.getOrderStatus() == OrderStatus.PROCESSING) {
             if (order.getCancelStatus() == CancelStatus.REQUESTED) {
-                throw new IllegalArgumentException("Đơn hàng đã có yêu cầu hủy đang chờ Quản lý cửa hàng xét duyệt");
+                throw new IllegalArgumentException("Order already has a pending cancellation request waiting for manager review");
             }
 
             order.setCancelStatus(CancelStatus.REQUESTED);
@@ -557,32 +557,32 @@ public class OrderServiceImpl implements OrderService {
             return mapToOrderResponse(order);
         }
 
-        throw new IllegalArgumentException("Trạng thái đơn hàng hiện tại không hợp lệ để hủy: " + order.getOrderStatus());
+        throw new IllegalArgumentException("Current order status is not eligible for cancellation: " + order.getOrderStatus());
     }
 
     @Override
     @Transactional
     public OrderResponse resumePayment(User customer, Long orderId, HttpServletRequest servletRequest) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+                .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + orderId));
 
         if (!order.getCustomer().getUserId().equals(customer.getUserId())) {
-            throw new IllegalArgumentException("Bạn không có quyền thực hiện thanh toán cho đơn hàng này");
+            throw new IllegalArgumentException("You do not have permission to pay for this order");
         }
 
         PaymentTransaction paymentTx = paymentTransactionRepository.findByOrder(order).orElse(null);
         PaymentStatus paymentStatus = (paymentTx != null) ? paymentTx.getPaymentStatus() : PaymentStatus.UNPAID;
 
         if (paymentStatus == PaymentStatus.PAID) {
-            throw new IllegalArgumentException("Đơn hàng này đã được thanh toán thành công, không thể thanh toán lại");
+            throw new IllegalArgumentException("This order has already been paid");
         }
 
         if (order.getOrderStatus() == OrderStatus.COMPLETED) {
-            throw new IllegalArgumentException("Đơn hàng đã hoàn thành");
+            throw new IllegalArgumentException("Order has already been completed");
         }
 
         if (order.getOrderStatus() == OrderStatus.SHIPPING) {
-            throw new IllegalArgumentException("Đơn hàng đang trong quá trình vận chuyển");
+            throw new IllegalArgumentException("Order is currently out for delivery");
         }
 
         // Trường hợp đơn đã bị CANCELLED (do hết hạn 15 phút hoặc đã hủy trước đó):
@@ -786,8 +786,8 @@ public class OrderServiceImpl implements OrderService {
         try {
             if (order.getCustomer() != null) {
                 String orderCode = "#UWE-" + order.getOrderId();
-                String title = "Đơn hàng " + orderCode + " đã được phê duyệt";
-                String msg = "Cửa hàng đã phê duyệt đơn hàng " + orderCode + " và đang đóng gói sản phẩm.";
+                String title = "Order " + orderCode + " Confirmed";
+                String msg = "Your order " + orderCode + " has been confirmed and is being prepared.";
                 notificationService.sendNotification(order.getCustomer(), title, msg, NotificationType.ORDER_APPROVED, order.getOrderId());
             }
         } catch (Exception e) {
@@ -842,8 +842,8 @@ public class OrderServiceImpl implements OrderService {
         try {
             if (order.getCustomer() != null) {
                 String orderCode = "#UWE-" + order.getOrderId();
-                String title = "Đơn hàng " + orderCode + " đã bị hủy";
-                String msg = "Cửa hàng đã từ chối đơn hàng " + orderCode + ". Lý do: \"" + reason + "\". Tồn kho và tiền đã được hoàn trả.";
+                String title = "Order " + orderCode + " Cancelled";
+                String msg = "Your order " + orderCode + " has been cancelled. Reason: \"" + reason + "\". Stock and payment have been refunded.";
                 notificationService.sendNotification(order.getCustomer(), title, msg, NotificationType.ORDER_REJECTED, order.getOrderId());
             }
         } catch (Exception e) {
@@ -1334,9 +1334,9 @@ public class OrderServiceImpl implements OrderService {
         // Gửi thông báo thời gian thực cho Khách hàng
         if (order.getCustomer() != null) {
             String orderCode = "#UWE-" + order.getOrderId();
-            String custMsg = String.format("Đơn hàng %s đang được giao bởi Shipper %s (%s).",
+            String custMsg = String.format("Order %s is on the way with delivery person %s (%s).",
                     orderCode, shipper.getFullName(), shipper.getPhoneNumber() != null ? shipper.getPhoneNumber() : "");
-            notificationService.sendNotification(order.getCustomer(), "Đơn hàng đang được giao", custMsg, NotificationType.ORDER_SHIPPING, order.getOrderId());
+            notificationService.sendNotification(order.getCustomer(), "Order Out for Delivery", custMsg, NotificationType.ORDER_SHIPPING, order.getOrderId());
         }
 
         return mapToOrderResponse(order);

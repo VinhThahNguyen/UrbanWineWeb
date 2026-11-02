@@ -147,9 +147,9 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
     return list;
   }, [filteredWines, sortBy]);
 
-  // Display Name: Default to Thế Vinh or currentUser.fullName
-  const displayName = currentUser?.fullName || 'Thế Vinh';
-  const displayTag = currentUser?.role === 'ROLE_ADMIN' ? 'TV' : 'TV';
+  // Display Name: Default to Customer or currentUser.fullName
+  const displayName = currentUser?.fullName || 'Customer';
+  const displayTag = currentUser?.role === 'ROLE_ADMIN' ? 'AD' : 'CU';
 
   return (
     <div className="admin-catalog-page">
@@ -201,7 +201,7 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
               onClick={() => {
                 setActiveTab('orders');
                 if (onViewOrders) onViewOrders();
-                else alert('Đang chuyển tới trang Quản lý đơn hàng (My Orders)');
+                else alert('Navigating to My Orders');
               }}
             >
               My Orders
@@ -209,15 +209,15 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
           </div>
 
           {/* Cart Icon */}
-          <button className="admin-cart-btn" onClick={onViewCart} title="Giỏ hàng">
+          <button className="admin-cart-btn" onClick={onViewCart} title="Cart">
             <ShoppingBag size={20} />
             {cartCount > 0 && <span className="admin-cart-dot">{cartCount}</span>}
           </button>
 
           {/* Customer Profile Pill (No logout dropdown) */}
-          <div className="admin-user-pill static-pill" title="Tài khoản Khách hàng">
+          <div className="admin-user-pill static-pill" title="Customer Account">
             <span className="user-greeting-txt">
-              Xin chào, <strong className="user-name-bold">{displayName}</strong>
+              Hello, <strong className="user-name-bold">{displayName}</strong>
             </span>
             <span className="user-badge-tag">{displayTag}</span>
           </div>
@@ -319,7 +319,7 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
               type="button"
               className="admin-footer-btn btn-logout"
               onClick={onLogout}
-              title="Đăng xuất khỏi hệ thống"
+              title="Sign Out"
             >
               <LogOut size={16} />
               <span>Sign Out</span>
@@ -362,11 +362,11 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
             {isLoadingWines ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: '#d4af37' }}>
                 <Loader2 size={36} className="spin-icon" style={{ animation: 'spin 1s linear infinite' }} />
-                <p style={{ marginTop: '12px', color: '#bfb7ad', fontSize: '0.95rem' }}>Đang nạp danh sách vang hảo hạng từ hầm rượu...</p>
+                <p style={{ marginTop: '12px', color: '#bfb7ad', fontSize: '0.95rem' }}>Loading fine wines from cellar...</p>
               </div>
             ) : sortedWines.length === 0 ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: '#8a8279' }}>
-                <p style={{ fontSize: '1.05rem', color: '#f7f3ed', marginBottom: '10px' }}>Không có chai rượu nào phù hợp với bộ lọc hiện tại.</p>
+                <p style={{ fontSize: '1.05rem', color: '#f7f3ed', marginBottom: '10px' }}>No wines match the selected filters.</p>
                 <button
                   type="button"
                   onClick={handleResetFilters}
@@ -380,7 +380,7 @@ export const AdminCatalogPage: React.FC<AdminCatalogPageProps> = ({
                     cursor: 'pointer',
                   }}
                 >
-                  Đặt lại bộ lọc (Reset)
+                  Reset Filters
                 </button>
               </div>
             ) : (

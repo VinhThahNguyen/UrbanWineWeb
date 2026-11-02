@@ -82,9 +82,9 @@ export const SelectQuantityModal: React.FC<SelectQuantityModalProps> = ({
           <span className={`stock-dot ${realStock <= 0 ? 'dot-red' : realStock <= 3 ? 'dot-yellow' : ''}`}></span>
           <span>
             {isLoadingStock ? (
-              <span style={{ color: '#d4af37' }}>Đang kiểm tra kho thực tế...</span>
+              <span style={{ color: '#d4af37' }}>Checking stock...</span>
             ) : realStock <= 0 ? (
-              <strong style={{ color: '#ef4444' }}>Hết hàng trong hầm (0 chai)</strong>
+              <strong style={{ color: '#ef4444' }}>Out of stock (0 bottles)</strong>
             ) : (
               <>
                 Available in cellar: <strong>{realStock} {realStock === 1 ? 'bottle' : 'bottles'}</strong>
@@ -130,7 +130,7 @@ export const SelectQuantityModal: React.FC<SelectQuantityModalProps> = ({
             onClose();
           }}
         >
-          {realStock <= 0 ? 'HẾT HÀNG' : 'ADD TO CART'}
+          {realStock <= 0 ? 'OUT OF STOCK' : 'ADD TO CART'}
         </button>
       </div>
     </div>

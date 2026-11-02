@@ -102,12 +102,12 @@ export const Header: React.FC<HeaderProps> = ({
                 <User size={15} />
               </div>
               <span className="user-display-name">
-                Xin chào, {currentUser.fullName || currentUser.email}
+                Hello, {currentUser.fullName || currentUser.email}
               </span>
               <button
                 className="btn-logout-small"
                 onClick={onLogout}
-                title="Đăng xuất"
+                title="Sign Out"
               >
                 Logout
               </button>

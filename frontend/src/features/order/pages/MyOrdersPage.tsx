@@ -41,7 +41,7 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
 
   // Cancel Modal state
   const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
-  const [cancelReason, setCancelReason] = useState<string>('Tôi muốn thay đổi thông tin đơn hàng');
+  const [cancelReason, setCancelReason] = useState<string>('I want to change order details');
   const [isSubmittingCancel, setIsSubmittingCancel] = useState<boolean>(false);
 
   // Load orders from backend API
@@ -53,7 +53,7 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
       setOrders(data || []);
     } catch (err: any) {
       console.error('Error fetching orders from backend:', err);
-      setErrorMsg(err?.response?.data?.message || 'Không thể tải danh sách đơn hàng từ máy chủ.');
+      setErrorMsg(err?.response?.data?.message || 'Unable to load orders from the server.');
       setOrders([]);
     } finally {
       setLoading(false);
@@ -142,7 +142,7 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
       setCancellingOrder(null);
     } catch (err: any) {
       console.error('Error cancelling order:', err);
-      alert(err?.response?.data?.message || 'Không thể thực hiện hủy đơn hàng. Vui lòng thử lại.');
+      alert(err?.response?.data?.message || 'Unable to cancel order. Please try again.');
     } finally {
       setIsSubmittingCancel(false);
     }
@@ -150,14 +150,14 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
 
   // Quick preset reasons
   const presetReasons = [
-    'Tôi muốn thay đổi thông tin đơn hàng',
-    'Đặt nhầm số lượng chai',
-    'Muốn đổi phương thức thanh toán',
-    'Tìm thấy giá ưu đãi hơn',
-    'Lý do khác',
+    'I want to change order details',
+    'Ordered wrong quantity',
+    'Want to change payment method',
+    'Found a better price',
+    'Other reason',
   ];
 
-  const displayName = currentUser?.fullName || 'Thế Vinh';
+  const displayName = currentUser?.fullName || 'Customer';
 
   return (
     <div className="my-orders-container">
@@ -201,15 +201,15 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
           </div>
 
           {/* Cart Icon */}
-          <button className="orders-cart-btn" onClick={onViewCart} title="Xem giỏ hàng">
+          <button className="orders-cart-btn" onClick={onViewCart} title="View cart">
             <ShoppingBag size={19} />
             {cartCount > 0 && <span className="orders-cart-badge">{cartCount}</span>}
           </button>
 
           {/* User Profile Badge */}
-          <div className="orders-user-pill static-pill" title="Tài khoản Khách hàng">
-            <span>Xin chào, <strong>{displayName}</strong></span>
-            <span className="orders-user-badge-red">TV</span>
+          <div className="orders-user-pill static-pill" title="Customer Account">
+            <span>Hello, <strong>{displayName}</strong></span>
+            <span className="orders-user-badge-red">CU</span>
           </div>
         </div>
       </header>
@@ -273,21 +273,21 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
           {loading ? (
             <div className="orders-empty-state">
               <div className="spinner-pulse" style={{ width: 18, height: 18, marginBottom: 12 }}></div>
-              <h3 className="empty-state-title">Đang kết nối cơ sở dữ liệu...</h3>
-              <p className="empty-state-desc">Đang tải danh sách đơn hàng thực tế từ máy chủ Urban Wine Express.</p>
+              <h3 className="empty-state-title">Connecting to server...</h3>
+              <p className="empty-state-desc">Loading your orders from Urban Wine Express.</p>
             </div>
           ) : errorMsg ? (
             <div className="orders-empty-state">
               <AlertCircle size={40} className="empty-state-icon" style={{ color: '#ef4444' }} />
               <h3 className="empty-state-title">{errorMsg}</h3>
-              <p className="empty-state-desc">Quý khách vui lòng đăng nhập hoặc kiểm tra kết nối máy chủ.</p>
+              <p className="empty-state-desc">Please sign in or check your connection.</p>
             </div>
           ) : filteredOrders.length === 0 ? (
             <div className="orders-empty-state">
               <AlertCircle size={40} className="empty-state-icon" />
-              <h3 className="empty-state-title">Chưa có đơn hàng nào</h3>
+              <h3 className="empty-state-title">No orders yet</h3>
               <p className="empty-state-desc">
-                Không tìm thấy đơn hàng nào trong mục này trên hệ thống. Quý khách có thể ghé thăm Hầm rượu để đặt hàng.
+                No orders found in this section. Explore our Wine Cellar to place an order.
               </p>
             </div>
           ) : (
@@ -384,7 +384,7 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                         className="btn-cancel-order"
                         onClick={() => {
                           setCancellingOrder(order);
-                          setCancelReason('Tôi muốn thay đổi thông tin đơn hàng');
+                          setCancelReason('I want to change order details');
                         }}
                       >
                         CANCEL ORDER
@@ -397,7 +397,7 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                         className="btn-request-cancel"
                         onClick={() => {
                           setCancellingOrder(order);
-                          setCancelReason('Đơn hàng cần điều chỉnh gấp, xin nhờ hỗ trợ');
+                          setCancelReason('Need urgent change, requesting assistance');
                         }}
                       >
                         REQUEST CANCELLATION
@@ -428,7 +428,7 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                         </span>
                         {(order.cancellationReason || (order as any).adminNote) && (
                           <div style={{ fontSize: '0.78rem', color: '#f87171', marginTop: '4px', fontStyle: 'italic' }}>
-                            Lý do: &ldquo;{order.cancellationReason || (order as any).adminNote}&rdquo;
+                            Reason: &ldquo;{order.cancellationReason || (order as any).adminNote}&rdquo;
                           </div>
                         )}
                       </div>
@@ -448,8 +448,8 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
             <div className="modal-header-luxury">
               <h3 className="modal-title-luxury">
                 {cancellingOrder.orderStatus === 'PENDING'
-                  ? 'Hủy Đơn Hàng'
-                  : 'Gửi Yêu Cầu Hủy Đơn'}
+                  ? 'Cancel Order'
+                  : 'Request Order Cancellation'}
               </h3>
               <button
                 className="modal-close-btn"
@@ -461,13 +461,13 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
 
             <p style={{ fontSize: '0.85rem', color: '#c7c2b8', lineHeight: 1.5 }}>
               {cancellingOrder.orderStatus === 'PENDING'
-                ? `Bạn đang thao tác hủy trực tiếp đơn hàng ${cancellingOrder.orderCode}. Số lượng rượu sẽ được hoàn trả lại kho ngay lập tức.`
-                : `Đơn hàng ${cancellingOrder.orderCode} đang được chuẩn bị tại hầm rượu. Yêu cầu của bạn sẽ được chuyển đến Quản lý cửa hàng xét duyệt.`}
+                ? `You are cancelling order ${cancellingOrder.orderCode}. Items will be returned to stock immediately.`
+                : `Order ${cancellingOrder.orderCode} is being prepared at our cellar. Your request will be sent to the store manager for review.`}
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <label style={{ fontSize: '0.78rem', color: '#8b857d', fontWeight: 600 }}>
-                CHỌN HOẶC NHẬP LÝ DO HỦY:
+                SELECT OR ENTER CANCELLATION REASON:
               </label>
               <div className="cancel-reason-presets">
                 {presetReasons.map((preset, i) => (
@@ -485,7 +485,7 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                 className="cancel-reason-textarea"
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
-                placeholder="Nhập lý do chi tiết..."
+                placeholder="Enter detailed reason..."
               />
             </div>
 
@@ -495,7 +495,7 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                 onClick={() => setCancellingOrder(null)}
                 disabled={isSubmittingCancel}
               >
-                Đóng
+                Close
               </button>
               <button
                 className="btn-danger-luxury"
@@ -503,10 +503,10 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                 disabled={isSubmittingCancel}
               >
                 {isSubmittingCancel
-                  ? 'Đang xử lý...'
+                  ? 'Processing...'
                   : cancellingOrder.orderStatus === 'PENDING'
-                  ? 'Xác nhận hủy đơn'
-                  : 'Gửi yêu cầu'}
+                  ? 'Confirm Cancel'
+                  : 'Submit Request'}
               </button>
             </div>
           </div>

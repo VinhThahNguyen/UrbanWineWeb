@@ -18,20 +18,20 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class RegisterRequest {
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email is invalid")
     private String email;
 
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, message = "Mật khẩu phải có tối thiểu 6 ký tự")
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
-    @NotBlank(message = "Họ và tên không được để trống")
+    @NotBlank(message = "Full name is required")
     private String fullName;
 
     private String phone;
 
-    @NotNull(message = "Ngày sinh không được để trống")
+    @NotNull(message = "Date of birth is required")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthDate;
 }

@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AddCartItemRequest {
 
-    @NotNull(message = "ID của rượu không được để trống")
+    @NotNull(message = "Wine ID is required")
     private Long wineId;
 
-    @NotNull(message = "Số lượng không được để trống")
+    @NotNull(message = "Quantity is required")
     private Integer quantity;
 }

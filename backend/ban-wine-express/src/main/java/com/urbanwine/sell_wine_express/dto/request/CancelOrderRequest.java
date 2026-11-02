@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CancelOrderRequest {
 
-    @NotBlank(message = "Vui lòng nhập lý do hủy đơn hàng")
-    @Size(max = 500, message = "Lý do hủy đơn không được vượt quá 500 ký tự")
+    @NotBlank(message = "Please provide a reason for cancellation")
+    @Size(max = 500, message = "Cancellation reason cannot exceed 500 characters")
     private String reason;
 }

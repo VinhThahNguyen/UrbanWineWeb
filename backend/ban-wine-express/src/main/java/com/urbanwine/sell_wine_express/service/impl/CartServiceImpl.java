@@ -89,14 +89,14 @@ public class CartServiceImpl implements CartService {
     @Transactional
     public CartResponse addItemToCart(User user, AddCartItemRequest request) {
         if (request.getQuantity() == null || request.getQuantity() <= 0) {
-            throw new IllegalArgumentException("Số lượng tối thiểu là 1, muốn xóa hãy bấm nút Xóa");
+            throw new IllegalArgumentException("Minimum quantity is 1. To remove the item, please click Remove");
         }
 
         Wine wine = wineRepository.findById(request.getWineId())
-                .orElseThrow(() -> new RuntimeException("Sản phẩm rượu không tồn tại"));
+                .orElseThrow(() -> new RuntimeException("Wine product not found"));
 
         if (!wine.getIsActive()) {
-            throw new RuntimeException("Sản phẩm rượu hiện không còn kinh doanh");
+            throw new RuntimeException("This wine is currently not available for sale");
         }
 
         Cart cart = getOrCreateCart(user);
@@ -110,7 +110,7 @@ public class CartServiceImpl implements CartService {
 
         // Kiểm tra tồn kho E2
         if (targetQty > wine.getStockQuantity()) {
-            throw new RuntimeException("Số lượng trong kho chỉ còn " + wine.getStockQuantity() + " sản phẩm, vui lòng chọn lại");
+            throw new RuntimeException("Only " + wine.getStockQuantity() + " bottles left in stock. Please adjust quantity");
         }
 
         if (cartItem == null) {
@@ -132,24 +132,24 @@ public class CartServiceImpl implements CartService {
     @Transactional
     public CartResponse updateItemQuantity(User user, Long cartItemId, UpdateCartItemRequest request) {
         if (request.getQuantity() == null || request.getQuantity() <= 0) {
-            throw new IllegalArgumentException("Số lượng tối thiểu là 1, muốn xóa hãy bấm nút Xóa");
+            throw new IllegalArgumentException("Minimum quantity is 1. To remove the item, please click Remove");
         }
 
         Cart cart = getOrCreateCart(user);
 
         CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("Món hàng không tồn tại trong giỏ"));
+                .orElseThrow(() -> new RuntimeException("Item not found in cart"));
 
         // Đảm bảo món hàng thuộc giỏ của user này
         if (!cartItem.getCart().getCartId().equals(cart.getCartId())) {
-            throw new RuntimeException("Bạn không có quyền thao tác trên món hàng này");
+            throw new RuntimeException("You do not have permission to modify this cart item");
         }
 
         Wine wine = cartItem.getWine();
 
         // Kiểm tra tồn kho E2: nếu vượt quá tồn kho -> giữ nguyên và báo lỗi
         if (request.getQuantity() > wine.getStockQuantity()) {
-            throw new RuntimeException("Số lượng trong kho chỉ còn " + wine.getStockQuantity() + " sản phẩm, vui lòng chọn lại");
+            throw new RuntimeException("Only " + wine.getStockQuantity() + " bottles left in stock. Please adjust quantity");
         }
 
         cartItem.setQuantity(request.getQuantity());
@@ -164,10 +164,10 @@ public class CartServiceImpl implements CartService {
         Cart cart = getOrCreateCart(user);
 
         CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("Món hàng không tồn tại trong giỏ"));
+                .orElseThrow(() -> new RuntimeException("Item not found in cart"));
 
         if (!cartItem.getCart().getCartId().equals(cart.getCartId())) {
-            throw new RuntimeException("Bạn không có quyền thao tác trên món hàng này");
+            throw new RuntimeException("You do not have permission to modify this cart item");
         }
 
         cart.getItems().remove(cartItem);

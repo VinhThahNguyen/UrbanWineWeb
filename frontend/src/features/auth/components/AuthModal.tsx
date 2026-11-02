@@ -124,12 +124,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         if (successRes.role === 'ROLE_ADMIN' || successRes.role === 'ROLE_SHIPPER') {
           setStaffUsername(email);
           setStaffPassword(password);
-          setErrorMsg('Cổng đăng nhập này chỉ dành riêng cho Khách hàng (Customer)! Tài khoản Quản trị / Nhân viên không được phép đăng nhập tại đây. Vui lòng bấm vào "Log in as Store Staff" bên dưới.');
+          setErrorMsg('This portal is for Customers only. Store Staff cannot sign in here. Please click "Log in as Store Staff" below.');
           return;
         }
 
         if (successRes.role && successRes.role !== 'ROLE_CUSTOMER') {
-          setErrorMsg('Tài khoản này không phải là Khách hàng. Vui lòng chuyển sang cổng Store Staff.');
+          setErrorMsg('This account is not a Customer account. Please use the Store Staff portal.');
           return;
         }
 
@@ -140,7 +140,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onClose();
       }
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || err.response?.data?.message || 'Email hoặc mật khẩu không chính xác');
+      setErrorMsg(err.response?.data?.error || err.response?.data?.message || 'Incorrect email or password');
     } finally {
       setLoading(false);
     }
@@ -154,7 +154,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     const otpCode = getFullOtp();
     if (otpCode.length < 6) {
-      setErrorMsg('Vui lòng nhập đầy đủ 6 chữ số OTP');
+      setErrorMsg('Please enter all 6 digits of the OTP code');
       setLoading(false);
       return;
     }
@@ -167,7 +167,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       if (onLoginSuccess) onLoginSuccess(res);
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Mã OTP không chính xác hoặc đã hết hạn');
+      setErrorMsg(err.response?.data?.error || 'Invalid or expired OTP code');
     } finally {
       setLoading(false);
     }
@@ -179,7 +179,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMsg(null);
 
     if (!birthDate) {
-      setErrorMsg('Vui lòng chọn ngày sinh để xác nhận từ 18 tuổi trở lên (Quy định BR-01)');
+      setErrorMsg('Please select your date of birth (must be 18 or older)');
       return;
     }
 
@@ -196,7 +196,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setOtpDigits(['', '', '', '', '', '']);
       setView('REGISTER_OTP');
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Đăng ký không thành công. Vui lòng thử lại');
+      setErrorMsg(err.response?.data?.error || 'Registration failed. Please try again');
     } finally {
       setLoading(false);
     }
@@ -211,10 +211,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const otpCode = getFullOtp();
     try {
       await authApi.verifyRegisterOtp({ email, otpCode });
-      setSuccessMsg('Kích hoạt tài khoản thành công! Bây giờ bạn có thể đăng nhập.');
+      setSuccessMsg('Account activated successfully! You can now sign in.');
       setView('CUSTOMER_SIGNIN');
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Mã OTP không chính xác hoặc đã hết hạn');
+      setErrorMsg(err.response?.data?.error || 'Invalid or expired OTP code');
     } finally {
       setLoading(false);
     }
@@ -223,7 +223,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // 5. Send Forgot Password OTP
   const handleSendForgotPasswordOtp = async () => {
     if (!email) {
-      setErrorMsg('Vui lòng nhập địa chỉ email');
+      setErrorMsg('Please enter your email address');
       return;
     }
     setErrorMsg(null);
@@ -231,9 +231,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       await authApi.forgotPassword(email);
       setOtpTimer(285);
-      setSuccessMsg('Mã OTP 6 số đã được gửi tới email của bạn!');
+      setSuccessMsg('A 6-digit OTP code has been sent to your email!');
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Không tìm thấy tài khoản với email này');
+      setErrorMsg(err.response?.data?.error || 'No account found with this email');
     } finally {
       setLoading(false);
     }
@@ -244,7 +244,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     e.preventDefault();
     const otpCode = getFullOtp();
     if (otpCode.length < 6) {
-      setErrorMsg('Vui lòng nhập đủ 6 chữ số OTP');
+      setErrorMsg('Please enter all 6 digits of the OTP code');
       return;
     }
     setErrorMsg(null);
@@ -257,7 +257,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMsg(null);
 
     if (newPassword !== confirmPassword) {
-      setErrorMsg('Mật khẩu mới và xác nhận mật khẩu không khớp');
+      setErrorMsg('New password and confirmation do not match');
       return;
     }
 
@@ -270,10 +270,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         newPassword,
         confirmPassword,
       });
-      setSuccessMsg('Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay.');
+      setSuccessMsg('Password reset successfully! You can now sign in.');
       setView('CUSTOMER_SIGNIN');
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Mã OTP không chính xác hoặc đã hết hạn');
+      setErrorMsg(err.response?.data?.error || 'Invalid or expired OTP code');
     } finally {
       setLoading(false);
     }
@@ -295,7 +295,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       if ('requiresOtp' in res && res.requiresOtp) {
         setEmail(staffUsername);
         setPassword(staffPassword);
-        setErrorMsg('Cổng này chỉ dành riêng cho Quản trị viên / Nhân viên cửa hàng (Store Staff)! Tài khoản Khách hàng không được phép đăng nhập tại đây. Vui lòng quay lại cổng Khách hàng.');
+        setErrorMsg('This portal is for Store Staff only. Customer accounts cannot sign in here. Please go back to Customer login.');
         return;
       }
 
@@ -305,13 +305,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       if (staffRes.role === 'ROLE_CUSTOMER') {
         setEmail(staffUsername);
         setPassword(staffPassword);
-        setErrorMsg('Cổng này chỉ dành riêng cho Quản trị viên / Nhân viên cửa hàng (Store Staff)! Tài khoản Khách hàng không được phép đăng nhập tại đây. Vui lòng quay lại cổng Khách hàng.');
+        setErrorMsg('This portal is for Store Staff only. Customer accounts cannot sign in here. Please go back to Customer login.');
         return;
       }
 
       // Kiểm tra vai trò hợp lệ
       if (staffRes.role !== 'ROLE_ADMIN' && staffRes.role !== 'ROLE_SHIPPER') {
-        setErrorMsg('Tài khoản này không có quyền truy cập vào khu vực quản trị.');
+        setErrorMsg('This account does not have permission to access the staff portal.');
         return;
       }
 
@@ -321,7 +321,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       if (onLoginSuccess) onLoginSuccess(staffRes);
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || err.response?.data?.message || 'Thông tin đăng nhập quản trị/nhân viên không chính xác');
+      setErrorMsg(err.response?.data?.error || err.response?.data?.message || 'Incorrect staff credentials');
     } finally {
       setLoading(false);
     }
@@ -374,7 +374,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setView('STAFF_LOGIN');
                     }}
                   >
-                    Chuyển sang cổng "Log in as Store Staff" ngay →
+                    Switch to "Log in as Store Staff" →
                   </button>
                 )}
               </div>
@@ -481,7 +481,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="Nhập họ và tên đầy đủ..."
+                  placeholder="Enter your full name..."
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="form-input"
@@ -493,7 +493,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <input
                   type="tel"
                   required
-                  placeholder="Nhập số điện thoại (10 chữ số)..."
+                  placeholder="Enter phone number (10 digits)..."
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="form-input"
@@ -791,7 +791,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {errorMsg && (
               <div className="auth-error-banner">
                 <div>{errorMsg}</div>
-                {errorMsg.includes('Khách hàng') && (
+                {(errorMsg.includes('Khách hàng') || errorMsg.includes('Customer')) && (
                   <button
                     type="button"
                     className="auth-error-switch-btn"
@@ -802,7 +802,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setView('CUSTOMER_SIGNIN');
                     }}
                   >
-                    Quay lại cổng đăng nhập Khách hàng →
+                    Back to Customer Sign In →
                   </button>
                 )}
               </div>

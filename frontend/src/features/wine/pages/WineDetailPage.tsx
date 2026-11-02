@@ -180,9 +180,9 @@ export const WineDetailPage: React.FC<WineDetailPageProps> = ({
           <div style={{ color: '#d4af37', fontSize: '0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: realStock <= 0 ? '#ef4444' : realStock <= 3 ? '#eab308' : '#22c55e', display: 'inline-block' }}></span>
             {realStock <= 0 ? (
-              <span style={{ color: '#ef4444', fontWeight: 600 }}>Tạm thời hết hàng trong hầm</span>
+              <span style={{ color: '#ef4444', fontWeight: 600 }}>Temporarily out of stock</span>
             ) : (
-              <span>Tồn kho hiện có trong hầm: <strong style={{ color: '#ffffff' }}>{realStock} chai</strong></span>
+              <span>In stock: <strong style={{ color: '#ffffff' }}>{realStock} {realStock === 1 ? 'bottle' : 'bottles'}</strong></span>
             )}
           </div>
 
@@ -202,7 +202,7 @@ export const WineDetailPage: React.FC<WineDetailPageProps> = ({
               disabled={realStock <= 0}
               onClick={() => onAddToCart({ ...detail, stock: realStock }, selectedPack)}
             >
-              {realStock <= 0 ? 'HẾT HÀNG' : 'ADD TO CART'}
+              {realStock <= 0 ? 'OUT OF STOCK' : 'ADD TO CART'}
             </button>
             <button
               className="btn-detail-checkout"

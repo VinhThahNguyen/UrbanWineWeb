@@ -43,8 +43,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ currentUser,
       // Nếu message thuộc về user này (hoặc broadcast)
       const newNotif: AppNotification = {
         notificationId: Date.now(),
-        title: msg.title || 'Thông báo đơn hàng',
-        message: msg.reason ? `${msg.message} (Lý do: "${msg.reason}")` : msg.message,
+        title: msg.title || 'Order Notification',
+        message: msg.reason ? `${msg.message} (Reason: "${msg.reason}")` : msg.message,
         type: msg.type,
         orderId: msg.orderId,
         isRead: false,
@@ -120,11 +120,11 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ currentUser,
       const now = new Date();
       const diffMs = now.getTime() - date.getTime();
       const diffMinutes = Math.floor(diffMs / 60000);
-      if (diffMinutes < 1) return 'Vừa xong';
-      if (diffMinutes < 60) return `${diffMinutes} phút trước`;
+      if (diffMinutes < 1) return 'Just now';
+      if (diffMinutes < 60) return `${diffMinutes}m ago`;
       const diffHours = Math.floor(diffMinutes / 60);
-      if (diffHours < 24) return `${diffHours} giờ trước`;
-      return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
     } catch {
       return '';
     }
@@ -149,8 +149,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ currentUser,
       <button
         className={`notification-bell-btn ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen((prev) => !prev)}
-        title="Thông báo đơn hàng"
-        aria-label="Thông báo"
+        title="Order notifications"
+        aria-label="Notifications"
       >
         <Bell size={20} className={unreadCount > 0 ? 'bell-ringing' : ''} />
         {unreadCount > 0 && (
@@ -169,7 +169,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ currentUser,
           <div className="toast-body">
             <div className="toast-title">{toastNotification.title}</div>
             <div className="toast-message">{toastNotification.message}</div>
-            <div className="toast-hint">Nhấn để xem chi tiết đơn hàng</div>
+            <div className="toast-hint">Click to view order details</div>
           </div>
           <button
             className="toast-close-btn"
@@ -188,19 +188,19 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ currentUser,
         <div className="notification-dropdown-menu">
           <div className="dropdown-header">
             <div className="dropdown-title-row">
-              <span className="dropdown-title">Thông báo của bạn</span>
+              <span className="dropdown-title">Your Notifications</span>
               {unreadCount > 0 && (
-                <span className="dropdown-unread-pill">{unreadCount} mới</span>
+                <span className="dropdown-unread-pill">{unreadCount} new</span>
               )}
             </div>
             {notifications.length > 0 && unreadCount > 0 && (
               <button
                 className="btn-mark-all-read"
                 onClick={handleMarkAllAsRead}
-                title="Đánh dấu tất cả đã đọc"
+                title="Mark all as read"
               >
                 <CheckCheck size={14} />
-                <span>Đã đọc tất cả</span>
+                <span>Mark all as read</span>
               </button>
             )}
           </div>
@@ -209,9 +209,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ currentUser,
             {notifications.length === 0 ? (
               <div className="empty-notifications">
                 <Bell size={32} className="empty-bell-icon" />
-                <p className="empty-notif-title">Chưa có thông báo nào</p>
+                <p className="empty-notif-title">No notifications yet</p>
                 <p className="empty-notif-sub">
-                  Khi đơn hàng của bạn được duyệt, giao hàng hoặc bị từ chối, thông báo sẽ hiển thị tại đây.
+                  When your order status updates, notifications will appear here.
                 </p>
               </div>
             ) : (
@@ -232,7 +232,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ currentUser,
                     <p className="notif-item-msg">{item.message}</p>
                     {item.orderId && (
                       <span className="notif-item-action-link">
-                        Xem đơn hàng #{item.orderId} <ExternalLink size={11} />
+                        View order #{item.orderId} <ExternalLink size={11} />
                       </span>
                     )}
                   </div>

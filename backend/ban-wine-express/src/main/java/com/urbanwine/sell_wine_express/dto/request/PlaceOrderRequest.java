@@ -18,19 +18,19 @@ import java.util.List;
 @AllArgsConstructor
 public class PlaceOrderRequest {
 
-    @NotBlank(message = "Tên người nhận không được để trống")
+    @NotBlank(message = "Recipient name is required")
     private String recipientName;
 
-    @NotBlank(message = "Số điện thoại người nhận không được để trống")
+    @NotBlank(message = "Recipient phone is required")
     private String recipientPhone;
 
-    @NotBlank(message = "Địa chỉ giao hàng không được để trống")
+    @NotBlank(message = "Delivery address is required")
     private String deliveryAddress;
 
-    @NotNull(message = "Phương thức thanh toán không được để trống")
+    @NotNull(message = "Payment method is required")
     private PaymentMethod paymentMethod;
 
-    @NotEmpty(message = "Danh sách sản phẩm không được để trống")
+    @NotEmpty(message = "Product items list cannot be empty")
     @Valid
     private List<OrderItemRequest> items;
 }

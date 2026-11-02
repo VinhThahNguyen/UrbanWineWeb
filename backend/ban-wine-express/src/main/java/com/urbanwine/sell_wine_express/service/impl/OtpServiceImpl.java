@@ -71,23 +71,23 @@ public class OtpServiceImpl implements OtpService {
 
         switch (type) {
             case REGISTER -> {
-                subject = "[Urban Wine Express] Mã OTP Xác Thực Đăng Ký Tài Khoản";
-                content = String.format("Chào bạn,\n\nMã OTP để kích hoạt tài khoản của bạn là: %s\nMã có hiệu lực trong %d phút.\n\nTrân trọng,\nUrban Wine Express Team",
+                subject = "[Urban Wine Express] Your Account Verification Code";
+                content = String.format("Hello,\n\nYour OTP code to activate your account is: %s\nThis code will expire in %d minutes.\n\nBest regards,\nUrban Wine Express Team",
                         otpCode, OTP_EXPIRY_MINUTES);
             }
             case LOGIN -> {
-                subject = "[Urban Wine Express] Mã OTP Xác Thực Đăng Nhập";
-                content = String.format("Chào bạn,\n\nMã OTP xác thực 2 bước để đăng nhập vào tài khoản của bạn là: %s\nMã có hiệu lực trong %d phút.\n\nTrân trọng,\nUrban Wine Express Team",
+                subject = "[Urban Wine Express] Your Login Verification Code";
+                content = String.format("Hello,\n\nYour 2-step verification code to sign in is: %s\nThis code will expire in %d minutes.\n\nBest regards,\nUrban Wine Express Team",
                         otpCode, OTP_EXPIRY_MINUTES);
             }
             case FORGOT_PASSWORD -> {
-                subject = "[Urban Wine Express] Mã OTP Khôi Phục Mật Khẩu";
-                content = String.format("Chào bạn,\n\nMã OTP để khôi phục mật khẩu tài khoản của bạn là: %s\nMã có hiệu lực trong %d phút.\n\nTrân trọng,\nUrban Wine Express Team",
+                subject = "[Urban Wine Express] Password Reset Code";
+                content = String.format("Hello,\n\nYour OTP code to reset your password is: %s\nThis code will expire in %d minutes.\n\nBest regards,\nUrban Wine Express Team",
                         otpCode, OTP_EXPIRY_MINUTES);
             }
             default -> {
-                subject = "[Urban Wine Express] Mã xác thực OTP";
-                content = "Mã OTP của bạn là: " + otpCode;
+                subject = "[Urban Wine Express] Verification Code";
+                content = "Your OTP code is: " + otpCode;
             }
         }
 

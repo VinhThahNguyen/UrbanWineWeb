@@ -19,7 +19,7 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUserProfile(@AuthenticationPrincipal User currentUser) {
         if (currentUser == null) {
-            return ResponseEntity.status(401).body(Map.of("error", "Chưa xác thực"));
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
         }
 
         Map<String, Object> profile = new HashMap<>();

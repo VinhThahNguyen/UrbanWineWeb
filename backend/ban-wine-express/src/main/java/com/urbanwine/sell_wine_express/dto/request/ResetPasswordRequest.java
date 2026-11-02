@@ -14,17 +14,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ResetPasswordRequest {
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email is invalid")
     private String email;
 
-    @NotBlank(message = "Mã OTP không được để trống")
+    @NotBlank(message = "OTP code is required")
     private String otpCode;
 
-    @NotBlank(message = "Mật khẩu mới không được để trống")
-    @Size(min = 6, message = "Mật khẩu mới phải có tối thiểu 6 ký tự")
+    @NotBlank(message = "New password is required")
+    @Size(min = 6, message = "New password must be at least 6 characters")
     private String newPassword;
 
-    @NotBlank(message = "Xác nhận mật khẩu không được để trống")
+    @NotBlank(message = "Confirmation password is required")
     private String confirmPassword;
 }
