@@ -87,7 +87,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
       const data = await adminApi.getAllCategories();
       setCategories(data);
     } catch (err) {
-      console.warn('Lỗi khi tải danh mục từ database:', err);
+      console.warn('Error loading categories from database:', err);
     }
   }, []);
 
@@ -105,7 +105,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
         setCategoryCounts(counts);
       }
     } catch (err) {
-      console.warn('Lỗi khi tải số lượng danh mục:', err);
+      console.warn('Error loading category counts:', err);
     }
   }, []);
 
@@ -150,8 +150,8 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
         }
       }
     } catch (err: any) {
-      console.error('Lỗi khi tải danh mục rượu từ cơ sở dữ liệu:', err);
-      setFetchError('Không thể kết nối đến máy chủ cơ sở dữ liệu để tải danh mục rượu. Vui lòng kiểm tra lại backend.');
+      console.error('Error loading wine catalog from database:', err);
+      setFetchError('Unable to connect to database server. Please check backend.');
       setWines([]);
       setTotalPages(0);
       setTotalElements(0);
@@ -171,7 +171,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
 
   // Format VND
   const formatVnd = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
+    return new Intl.NumberFormat('vi-VN').format(amount) + '₫';
   };
 
   // Category Pill Badge Class Helper
@@ -216,7 +216,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
 
     try {
       const updated = await adminApi.updateWine(editingWine.wineId, editFormData);
-      setEditSuccessMsg(`Đã cập nhật thông tin rượu "${updated.wineName}" thành công!`);
+      setEditSuccessMsg(`Wine "${updated.wineName}" updated successfully!`);
       
       // Update local state
       setWines((prev) =>
@@ -229,8 +229,8 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
         setEditSuccessMsg(null);
       }, 1500);
     } catch (err: any) {
-      console.error('Lỗi khi cập nhật rượu:', err);
-      const msg = err.response?.data?.message || 'Không thể lưu thay đổi. Vui lòng kiểm tra lại thông tin.';
+      console.error('Error updating wine:', err);
+      const msg = err.response?.data?.message || 'Unable to save changes. Please check the information.';
       setEditErrorMsg(msg);
     } finally {
       setIsSavingEdit(false);
@@ -249,7 +249,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
       }
       fetchCategoryCounts();
     } catch (err: any) {
-      alert('Không thể đổi trạng thái sản phẩm: ' + (err.response?.data?.message || err.message));
+      alert('Unable to change product status: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -298,7 +298,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
               fetchWines();
               fetchCategoryCounts();
             }}
-            title="Làm mới danh sách từ Database"
+            title="Refresh list from database"
           >
             <RefreshCw size={16} className={isLoading ? 'spin-icon' : ''} />
           </button>
@@ -368,7 +368,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
         <div className="catalog-stock-alert-notice">
           <AlertTriangle size={18} className="alert-icon" />
           <span>
-            Đang hiển thị danh sách các sản phẩm rượu có lượng tồn kho <strong>chạm hoặc dưới ngưỡng cảnh báo (≤ 5 chai)</strong>.
+            Showing wines with stock at or below warning threshold <strong>(≤ 5 bottles)</strong>.
           </span>
           <button
             type="button"
@@ -378,7 +378,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
               setCurrentPage(0);
             }}
           >
-            Xem toàn bộ sản phẩm
+            View all wines
           </button>
         </div>
       )}
@@ -388,28 +388,28 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
         {isLoading ? (
           <div className="catalog-loading-state">
             <Loader2 size={32} className="spin-icon text-gold" />
-            <p>Đang tải danh sách rượu từ cơ sở dữ liệu...</p>
+            <p>Loading wines from database...</p>
           </div>
         ) : fetchError ? (
           <div className="catalog-empty-notice error">
             <AlertTriangle size={32} />
-            <h4>Lỗi kết nối cơ sở dữ liệu</h4>
+            <h4>Database Connection Error</h4>
             <p>{fetchError}</p>
             <button type="button" className="catalog-retry-btn" onClick={fetchWines}>
               <RefreshCw size={14} />
-              <span>Thử lại</span>
+              <span>Retry</span>
             </button>
           </div>
         ) : wines.length === 0 ? (
           <div className="catalog-empty-notice">
             <WineIcon size={40} className="empty-icon" />
-            <h4>Chưa có dữ liệu sản phẩm rượu nào</h4>
+            <h4>No wines available</h4>
             <p>
               {localSearchQuery
-                ? `Không tìm thấy chai rượu nào khớp với từ khóa "${localSearchQuery}".`
+                ? `No wines match "${localSearchQuery}".`
                 : isStockAlertFilter
-                ? 'Tuyệt vời! Hiện tại không có sản phẩm nào chạm ngưỡng tồn kho thấp (≤ 5 chai).'
-                : 'Cơ sở dữ liệu danh mục rượu hiện đang trống. Hãy thêm sản phẩm mới để bắt đầu kinh doanh.'}
+                ? 'Great! No wines are running low on stock (≤ 5 bottles).'
+                : 'The wine catalog is currently empty. Add a new wine to get started.'}
             </p>
             {!isStockAlertFilter && (
               <button
@@ -419,7 +419,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                 onClick={onOpenAddWine}
               >
                 <Plus size={16} />
-                <span>+ Thêm chai rượu đầu tiên</span>
+                <span>+ Add First Wine</span>
               </button>
             )}
           </div>
@@ -533,9 +533,9 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
             {totalPages > 0 && (
               <div className="catalog-pagination-bar">
                 <div className="pagination-info">
-                  Hiển thị <strong>{currentPage * PAGE_SIZE + 1}</strong> –{' '}
-                  <strong>{Math.min((currentPage + 1) * PAGE_SIZE, totalElements)}</strong> trên tổng số{' '}
-                  <strong>{totalElements}</strong> chai rượu
+                  Showing <strong>{currentPage * PAGE_SIZE + 1}</strong> –{' '}
+                  <strong>{Math.min((currentPage + 1) * PAGE_SIZE, totalElements)}</strong> of{' '}
+                  <strong>{totalElements}</strong> wines
                 </div>
 
                 <div className="pagination-controls">
@@ -544,10 +544,10 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                     className="btn-page-nav"
                     disabled={currentPage === 0 || isLoading}
                     onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-                    title="Trang trước"
+                    title="Previous page"
                   >
                     <ChevronLeft size={16} />
-                    <span>Trước</span>
+                    <span>Prev</span>
                   </button>
 
                   <div className="pagination-numbers">
@@ -588,9 +588,9 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                     className="btn-page-nav"
                     disabled={currentPage >= totalPages - 1 || isLoading}
                     onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-                    title="Trang sau"
+                    title="Next page"
                   >
-                    <span>Sau</span>
+                    <span>Next</span>
                     <ChevronRight size={16} />
                   </button>
                 </div>
@@ -632,51 +632,51 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                 </div>
                 <div className="detail-meta-specs">
                   <div className="detail-spec-item">
-                    <span className="spec-label">Nhà sản xuất (Winery):</span>
+                    <span className="spec-label">Winery / Producer:</span>
                     <strong className="spec-val">{selectedDetailWine.wineryName}</strong>
                   </div>
                   <div className="detail-spec-item">
-                    <span className="spec-label">Phân loại rượu:</span>
+                    <span className="spec-label">Category:</span>
                     <span className={getCategoryBadgeClass(selectedDetailWine.categoryName)}>
                       {selectedDetailWine.categoryName}
                     </span>
                   </div>
                   <div className="detail-spec-item">
-                    <span className="spec-label">Giá niêm yết:</span>
+                    <span className="spec-label">Price:</span>
                     <strong className="spec-val gold-text" style={{ fontSize: '1.1rem' }}>
                       {formatVnd(selectedDetailWine.price)}
                     </strong>
                   </div>
                   <div className="detail-spec-item">
-                    <span className="spec-label">Tồn kho hiện tại:</span>
+                    <span className="spec-label">Current Stock:</span>
                     <span className={`stock-pill ${selectedDetailWine.stockQuantity <= 5 ? 'stock-low' : 'stock-ok'}`}>
-                      {selectedDetailWine.stockQuantity} chai
+                      {selectedDetailWine.stockQuantity} bottles
                     </span>
                   </div>
                   <div className="detail-spec-item">
-                    <span className="spec-label">Xuất xứ:</span>
-                    <span className="spec-val">{selectedDetailWine.origin || 'Chưa cập nhật'}</span>
+                    <span className="spec-label">Origin:</span>
+                    <span className="spec-val">{selectedDetailWine.origin || 'Not updated'}</span>
                   </div>
                   <div className="detail-spec-item">
-                    <span className="spec-label">Giống nho:</span>
-                    <span className="spec-val">{selectedDetailWine.grapeVariety || 'Chưa cập nhật'}</span>
+                    <span className="spec-label">Grape Variety:</span>
+                    <span className="spec-val">{selectedDetailWine.grapeVariety || 'Not updated'}</span>
                   </div>
                   <div className="detail-spec-item">
-                    <span className="spec-label">Nồng độ cồn (ABV):</span>
+                    <span className="spec-label">Alcohol (ABV):</span>
                     <span className="spec-val">{selectedDetailWine.abv}%</span>
                   </div>
                   <div className="detail-spec-item">
-                    <span className="spec-label">Niên vụ (Vintage):</span>
-                    <span className="spec-val">{selectedDetailWine.vintageYear || 'NV (Không niên vụ)'}</span>
+                    <span className="spec-label">Vintage:</span>
+                    <span className="spec-val">{selectedDetailWine.vintageYear || 'NV (Non-vintage)'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Tasting Notes / Description */}
               <div className="detail-desc-box">
-                <h4 className="detail-desc-title">Ghi chú nếm thử (Tasting Notes)</h4>
+                <h4 className="detail-desc-title">Tasting Notes</h4>
                 <p className="detail-desc-content">
-                  {selectedDetailWine.description || 'Chưa có mô tả chi tiết cho sản phẩm này.'}
+                  {selectedDetailWine.description || 'No description available for this wine.'}
                 </p>
               </div>
             </div>
@@ -687,7 +687,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                 className="btn-modal-toggle-status"
                 onClick={() => handleToggleStatus(selectedDetailWine.wineId)}
               >
-                {selectedDetailWine.isActive ? 'Ẩn sản phẩm khỏi khách hàng' : 'Kích hoạt kinh doanh lại'}
+                {selectedDetailWine.isActive ? 'Hide product from customers' : 'Reactivate product'}
               </button>
               <button
                 type="button"
@@ -698,14 +698,14 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                   handleOpenEdit(w);
                 }}
               >
-                Chỉnh sửa
+                Edit
               </button>
               <button
                 type="button"
                 className="btn-modal-close"
                 onClick={() => setSelectedDetailWine(null)}
               >
-                Đóng
+                Close
               </button>
             </div>
           </div>
@@ -719,7 +719,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
             <div className="catalog-modal-header">
               <div className="modal-header-left">
                 <Edit2 size={18} className="text-gold" />
-                <h3 className="modal-title">Cập nhật rượu: {editingWine.wineName}</h3>
+                <h3 className="modal-title">Edit Wine: {editingWine.wineName}</h3>
               </div>
               <button
                 type="button"
@@ -747,7 +747,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
 
                 <div className="edit-grid">
                   <div className="form-group">
-                    <label>Tên sản phẩm *</label>
+                    <label>Wine Name *</label>
                     <input
                       type="text"
                       required
@@ -757,7 +757,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label>Nhà sản xuất (Winery) *</label>
+                    <label>Winery / Producer *</label>
                     <input
                       type="text"
                       required
@@ -767,7 +767,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label>Danh mục rượu *</label>
+                    <label>Category *</label>
                     <select
                       value={editFormData.categoryId}
                       onChange={(e) => setEditFormData({ ...editFormData, categoryId: Number(e.target.value) })}
@@ -781,7 +781,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label>Xuất xứ *</label>
+                    <label>Country of Origin *</label>
                     <input
                       type="text"
                       required
@@ -791,7 +791,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label>Giá bán (VNĐ) *</label>
+                    <label>Price (VND) *</label>
                     <input
                       type="number"
                       required
@@ -802,7 +802,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label>Nồng độ cồn ABV (%) *</label>
+                    <label>Alcohol ABV (%) *</label>
                     <input
                       type="number"
                       step="0.1"
@@ -815,7 +815,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label>Niên vụ (Vintage Year)</label>
+                    <label>Vintage Year</label>
                     <input
                       type="number"
                       min={1000}
@@ -826,7 +826,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label>Nhập thêm vào kho (Chai)</label>
+                    <label>Add Stock (Bottles)</label>
                     <input
                       type="number"
                       min={0}
@@ -837,7 +837,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                   </div>
 
                   <div className="form-group full-width">
-                    <label>URL Hình ảnh chai rượu</label>
+                    <label>Product Image URL</label>
                     <input
                       type="url"
                       value={editFormData.imageUrl || ''}
@@ -846,7 +846,7 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                   </div>
 
                   <div className="form-group full-width">
-                    <label>Ghi chú nếm thử (Tasting Notes) *</label>
+                    <label>Tasting Notes *</label>
                     <textarea
                       rows={3}
                       required
@@ -864,14 +864,14 @@ export const AdminWineCatalog: React.FC<AdminWineCatalogProps> = ({
                   disabled={isSavingEdit}
                   onClick={() => setEditingWine(null)}
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="btn-catalog-add-wine"
                   disabled={isSavingEdit}
                 >
-                  {isSavingEdit ? 'Đang lưu thay đổi...' : 'Lưu cập nhật'}
+                  {isSavingEdit ? 'Saving changes...' : 'Save Changes'}
                 </button>
               </div>
             </form>

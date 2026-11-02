@@ -51,7 +51,7 @@ export const AdminAddWine: React.FC<AdminAddWineProps> = ({ onBack, onSuccess })
         }
       })
       .catch((err) => {
-        console.warn('Lỗi khi tải danh mục rượu từ DB:', err);
+        console.warn('Error loading wine categories from DB:', err);
       })
       .finally(() => {
         setIsLoadingCategories(false);
@@ -66,39 +66,39 @@ export const AdminAddWine: React.FC<AdminAddWineProps> = ({ onBack, onSuccess })
 
     // Validation
     if (!wineName.trim()) {
-      setErrorMsg('Vui lòng nhập tên sản phẩm rượu (Wine Name)');
+      setErrorMsg('Please enter the wine name');
       return;
     }
     if (!wineryName.trim()) {
-      setErrorMsg('Vui lòng nhập tên nhà sản xuất (Winery / Producer)');
+      setErrorMsg('Please enter the winery / producer name');
       return;
     }
     if (!categoryId) {
-      setErrorMsg('Vui lòng chọn danh mục rượu (Category)');
+      setErrorMsg('Please select a wine category');
       return;
     }
     if (!origin.trim()) {
-      setErrorMsg('Vui lòng nhập quốc gia xuất xứ (Country of Origin)');
+      setErrorMsg('Please enter the country of origin');
       return;
     }
     if (price === '' || Number(price) <= 0) {
-      setErrorMsg('Giá bán đơn vị phải lớn hơn 0 VNĐ');
+      setErrorMsg('Unit price must be greater than 0 VND');
       return;
     }
     if (abv === '' || Number(abv) <= 0 || Number(abv) > 100) {
-      setErrorMsg('Nồng độ cồn ABV (%) phải nằm trong khoảng từ 0.1% đến 100%');
+      setErrorMsg('ABV (%) must be between 0.1% and 100%');
       return;
     }
     if (stockQuantity === '' || Number(stockQuantity) < 0) {
-      setErrorMsg('Số lượng tồn kho ban đầu không được âm');
+      setErrorMsg('Initial stock cannot be negative');
       return;
     }
     if (!grapeVariety.trim()) {
-      setErrorMsg('Vui lòng nhập giống nho (Grape Variety)');
+      setErrorMsg('Please enter the grape variety');
       return;
     }
     if (!description.trim()) {
-      setErrorMsg('Vui lòng nhập ghi chú nếm thử (Tasting Notes / Description)');
+      setErrorMsg('Please enter tasting notes / description');
       return;
     }
 
@@ -122,15 +122,15 @@ export const AdminAddWine: React.FC<AdminAddWineProps> = ({ onBack, onSuccess })
     setIsSubmitting(true);
     try {
       const created = await adminApi.createWine(payload);
-      setSuccessMsg(`Đã thêm mới chai rượu "${created.wineName}" vào danh mục thành công!`);
+      setSuccessMsg(`Wine "${created.wineName}" added to catalog successfully!`);
       
       // Navigate back to catalog after 1.5s
       setTimeout(() => {
         onSuccess();
       }, 1500);
     } catch (err: any) {
-      console.error('Lỗi khi thêm mới sản phẩm rượu:', err);
-      const backendMessage = err.response?.data?.message || err.message || 'Không thể tạo mới sản phẩm. Vui lòng kiểm tra lại.';
+      console.error('Error adding new wine product:', err);
+      const backendMessage = err.response?.data?.message || err.message || 'Unable to add wine product. Please try again.';
       setErrorMsg(backendMessage);
     } finally {
       setIsSubmitting(false);
@@ -206,9 +206,9 @@ export const AdminAddWine: React.FC<AdminAddWineProps> = ({ onBack, onSuccess })
                 disabled={isLoadingCategories}
               >
                 {isLoadingCategories ? (
-                  <option value="">Đang tải danh mục từ CSDL...</option>
+                  <option value="">Loading categories from database...</option>
                 ) : categories.length === 0 ? (
-                  <option value="">Chưa có danh mục nào trong CSDL</option>
+                  <option value="">No categories found in database</option>
                 ) : (
                   categories.map((c) => (
                     <option key={c.categoryId} value={c.categoryId}>
@@ -355,7 +355,7 @@ export const AdminAddWine: React.FC<AdminAddWineProps> = ({ onBack, onSuccess })
             {isSubmitting ? (
               <>
                 <Loader2 size={16} className="spin-icon" />
-                <span>Đang lưu vào kho...</span>
+                <span>Saving to catalog...</span>
               </>
             ) : (
               <span>Add to Catalog</span>

@@ -96,7 +96,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
-      // 1. Fetch Orders from /api/admin/orders (all: true để lấy toàn bộ đơn hàng trong hệ thống)
+      // 1. Fetch Orders from /api/admin/orders (all: true to retrieve all orders in the system)
       const orderRes = await adminApi.getAdminOrders(0, 100, undefined, true);
       let loadedOrders: AdminOrderSummary[] = [];
 
@@ -106,12 +106,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           orderCode: item.orderCode || `UWE-${item.orderId}`,
           customerId: item.customerId,
           customerEmail: item.customerEmail,
-          recipientName: item.recipientName || 'Khách vãng lai',
+          recipientName: item.recipientName || 'Walk-in Customer',
           totalAmount: Number(item.totalAmount) || 0,
           orderStatus: item.orderStatus || 'PENDING',
           createdAt: item.createdAt
-            ? new Date(item.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-            : 'Mới tạo',
+            ? new Date(item.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+            : 'Just created',
         }));
         setRecentOrders(loadedOrders);
       } else {
@@ -130,9 +130,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         if (stockRes.wines && stockRes.wines.content) {
           loadedStockList = stockRes.wines.content.map((w: any) => ({
             wineId: w.wineId || w.id,
-            wineName: w.wineName || w.name || 'Vang hảo hạng',
+            wineName: w.wineName || w.name || 'Fine Wine',
             categoryName: w.categoryName || 'Red Wine',
-            storageLocation: w.wineryName ? `${w.wineryName} · Hầm rượu` : (w.origin || 'Inner Cellar Rack'),
+            storageLocation: w.wineryName ? `${w.wineryName} · Wine Cellar` : (w.origin || 'Inner Cellar Rack'),
             stockQuantity: w.stockQuantity ?? w.stock ?? 0,
           }));
           setLowStockList(loadedStockList);
@@ -158,7 +158,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
       // 4. Calculate Dynamic Metrics strictly from real backend responses
       const revenue = loadedOrders.reduce((sum, order) => {
-        // Chỉ tính đơn hàng hợp lệ đã thanh toán hoặc đang vận hành
+        // Only count valid paid or active orders
         if (order.orderStatus !== 'CANCELLED') {
           return sum + order.totalAmount;
         }
@@ -173,7 +173,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
       const critical = loadedStockList.filter((item) => item.stockQuantity <= 3).length;
 
-      // Tính chính xác số lượng tài khoản Khách hàng (Customer) dựa trên Email độc nhất
+      // Accurately count unique customer accounts based on email
       const customerEmails = loadedOrders
         .map((o) => o.customerEmail)
         .filter((email): email is string => Boolean(email && email.trim()));
@@ -263,7 +263,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const handleCreateQuickOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickOrderWineId) {
-      alert('Vui lòng chọn sản phẩm rượu');
+      alert('Please select a wine');
       return;
     }
 
@@ -275,7 +275,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
     try {
       const response = await adminApi.createOfflineOrder({
-        customerName: quickCustomerName || 'Khách mua tại quầy',
+        customerName: quickCustomerName || 'Walk-in Customer',
         customerPhone: quickCustomerPhone || '0900000000',
         paymentMethod: quickPaymentMethod,
         amountTendered: quickPaymentMethod === 'CASH' ? (amountTendered !== '' ? Number(amountTendered) : grandTotal) : undefined,
@@ -288,7 +288,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       });
 
       setQuickOrderSuccessMsg(
-        `Tạo đơn hàng thành công! Mã đơn: ${response?.orderCode || 'Thành công'} (${quickPaymentMethod === 'CASH' ? 'Tiền mặt' : 'VietQR'})`
+        `Order created successfully! Order code: ${response?.orderCode || 'Success'} (${quickPaymentMethod === 'CASH' ? 'Cash' : 'VietQR'})`
       );
 
       // Refresh data from backend to ensure 100% sync
@@ -303,8 +303,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         setAmountTendered('');
       }, 1400);
     } catch (error: any) {
-      const errMsg = error?.response?.data?.message || error?.message || 'Có lỗi xảy ra khi tạo đơn tại quầy';
-      alert(`Lỗi: ${errMsg}`);
+      const errMsg = error?.response?.data?.message || error?.message || 'An error occurred while creating order';
+      alert(`Error: ${errMsg}`);
     } finally {
       setIsSubmittingQuickOrder(false);
     }
@@ -431,7 +431,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             type="button"
             className="admin-footer-btn btn-logout"
             onClick={onLogout}
-            title="Đăng xuất khỏi hệ thống"
+            title="Sign out of the system"
           >
             <LogOut size={16} />
             <span>Sign Out</span>
@@ -460,7 +460,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               type="button"
               className="admin-icon-btn"
               onClick={fetchDashboardData}
-              title="Tải lại dữ liệu từ máy chủ"
+              title="Reload data from server"
             >
               <RefreshCw size={16} className={isLoading ? 'spin-icon' : ''} />
             </button>
@@ -477,7 +477,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             </button>
 
             {/* Admin Profile Pill */}
-            <div className="admin-profile-pill" title="Tài khoản Quản trị">
+            <div className="admin-profile-pill" title="Admin Account">
               <div className="admin-avatar-circle">
                 <span>{adminInitials}</span>
               </div>
@@ -526,7 +526,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <div>
                   <h1 className="admin-dashboard-heading">Dashboard Overview</h1>
                   <p className="admin-dashboard-subheading">
-                    Hanoi Operations Center — Dữ liệu thời gian thực
+                    Hanoi Operations Center — Real-time data
                   </p>
                 </div>
 
@@ -638,8 +638,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           <tr>
                             <td colSpan={5} style={{ textAlign: 'center', padding: '36px', color: '#8b857d' }}>
                               {isLoading
-                                ? 'Đang tải danh sách đơn hàng từ máy chủ...'
-                                : 'Chưa có đơn hàng nào trong hệ thống backend.'}
+                                ? 'Loading orders from server...'
+                                : 'No orders found in the system.'}
                             </td>
                           </tr>
                         )}
@@ -679,8 +679,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     ) : (
                       <div style={{ textAlign: 'center', padding: '36px 16px', color: '#8b857d', fontSize: '0.88rem' }}>
                         {isLoading
-                          ? 'Đang kiểm tra tồn kho...'
-                          : stockAlertMessage || 'Tồn kho an toàn — Không có sản phẩm nào chạm ngưỡng thiếu hàng (<= 5 chai).'}
+                          ? 'Checking inventory...'
+                          : stockAlertMessage || 'Stock is healthy — No products running low (<= 5 bottles).'}
                       </div>
                     )}
                   </div>
@@ -698,7 +698,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             <div className="admin-modal-header">
               <div className="modal-title-wrap">
                 <Plus size={20} className="modal-gold-icon" />
-                <h3 className="admin-modal-title">Tạo Đơn Hàng Nhanh Tại Quầy (+ Quick Order)</h3>
+                <h3 className="admin-modal-title">Create In-Store Quick Order (+ Quick Order)</h3>
               </div>
               <button
                 type="button"
@@ -717,7 +717,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             ) : (
               <form onSubmit={handleCreateQuickOrder} className="admin-modal-body">
                 <div className="form-group">
-                  <label className="form-label">Chọn chai rượu:</label>
+                  <label className="form-label">Select wine:</label>
                   <select
                     className="form-select"
                     value={quickOrderWineId || ''}
@@ -726,17 +726,17 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     {availableWines.length > 0 ? (
                       availableWines.map((w) => (
                         <option key={w.id} value={w.id}>
-                          {w.name} ({formatVnd(w.price)}) - Còn {w.stock} chai
+                          {w.name} ({formatVnd(w.price)}) - {w.stock} left
                         </option>
                       ))
                     ) : (
-                      <option value="">Không có rượu khả dụng</option>
+                      <option value="">No wines available</option>
                     )}
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Số lượng:</label>
+                  <label className="form-label">Quantity:</label>
                   <input
                     type="number"
                     min="1"
@@ -749,31 +749,31 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
                 <div className="form-row-2">
                   <div className="form-group">
-                    <label className="form-label">Tên khách hàng:</label>
+                    <label className="form-label">Customer name:</label>
                     <input
                       type="text"
                       className="form-input"
-                      placeholder="VD: Nguyen Thi Lan"
+                      placeholder="e.g. John Doe"
                       value={quickCustomerName}
                       onChange={(e) => setQuickCustomerName(e.target.value)}
                     />
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Số điện thoại:</label>
+                    <label className="form-label">Phone number:</label>
                     <input
                       type="text"
                       className="form-input"
-                      placeholder="VD: 0987654321"
+                      placeholder="e.g. 0987654321"
                       value={quickCustomerPhone}
                       onChange={(e) => setQuickCustomerPhone(e.target.value)}
                     />
                   </div>
                 </div>
 
-                {/* Chọn phương thức thanh toán tại quầy */}
+                {/* Select in-store payment method */}
                 <div className="form-group">
-                  <label className="form-label">Phương thức thanh toán tại quầy:</label>
+                  <label className="form-label">Payment method:</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <button
                       type="button"
@@ -790,7 +790,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                       }}
                       onClick={() => setQuickPaymentMethod('CASH')}
                     >
-                      💵 Tiền mặt (Cash)
+                      💵 Cash
                     </button>
                     <button
                       type="button"
@@ -807,25 +807,25 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                       }}
                       onClick={() => setQuickPaymentMethod('VIETQR')}
                     >
-                      📱 Quét mã VietQR
+                      📱 VietQR Scan
                     </button>
                   </div>
                 </div>
 
                 {quickPaymentMethod === 'CASH' && (
                   <div className="form-group">
-                    <label className="form-label">Tiền khách đưa (VNĐ):</label>
+                    <label className="form-label">Cash received (VND):</label>
                     <input
                       type="number"
                       min={0}
                       className="form-input"
-                      placeholder={`VD: ${formatVnd((selectedQuickWine?.price || 0) * quickOrderQty)}`}
+                      placeholder={`e.g. ${formatVnd((selectedQuickWine?.price || 0) * quickOrderQty)}`}
                       value={amountTendered}
                       onChange={(e) => setAmountTendered(e.target.value ? Number(e.target.value) : '')}
                     />
                     {amountTendered !== '' && Number(amountTendered) >= (selectedQuickWine?.price || 0) * quickOrderQty && (
                       <p style={{ color: '#22c55e', fontSize: '0.82rem', marginTop: '6px', margin: 0 }}>
-                        Tiền thối lại khách: <strong>{formatVnd(Number(amountTendered) - (selectedQuickWine?.price || 0) * quickOrderQty)}</strong>
+                        Change to return: <strong>{formatVnd(Number(amountTendered) - (selectedQuickWine?.price || 0) * quickOrderQty)}</strong>
                       </p>
                     )}
                   </div>
@@ -833,7 +833,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
                 <div className="modal-summary-box">
                   <div className="summary-row">
-                    <span>Tổng tiền thanh toán ({quickPaymentMethod === 'CASH' ? 'Tiền mặt' : 'VietQR'}):</span>
+                    <span>Total payment ({quickPaymentMethod === 'CASH' ? 'Cash' : 'VietQR'}):</span>
                     <strong className="summary-total-amount">
                       {formatVnd((selectedQuickWine?.price || 0) * quickOrderQty)}
                     </strong>
@@ -846,14 +846,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     className="modal-cancel-btn"
                     onClick={() => setIsQuickOrderOpen(false)}
                   >
-                    Hủy bỏ
+                    Cancel
                   </button>
                   <button
                     type="submit"
                     className="modal-submit-btn"
                     disabled={isSubmittingQuickOrder || availableWines.length === 0}
                   >
-                    {isSubmittingQuickOrder ? 'Đang tạo đơn...' : 'Xác nhận xuất đơn'}
+                    {isSubmittingQuickOrder ? 'Creating order...' : 'Confirm Order'}
                   </button>
                 </div>
               </form>

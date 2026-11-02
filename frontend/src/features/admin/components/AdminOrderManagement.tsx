@@ -66,7 +66,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
   const [rejectReason, setRejectReason] = useState<string>('');
   const [rejectReasonError, setRejectReasonError] = useState<string | null>(null);
 
-  // Action Feedback Popup Modal State (thành công / thất bại)
+  // Action Feedback Popup Modal State (success / error)
   const [actionPopup, setActionPopup] = useState<{
     type: 'success' | 'error';
     title: string;
@@ -75,11 +75,11 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
   } | null>(null);
 
   const COMMON_REJECT_REASONS = [
-    'Hết hàng trong kho',
-    'Không thể liên hệ được số điện thoại người nhận',
-    'Địa chỉ nhận hàng nằm ngoài khu vực hỗ trợ',
-    'Khách hàng chủ động yêu cầu hủy đơn',
-    'Nghi ngờ đơn hàng ảo / Thông tin không hợp lệ',
+    'Out of stock',
+    'Unable to contact recipient by phone',
+    'Delivery address is outside service area',
+    'Customer requested cancellation',
+    'Invalid or fake order information',
   ];
 
   // 1. Fetch Counts from Database
@@ -90,7 +90,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
         setCounts(countsData);
       }
     } catch (err) {
-      console.warn('Lỗi khi tải số lượng thống kê đơn hàng từ database:', err);
+      console.warn('Error fetching order statistics from database:', err);
     }
   }, []);
 
@@ -109,8 +109,8 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
         setOrders([]);
       }
     } catch (err: any) {
-      console.error('Lỗi khi tải danh sách đơn hàng từ database:', err);
-      setFetchError('Không thể kết nối đến máy chủ cơ sở dữ liệu. Vui lòng kiểm tra lại dịch vụ backend.');
+      console.error('Error fetching orders from database:', err);
+      setFetchError('Unable to connect to database server. Please check backend service.');
       setOrders([]);
     } finally {
       setIsLoading(false);
@@ -137,7 +137,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
 
   // Format Order Date matching UI: "01 Oct 2026"
   const formatOrderDate = (dateStr?: string) => {
-    if (!dateStr) return 'Mới tạo';
+    if (!dateStr) return 'Just created';
     try {
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return dateStr;
@@ -211,7 +211,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
     setShippers([]);
     setSelectedShipperId(null);
 
-    // Nếu đơn đang PROCESSING hoặc SHIPPING, tự động tải danh sách Shipper online từ database
+    // If order is PROCESSING or SHIPPING, automatically load online shippers from database
     if (orderSummary.orderStatus === 'PROCESSING' || orderSummary.orderStatus === 'SHIPPING') {
       setIsLoadingShippers(true);
       adminApi.getAvailableShippers()
@@ -223,7 +223,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
           }
         })
         .catch((err) => {
-          console.warn('Không thể tải danh sách shipper trực tuyến:', err);
+          console.warn('Unable to load online shippers list:', err);
           setShippers([]);
         })
         .finally(() => {
@@ -237,7 +237,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
         setSelectedOrder(detail);
       }
     } catch (err) {
-      console.warn('Không thể tải chi tiết sâu của đơn hàng, hiển thị dữ liệu tóm tắt:', err);
+      console.warn('Unable to load full order details, showing summary data:', err);
     } finally {
       setIsLoadingDetail(false);
     }
@@ -246,20 +246,20 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
   // Assign Order to Shipper (UC_2.1.4: PROCESSING -> SHIPPING)
   const handleAssignShipper = async (orderId: number) => {
     if (!selectedShipperId) {
-      alert('Vui lòng chọn một nhân viên giao hàng đang trực tuyến');
+      alert('Please select an online delivery shipper');
       return;
     }
     const chosen = shippers.find((s) => s.shipperId === selectedShipperId);
     if (!chosen) return;
 
-    if (!window.confirm(`Xác nhận phân công đơn hàng này cho Shipper '${chosen.fullName}'? Đơn sẽ chuyển sang trạng thái SHIPPING (Đang giao).`)) {
+    if (!window.confirm(`Assign this order to Shipper '${chosen.fullName}'? The order status will become SHIPPING (Out for Delivery).`)) {
       return;
     }
 
     setIsAssigningShipper(true);
     try {
       const updated = await adminApi.assignShipper(orderId, selectedShipperId);
-      setActionSuccessMsg(`Đã phân công đơn hàng cho Shipper '${chosen.fullName}' thành công!`);
+      setActionSuccessMsg(`Order successfully assigned to Shipper '${chosen.fullName}'!`);
 
       if (updated) {
         setSelectedOrder(updated);
@@ -279,8 +279,8 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
         setActionSuccessMsg(null);
       }, 2500);
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Không thể gán Shipper cho đơn hàng này. Vui lòng thử lại.';
-      alert(`Lỗi: ${msg}`);
+      const msg = err.response?.data?.message || 'Unable to assign Shipper to this order. Please try again.';
+      alert(`Error: ${msg}`);
     } finally {
       setIsAssigningShipper(false);
     }
@@ -303,10 +303,10 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
     try {
       await adminApi.approveOrder(orderId);
       
-      // Thoát ngay khỏi modal chi tiết đơn
+      // Close order detail modal immediately
       setSelectedOrder(null);
       
-      // Cập nhật trạng thái tức thì trên giao diện
+      // Update UI state immediately (Optimistic UI)
       setOrders((prev) =>
         selectedStatus === 'ALL'
           ? prev.map((o) => (o.orderId === orderId ? { ...o, orderStatus: 'PROCESSING' } : o))
@@ -320,7 +320,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
 
       setActionPopup({
         type: 'success',
-        title: 'Phê duyệt thành công',
+        title: 'Approved successfully',
         targetTab: 'PROCESSING',
       });
 
@@ -329,10 +329,10 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
     } catch (err: any) {
       const errorMsg =
         err?.response?.data?.message ||
-        'Không thể phê duyệt đơn hàng. Vui lòng kiểm tra lại.';
+        'Unable to approve order. Please check again.';
       setActionPopup({
         type: 'error',
-        title: 'Phê duyệt thất bại',
+        title: 'Approval failed',
         message: errorMsg,
       });
     } finally {
@@ -352,7 +352,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
     e.preventDefault();
     if (!rejectModalOrder) return;
     if (!rejectReason.trim()) {
-      setRejectReasonError('Vui lòng nhập hoặc chọn lý do từ chối đơn hàng.');
+      setRejectReasonError('Please enter or select a rejection reason.');
       return;
     }
 
@@ -364,11 +364,11 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
     try {
       await adminApi.rejectOrder(targetOrderId, reasonText);
 
-      // Thoát ngay lập tức khỏi cả màn hình nhập lý do và màn hình chi tiết đơn hàng
+      // Close both reject reason modal and order detail modal immediately
       setRejectModalOrder(null);
       setSelectedOrder(null);
 
-      // Cập nhật trạng thái tức thì trên giao diện (Optimistic UI)
+      // Update UI state immediately (Optimistic UI)
       setOrders((prev) =>
         selectedStatus === 'ALL'
           ? prev.map((o) =>
@@ -384,24 +384,24 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
         CANCELLED: prev.CANCELLED + 1,
       }));
 
-      // Hiển thị Popup màn hình nhỏ thông báo từ chối thành công
+      // Show small popup notification for successful rejection
       setActionPopup({
         type: 'success',
-        title: 'Từ chối thành công',
+        title: 'Rejected successfully',
         targetTab: 'CANCELLED',
       });
 
-      // Reload từ server để đảm bảo dữ liệu đồng bộ
+      // Reload from server to ensure sync
       fetchCounts();
       fetchOrders(selectedStatus);
     } catch (err: any) {
       const errorMsg =
         err?.response?.data?.message ||
         (err?.response?.data?.errors ? Object.values(err.response.data.errors)[0] : null) ||
-        'Không thể từ chối đơn hàng. Vui lòng thử lại.';
+        'Unable to reject order. Please try again.';
 
       const errStr = String(errorMsg);
-      // Nếu đơn hàng thực tế trên máy chủ đã chuyển sang CANCELLED rồi
+      // If server order has already transitioned to CANCELLED
       if (errStr.includes('CANCELLED') || errStr.includes('Trạng thái hiện tại') || errStr.includes('đã ở trạng thái')) {
         setRejectModalOrder(null);
         setSelectedOrder(null);
@@ -421,7 +421,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
         }));
         setActionPopup({
           type: 'success',
-          title: 'Từ chối thành công',
+          title: 'Rejected successfully',
           targetTab: 'CANCELLED',
         });
         fetchCounts();
@@ -432,7 +432,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
       setRejectModalOrder(null);
       setActionPopup({
         type: 'error',
-        title: 'Từ chối thất bại',
+        title: 'Rejection failed',
         message: errStr,
       });
     } finally {
@@ -455,7 +455,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
           type="button"
           className="btn-new-order"
           onClick={onOpenNewOrder}
-          title="Tạo đơn hàng nhanh bán trực tiếp tại quầy (+ Quick Order)"
+          title="Create in-store quick order (+ Quick Order)"
         >
           <Plus size={18} strokeWidth={2.5} />
           <span>+ Quick Order</span>
@@ -545,7 +545,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                   <td colSpan={7}>
                     <div className="order-notice-box">
                       <Loader2 size={32} className="spin-icon order-notice-icon" />
-                      <p className="order-notice-text">Đang tải dữ liệu đơn hàng từ cơ sở dữ liệu...</p>
+                      <p className="order-notice-text">Loading orders from database...</p>
                     </div>
                   </td>
                 </tr>
@@ -560,7 +560,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                         className="order-notice-retry-btn"
                         onClick={handleRefresh}
                       >
-                        <RefreshCw size={14} /> Thử lại
+                        <RefreshCw size={14} /> Retry
                       </button>
                     </div>
                   </td>
@@ -572,13 +572,13 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                       <Package size={40} className="order-notice-icon" />
                       <p className="order-notice-text">
                         {searchKeyword.trim()
-                          ? `Không tìm thấy đơn hàng nào phù hợp với từ khóa "${searchKeyword}".`
+                          ? `No orders found matching "${searchKeyword}".`
                           : selectedStatus === 'ALL'
-                          ? 'Hiện tại chưa có đơn hàng nào trong cơ sở dữ liệu.'
-                          : `Không có đơn hàng nào ở trạng thái ${selectedStatus}.`}
+                          ? 'No orders found in the database.'
+                          : `No orders with status ${selectedStatus}.`}
                       </p>
                       <p className="order-notice-subtext">
-                        Tất cả dữ liệu được truy vấn 100% thời gian thực từ cơ sở dữ liệu hệ thống.
+                        All data is queried in real time from the database.
                       </p>
                     </div>
                   </td>
@@ -595,10 +595,10 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                     <td>
                       <div className="cell-customer">
                         <span className="customer-name">
-                          {order.recipientName || 'Khách vãng lai'}
+                          {order.recipientName || 'Walk-in Customer'}
                         </span>
                         <span className="customer-phone">
-                          {order.recipientPhone || 'Chưa cập nhật SĐT'}
+                          {order.recipientPhone || 'No phone number'}
                         </span>
                       </div>
                     </td>
@@ -629,7 +629,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                         type="button"
                         className="btn-view-order"
                         onClick={() => handleOpenDetail(order)}
-                        title="Xem chi tiết đơn hàng"
+                        title="View order details"
                       >
                         <span>View</span>
                         <ArrowRight size={14} />
@@ -675,26 +675,26 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
 
               {/* Customer Info */}
               <div>
-                <h4 className="detail-section-title">Thông tin giao hàng & Khách hàng</h4>
+                <h4 className="detail-section-title">Customer & Delivery Information</h4>
                 <div className="detail-info-grid">
                   <div className="detail-info-item">
-                    <span className="detail-info-label">Người nhận</span>
+                    <span className="detail-info-label">Recipient</span>
                     <span className="detail-info-val">{selectedOrder.recipientName || 'N/A'}</span>
                   </div>
                   <div className="detail-info-item">
-                    <span className="detail-info-label">Số điện thoại</span>
+                    <span className="detail-info-label">Phone Number</span>
                     <span className="detail-info-val">{selectedOrder.recipientPhone || 'N/A'}</span>
                   </div>
                   <div className="detail-info-item" style={{ gridColumn: 'span 2' }}>
-                    <span className="detail-info-label">Địa chỉ nhận hàng</span>
-                    <span className="detail-info-val">{selectedOrder.deliveryAddress || 'Nhận tại quầy / Không có địa chỉ'}</span>
+                    <span className="detail-info-label">Delivery Address</span>
+                    <span className="detail-info-val">{selectedOrder.deliveryAddress || 'Pick up at counter / No address'}</span>
                   </div>
                   <div className="detail-info-item">
-                    <span className="detail-info-label">Thời gian tạo đơn</span>
+                    <span className="detail-info-label">Order Date</span>
                     <span className="detail-info-val">{formatOrderDate(selectedOrder.createdAt)}</span>
                   </div>
                   <div className="detail-info-item">
-                    <span className="detail-info-label">Phương thức thanh toán</span>
+                    <span className="detail-info-label">Payment Method</span>
                     <span className="detail-info-val">{formatPaymentMethod(selectedOrder.paymentMethod)}</span>
                   </div>
                 </div>
@@ -702,15 +702,15 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
 
               {/* Items List */}
               <div>
-                <h4 className="detail-section-title">Danh sách sản phẩm ({selectedOrder.items?.length || 0})</h4>
+                <h4 className="detail-section-title">Items List ({selectedOrder.items?.length || 0})</h4>
                 {selectedOrder.items && selectedOrder.items.length > 0 ? (
                   <table className="detail-items-table">
                     <thead>
                       <tr>
-                        <th>Sản phẩm</th>
-                        <th style={{ textAlign: 'center' }}>Số lượng</th>
-                        <th style={{ textAlign: 'right' }}>Đơn giá</th>
-                        <th style={{ textAlign: 'right' }}>Thành tiền</th>
+                        <th>Product</th>
+                        <th style={{ textAlign: 'center' }}>Quantity</th>
+                        <th style={{ textAlign: 'right' }}>Unit Price</th>
+                        <th style={{ textAlign: 'right' }}>Subtotal</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -728,7 +728,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                   </table>
                 ) : (
                   <p style={{ color: '#8a8279', fontSize: '0.84rem', margin: 0 }}>
-                    {isLoadingDetail ? 'Đang tải danh sách sản phẩm...' : 'Chưa có thông tin danh sách sản phẩm.'}
+                    {isLoadingDetail ? 'Loading item list...' : 'No item information available.'}
                   </p>
                 )}
               </div>
@@ -737,18 +737,18 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
               <div className="detail-financial-box">
                 {selectedOrder.merchandiseSubtotal !== undefined && (
                   <div className="detail-financial-row">
-                    <span>Tiền hàng:</span>
+                    <span>Items Subtotal:</span>
                     <span>{formatVnd(selectedOrder.merchandiseSubtotal)}</span>
                   </div>
                 )}
                 {selectedOrder.shippingFee !== undefined && (
                   <div className="detail-financial-row">
-                    <span>Phí giao hàng:</span>
+                    <span>Shipping Fee:</span>
                     <span>{formatVnd(selectedOrder.shippingFee)}</span>
                   </div>
                 )}
                 <div className="detail-financial-total">
-                  <span>Tổng tiền thanh toán:</span>
+                  <span>Total Amount:</span>
                   <strong>{formatVnd(selectedOrder.totalAmount)}</strong>
                 </div>
               </div>
@@ -758,28 +758,28 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                 <div className="detail-shipper-section">
                   <div className="detail-shipper-header">
                     <Truck size={18} className="detail-shipper-icon" />
-                    <h4 className="detail-section-title" style={{ margin: 0 }}>Phân công nhân viên giao hàng (Shipper)</h4>
+                    <h4 className="detail-section-title" style={{ margin: 0 }}>Assign Delivery Shipper</h4>
                   </div>
 
                   {isLoadingShippers ? (
                     <div className="shipper-loading-box">
                       <Loader2 className="spinner-rotate" size={18} />
-                      <span>Đang kiểm tra danh sách Shipper trực tuyến từ hệ thống...</span>
+                      <span>Checking online shippers from system...</span>
                     </div>
                   ) : shippers.length === 0 ? (
                     <div className="shipper-empty-alert">
                       <AlertTriangle className="shipper-alert-icon" size={24} />
                       <div className="shipper-alert-content">
-                        <strong className="shipper-alert-title">Hiện tại chưa có Shipper nào đang trực tuyến</strong>
+                        <strong className="shipper-alert-title">No shippers are currently online</strong>
                         <p className="shipper-alert-desc">
-                          Hệ thống không tìm thấy nhân viên giao hàng nào đang bật trạng thái trực tuyến (online). Vui lòng thông báo cho đội giao hàng bật ca trực hoặc quay lại phân công sau.
+                          No delivery staff are currently marked online in the system. Please ask delivery staff to log in or assign later.
                         </p>
                       </div>
                     </div>
                   ) : (
                     <div className="shipper-assign-card">
                       <label className="shipper-select-label" htmlFor="shipper-select">
-                        Chọn Shipper đang trực tuyến để điều phối đơn hàng:
+                        Select an online shipper to assign order:
                       </label>
                       <div className="shipper-select-row">
                         <select
@@ -791,7 +791,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                         >
                           {shippers.map((s) => (
                             <option key={s.shipperId} value={s.shipperId} disabled={!s.canAssign}>
-                              {s.fullName} ({s.phoneNumber}) — {s.canAssign ? `Đang giao: ${s.currentActiveOrders}/${s.maxOrders} đơn` : `Quá tải (${s.currentActiveOrders}/${s.maxOrders})`}
+                              {s.fullName} ({s.phoneNumber}) — {s.canAssign ? `Delivering: ${s.currentActiveOrders}/${s.maxOrders} orders` : `Overloaded (${s.currentActiveOrders}/${s.maxOrders})`}
                             </option>
                           ))}
                         </select>
@@ -802,11 +802,11 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                           onClick={() => handleAssignShipper(selectedOrder.orderId)}
                         >
                           <Truck size={16} />
-                          <span>{isAssigningShipper ? 'Đang điều phối...' : 'Xác nhận gán Shipper'}</span>
+                          <span>{isAssigningShipper ? 'Assigning...' : 'Confirm Assign Shipper'}</span>
                         </button>
                       </div>
                       <p className="shipper-assign-note">
-                        * Sau khi gán Shipper, trạng thái đơn sẽ tự động chuyển sang <strong>SHIPPING (Out for Delivery)</strong>.
+                        * After assigning a shipper, order status will automatically change to <strong>SHIPPING (Out for Delivery)</strong>.
                       </p>
                     </div>
                   )}
@@ -818,17 +818,17 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                 <div className="detail-shipper-section assigned">
                   <div className="detail-shipper-header">
                     <Truck size={18} className="detail-shipper-icon text-shipping" />
-                    <h4 className="detail-section-title" style={{ margin: 0, color: '#38bdf8' }}>Thông tin Shipper đang giao hàng</h4>
+                    <h4 className="detail-section-title" style={{ margin: 0, color: '#38bdf8' }}>Assigned Shipper Details</h4>
                     <span className="status-pill pill-shipping" style={{ marginLeft: 'auto' }}>OUT FOR DELIVERY</span>
                   </div>
                   <div className="detail-assigned-shipper-card">
                     <div className="detail-assigned-item">
-                      <span className="detail-assigned-label">Nhân viên phụ trách:</span>
-                      <strong className="detail-assigned-value">{selectedOrder.shipperName || 'Shipper Urban Wine Express'}</strong>
+                      <span className="detail-assigned-label">Assigned Shipper:</span>
+                      <strong className="detail-assigned-value">{selectedOrder.shipperName || 'Urban Wine Express Shipper'}</strong>
                     </div>
                     <div className="detail-assigned-item">
-                      <span className="detail-assigned-label">Số điện thoại:</span>
-                      <span className="detail-assigned-value">{selectedOrder.shipperPhone || 'Chưa cập nhật'}</span>
+                      <span className="detail-assigned-label">Phone Number:</span>
+                      <span className="detail-assigned-value">{selectedOrder.shipperPhone || 'Not updated'}</span>
                     </div>
                   </div>
                 </div>
@@ -839,7 +839,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                 <div className="detail-shipper-section completed">
                   <div className="detail-shipper-header">
                     <CheckCircle2 size={18} className="detail-shipper-icon text-completed" />
-                    <h4 className="detail-section-title" style={{ margin: 0, color: '#22c55e' }}>Đơn hàng đã được giao bởi</h4>
+                    <h4 className="detail-section-title" style={{ margin: 0, color: '#22c55e' }}>Order delivered by</h4>
                   </div>
                   <div className="detail-assigned-shipper-card">
                     <div className="detail-assigned-item">
@@ -864,7 +864,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                     disabled={isProcessingAction}
                     onClick={() => handleApprove(selectedOrder.orderId)}
                   >
-                    {isProcessingAction ? 'Đang xử lý...' : 'Phê duyệt đơn hàng'}
+                    {isProcessingAction ? 'Processing...' : 'Approve Order'}
                   </button>
                   <button
                     type="button"
@@ -872,7 +872,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                     disabled={isProcessingAction}
                     onClick={() => handleOpenRejectModal(selectedOrder)}
                   >
-                    Từ chối đơn
+                    Reject Order
                   </button>
                 </>
               )}
@@ -881,14 +881,14 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                 className="btn-detail-close"
                 onClick={() => setSelectedOrder(null)}
               >
-                Đóng
+                Close
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 5. Reject Order Modal (Màn hình nhập lý do từ chối) */}
+      {/* 5. Reject Order Modal (Rejection Reason Input Screen) */}
       {rejectModalOrder && (
         <div className="order-detail-backdrop" onClick={() => setRejectModalOrder(null)}>
           <div className="order-reject-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -896,7 +896,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
               <div className="order-detail-header-left">
                 <AlertTriangle size={20} className="text-danger" style={{ color: '#ef4444' }} />
                 <h3 className="order-reject-modal-title">
-                  Từ chối đơn hàng {formatOrderCode(rejectModalOrder.orderCode, rejectModalOrder.orderId)}
+                  Reject Order {formatOrderCode(rejectModalOrder.orderCode, rejectModalOrder.orderId)}
                 </h3>
               </div>
               <button
@@ -911,7 +911,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
             <form onSubmit={handleConfirmReject}>
               <div className="order-reject-modal-body">
                 <p className="reject-modal-desc">
-                  Vui lòng cung cấp lý do từ chối. Hệ thống sẽ <strong>gửi thông báo kèm lý do này đến khách hàng ngay lập tức qua WebSocket</strong> và tự động hoàn trả số lượng chai rượu vào kho:
+                  Please provide a rejection reason. The system will <strong>send a real-time notification with this reason to the customer</strong> and return items to inventory:
                 </p>
 
                 {rejectReasonError && (
@@ -922,7 +922,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                 )}
 
                 <div className="quick-reason-chips">
-                  <span className="chips-label">Lý do phổ biến (Bấm để chọn nhanh):</span>
+                  <span className="chips-label">Common reasons (Click to select):</span>
                   <div className="chips-list">
                     {COMMON_REJECT_REASONS.map((r, idx) => (
                       <button
@@ -942,14 +942,14 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
 
                 <div className="form-group" style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label className="reject-input-label" htmlFor="reject-textarea">
-                    Chi tiết lý do từ chối *
+                    Rejection Reason Details *
                   </label>
                   <textarea
                     id="reject-textarea"
                     rows={4}
                     required
                     className="reject-textarea"
-                    placeholder="Nhập chi tiết lý do từ chối đơn hàng..."
+                    placeholder="Enter rejection reason details..."
                     value={rejectReason}
                     onChange={(e) => {
                       setRejectReason(e.target.value);
@@ -966,14 +966,14 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
                   disabled={isProcessingAction}
                   onClick={() => setRejectModalOrder(null)}
                 >
-                  Hủy bỏ
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="btn-confirm-reject-danger"
                   disabled={isProcessingAction}
                 >
-                  {isProcessingAction ? 'Đang hủy đơn...' : 'Xác nhận từ chối đơn'}
+                  {isProcessingAction ? 'Cancelling...' : 'Confirm Rejection'}
                 </button>
               </div>
             </form>
@@ -981,7 +981,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
         </div>
       )}
 
-      {/* 6. Action Feedback Popup Modal (Phê duyệt thành công / Từ chối thành công theo mẫu) */}
+      {/* 6. Action Feedback Popup Modal */}
       {actionPopup && (
         <div className="order-detail-backdrop" onClick={handleCloseActionPopup}>
           <div className="action-popup-card" onClick={(e) => e.stopPropagation()}>
@@ -1001,7 +1001,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({
               className="btn-popup-close"
               onClick={handleCloseActionPopup}
             >
-              Đóng
+              Close
             </button>
           </div>
         </div>
