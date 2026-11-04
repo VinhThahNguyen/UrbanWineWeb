@@ -39,15 +39,15 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string>('');
 
-  // Accordion mở rộng/thu gọn danh sách kiện hàng rượu
+  // Accordion state to expand/collapse wine bottles list
   const [isWineExpanded, setIsWineExpanded] = useState<boolean>(false);
 
-  // Trạng thái mở các Modal hành động
+  // Modal open states
   const [isPaymentOpen, setIsPaymentOpen] = useState<boolean>(false);
   const [isReassignOpen, setIsReassignOpen] = useState<boolean>(false);
   const [isFailOpen, setIsFailOpen] = useState<boolean>(false);
 
-  // Trạng thái Custom Alert Modal (thay thế browser alert của localhost)
+  // Custom Alert Modal state
   const [customAlert, setCustomAlert] = useState<{
     isOpen: boolean;
     type: ShipperToastType;
@@ -62,7 +62,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
     onConfirm: () => {},
   });
 
-  // Tải chi tiết đơn hàng từ backend
+  // Load order details from backend
   const fetchOrder = async () => {
     try {
       setLoading(true);
@@ -70,7 +70,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
       const data = await shipperService.getOrderDetail(orderId);
       setOrder(data);
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Không thể tải thông tin đơn hàng');
+      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Unable to load order details');
     } finally {
       setLoading(false);
     }
@@ -81,7 +81,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
   }, [orderId]);
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('vi-VN').format(val) + 'đ';
+    return new Intl.NumberFormat('vi-VN').format(val) + '₫';
   };
 
   const totalBottles = order?.items?.reduce((sum, item) => sum + item.quantity, 0) || 1;
@@ -111,14 +111,14 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
 
         {loading ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d4af37' }}>
-            <span style={{ fontSize: '0.9rem' }}>Đang tải chi tiết đơn hàng #{orderId}...</span>
+            <span style={{ fontSize: '0.9rem' }}>Loading order details #{orderId}...</span>
           </div>
         ) : errorMsg || !order ? (
           <div style={{ flex: 1, padding: '2rem 1.25rem', textAlign: 'center', color: '#fff' }}>
             <AlertTriangle size={36} color="#ef4444" style={{ margin: '0 auto 1rem auto' }} />
-            <div style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>{errorMsg || 'Không tìm thấy đơn hàng'}</div>
+            <div style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>{errorMsg || 'Order not found'}</div>
             <button type="button" className="shipper-btn-secondary" onClick={onBack}>
-              Quay lại danh sách
+              Back to Orders
             </button>
           </div>
         ) : (
@@ -133,16 +133,16 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
                 </span>
                 <span style={{ fontSize: '0.72rem', color: '#8b857d', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <Clock size={12} />
-                  <span>Assigned at {order.assignedAt ? new Date(order.assignedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '14:05'}</span>
+                  <span>Assigned at {order.assignedAt ? new Date(order.assignedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '14:05'}</span>
                 </span>
               </div>
             </div>
 
-            {/* Warning nếu có yêu cầu đổi đơn đang chờ duyệt */}
+            {/* Warning if reassign request is pending */}
             {order.shipperRejectStatus === 'REQUESTED' && (
               <div className="shipper-warning-banner" style={{ marginBottom: '1rem' }}>
                 <AlertTriangle size={16} />
-                <span>Bạn đã gửi yêu cầu bàn giao đơn này. Đang chờ Quản trị viên xét duyệt.</span>
+                <span>You requested to reassign this order. Waiting for Admin approval.</span>
               </div>
             )}
 
@@ -171,7 +171,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
                 <a 
                   href={`tel:${order.recipientPhone}`}
                   className="shipper-call-circle"
-                  title="Gọi ngay cho người nhận"
+                  title="Call customer"
                 >
                   <Phone size={14} />
                 </a>
@@ -188,13 +188,13 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
               <div className="shipper-note-box">
                 <div className="shipper-note-label">DELIVERY NOTE</div>
                 <div className="shipper-note-content">
-                  "Khách hàng yêu cầu kiểm tra rượu cẩn thận trước khi thanh toán."
+                  "Customer requested careful bottle inspection before payment."
                 </div>
               </div>
             </div>
 
             {/* =========================================================================
-                WINE PACKAGE SECTION (Phương án kết hợp: 1 chai đại diện + Nút Xem tất cả N chai)
+                WINE PACKAGE SECTION
                ========================================================================= */}
             <div className="shipper-section-head">
               <span className="shipper-section-title">Wine package</span>
@@ -202,7 +202,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
             </div>
 
             <div className="shipper-detail-card" style={{ marginBottom: '1.25rem' }}>
-              {/* Chai đại diện */}
+              {/* Main Wine Item */}
               <div className="shipper-wine-single-row">
                 <div className="shipper-wine-img-box" style={{ width: '56px', height: '56px' }}>
                   {mainWine?.wineImageUrl ? (
@@ -220,7 +220,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
                     {mainWine?.wineName || 'Sassicaia 2019'}
                   </div>
                   <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '2px' }}>
-                    {mainWine?.volume || '750ml'} • Qty: {mainWine?.quantity || 1} chai
+                    {mainWine?.volume || '750ml'} • Qty: {mainWine?.quantity || 1} bottles
                   </div>
                 </div>
 
@@ -229,7 +229,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
                 </div>
               </div>
 
-              {/* Nút bấm Accordion mở rộng/thu gọn nếu đơn có nhiều chai */}
+              {/* Accordion toggle if order has multiple items */}
               {order.items && order.items.length > 1 && (
                 <div>
                   <button
@@ -238,7 +238,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
                     onClick={() => setIsWineExpanded(!isWineExpanded)}
                   >
                     <span>
-                      {isWineExpanded ? 'Thu gọn kiện hàng' : `Xem toàn bộ kiện hàng (${order.items.length} loại rượu)`}
+                      {isWineExpanded ? 'Hide items list' : `View all items (${order.items.length} wine types)`}
                     </span>
                     {isWineExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                   </button>
@@ -252,7 +252,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
                               {item.wineName}
                             </div>
                             <div style={{ fontSize: '0.72rem', color: '#8b857d' }}>
-                              Số lượng: {item.quantity} • Đơn giá: {formatCurrency(item.unitPrice)}
+                              Qty: {item.quantity} • Price: {formatCurrency(item.unitPrice)}
                             </div>
                           </div>
                           <div style={{ fontSize: '0.825rem', fontWeight: 700, color: '#d4af37' }}>
@@ -265,7 +265,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
                 </div>
               )}
 
-              {/* Nhãn cảnh báo hàng dễ vỡ */}
+              {/* Fragile Alert */}
               <div className="shipper-fragile-alert">
                 <Wine size={14} color="#d4af37" />
                 <span>Fragile goods. Keep upright in the thermal bag.</span>
@@ -286,15 +286,15 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
               <div className="shipper-total-amount" style={{ margin: '0.5rem 0 0 0' }}>
                 {order.paymentMethod === 'COD' 
                   ? formatCurrency(order.totalAmount) 
-                  : '0đ (Đã thanh toán)'}
+                  : '0₫ (Prepaid)'}
               </div>
             </div>
 
             {/* =========================================================================
-                ACTION BUTTONS CỐT LÕI (Thu tiền, Báo sự cố 5.9, Báo giao thất bại)
+                CORE ACTION BUTTONS
                ========================================================================= */}
             <div className="shipper-action-group">
-              {/* Nút to chính: Quyết toán thanh toán & Hoàn tất */}
+              {/* Primary: Collect payment & complete */}
               {order.orderStatus === 'SHIPPING' && (
                 <button
                   type="button"
@@ -304,13 +304,13 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
                   <CreditCard size={17} />
                   <span>
                     {order.paymentStatus === 'PAID' || order.paymentMethod === 'VNPAY'
-                      ? 'XÁC NHẬN ĐÃ GIAO RƯỢU (THU 0Đ)'
+                      ? 'CONFIRM HANDOVER (COLLECT 0₫)'
                       : 'COLLECT PAYMENT & COMPLETE'}
                   </span>
                 </button>
               )}
 
-              {/* Nút phụ: Báo sự cố hỏng xe (Request Reassign Modal 5.9) */}
+              {/* Secondary: Request reassign */}
               {order.orderStatus === 'SHIPPING' && order.shipperRejectStatus !== 'REQUESTED' && (
                 <button
                   type="button"
@@ -318,11 +318,11 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
                   onClick={() => setIsReassignOpen(true)}
                 >
                   <AlertTriangle size={15} />
-                  <span>Báo sự cố xe • Đổi đơn (Reassign)</span>
+                  <span>Report Vehicle Issue • Reassign</span>
                 </button>
               )}
 
-              {/* Nút phụ: Báo giao thất bại */}
+              {/* Secondary: Report delivery failed */}
               {order.orderStatus === 'SHIPPING' && (
                 <button
                   type="button"
@@ -330,14 +330,14 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
                   onClick={() => setIsFailOpen(true)}
                 >
                   <XCircle size={15} />
-                  <span>Báo giao không thành công (Boom hàng)</span>
+                  <span>Report Delivery Failed</span>
                 </button>
               )}
             </div>
           </div>
         )}
 
-        {/* Modal Quyết toán Thanh toán (Physical Cash & Scan VietQR & Prepaid Online) */}
+        {/* Payment Settlement Modal */}
         {order && (
           <PaymentSettlementModal
             orderId={order.orderId}
@@ -351,8 +351,8 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
               setCustomAlert({
                 isOpen: true,
                 type: 'SUCCESS',
-                title: 'Giao hàng thành công',
-                message: msg || `Đơn hàng #${order.orderCode} đã hoàn tất thành công!`,
+                title: 'Delivery Successful',
+                message: msg || `Order #${order.orderCode} completed successfully!`,
                 onConfirm: () => {
                   fetchOrder();
                   onOrderCompleted?.();
@@ -362,7 +362,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
           />
         )}
 
-        {/* Modal Báo sự cố Reassign 5.9 */}
+        {/* Request Reassign Modal */}
         {order && (
           <RequestReassignModal
             orderId={order.orderId}
@@ -373,8 +373,8 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
               setCustomAlert({
                 isOpen: true,
                 type: 'WARNING',
-                title: 'Yêu cầu bàn giao đơn',
-                message: msg || `Đã gửi yêu cầu bàn giao đơn #${order.orderCode} lên Quản lý xét duyệt!`,
+                title: 'Reassign Request',
+                message: msg || `Reassign request for order #${order.orderCode} sent to Admin!`,
                 onConfirm: () => {
                   fetchOrder();
                 },
@@ -383,7 +383,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
           />
         )}
 
-        {/* Modal Báo giao thất bại */}
+        {/* Fail Delivery Modal */}
         {order && (
           <FailDeliveryModal
             orderId={order.orderId}
@@ -394,8 +394,8 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
               setCustomAlert({
                 isOpen: true,
                 type: 'ERROR',
-                title: 'Báo giao thất bại',
-                message: msg || `Đã báo cáo giao thất bại cho đơn #${order.orderCode}. Hàng sẽ được hoàn kho!`,
+                title: 'Delivery Failed',
+                message: msg || `Failed delivery reported for order #${order.orderCode}. Items will be returned to stock!`,
                 onConfirm: () => {
                   fetchOrder();
                 },
@@ -404,7 +404,7 @@ export const ShipperOrderDetailPage: React.FC<ShipperOrderDetailPageProps> = ({
           />
         )}
 
-        {/* Custom Confirmation/Notification Popup (Không còn alert/confirm của browser localhost) */}
+        {/* Custom Confirmation/Notification Popup */}
         <ShipperConfirmModal
           isOpen={customAlert.isOpen}
           type={customAlert.type}

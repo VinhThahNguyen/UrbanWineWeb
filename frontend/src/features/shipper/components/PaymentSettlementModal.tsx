@@ -32,23 +32,23 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  // Kiểm tra xem đơn này đã thanh toán trước chưa (VNPAY hoặc paymentStatus === PAID)
+  // Check if order is prepaid online (VNPAY or paymentStatus === PAID)
   const isPrepaid = paymentStatus === 'PAID' || paymentMethod === 'VNPAY';
 
   const [activeTab, setActiveTab] = useState<'CASH' | 'VIETQR'>('CASH');
 
-  // State cho Tiền mặt (Cash)
+  // State for Cash
   const [cashReceived, setCashReceived] = useState<number>(totalAmount);
   const [cashSubmitting, setCashSubmitting] = useState<boolean>(false);
 
-  // State cho VietQR
+  // State for VietQR
   const [qrLoading, setQrLoading] = useState<boolean>(false);
   const [qrData, setQrData] = useState<any>(null);
   const [isQrPaid, setIsQrPaid] = useState<boolean>(false);
   const [pollingActive, setPollingActive] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
 
-  // Reset state mỗi khi mở modal
+  // Reset state on modal open
   useEffect(() => {
     if (isOpen) {
       setCashReceived(totalAmount);
@@ -60,14 +60,14 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
     }
   }, [isOpen, totalAmount, paymentMethod]);
 
-  // Sinh mã VietQR khi chuyển sang tab VIETQR (chỉ với đơn COD/VietQR)
+  // Generate VietQR code when switching to VIETQR tab (COD/VietQR orders only)
   useEffect(() => {
     if (isOpen && !isPrepaid && activeTab === 'VIETQR' && !qrData && !qrLoading) {
       handleGenerateQr();
     }
   }, [isOpen, activeTab, isPrepaid]);
 
-  // Polling thời gian thực kiểm tra thanh toán VietQR
+  // Real-time polling to check VietQR payment
   useEffect(() => {
     let intervalId: any = null;
     if (isOpen && !isPrepaid && activeTab === 'VIETQR' && pollingActive && !isQrPaid) {
@@ -92,10 +92,10 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
   if (!isOpen) return null;
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('vi-VN').format(val) + 'đ';
+    return new Intl.NumberFormat('vi-VN').format(val) + '₫';
   };
 
-  // Tính tiền thối lại cho khách
+  // Calculate change due to customer
   const changeDue = Math.max(0, cashReceived - totalAmount);
 
   const cashPresets = [
@@ -104,25 +104,25 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
     Math.ceil(totalAmount / 1000000) * 1000000 || totalAmount + 500000,
   ].filter((v, idx, arr) => arr.indexOf(v) === idx && v >= totalAmount);
 
-  // Xử lý xác nhận giao hàng cho đơn ĐÃ THANH TOÁN TRƯỚC (VNPAY / PAID) -> Thu 0đ
+  // Confirm delivery for prepaid orders (VNPAY / PAID) -> Collect 0 VND
   const handleConfirmPrepaidDelivery = async () => {
     try {
       setCashSubmitting(true);
       setErrorMsg('');
       await shipperService.completeDelivery(orderId);
-      onSuccess(`Đã xác nhận giao hàng thành công đơn #${orderCode}! Đơn hàng đã được thanh toán online đầy đủ.`);
+      onSuccess(`Delivery confirmed for order #${orderCode}! Order was paid online.`);
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Có lỗi xảy ra khi xác nhận giao hàng.');
+      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Error confirming delivery.');
     } finally {
       setCashSubmitting(false);
     }
   };
 
-  // Xử lý xác nhận thu tiền mặt
+  // Confirm cash payment
   const handleConfirmCash = async () => {
     if (cashReceived < totalAmount) {
-      setErrorMsg(`Số tiền khách đưa (${formatCurrency(cashReceived)}) không đủ số tiền cần thu (${formatCurrency(totalAmount)})`);
+      setErrorMsg(`Cash received (${formatCurrency(cashReceived)}) is less than total amount (${formatCurrency(totalAmount)})`);
       return;
     }
 
@@ -130,16 +130,16 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
       setCashSubmitting(true);
       setErrorMsg('');
       await shipperService.completeDelivery(orderId);
-      onSuccess(`Xác nhận thu tiền mặt thành công! Đơn hàng #${orderCode} đã hoàn tất.`);
+      onSuccess(`Cash payment confirmed! Order #${orderCode} completed.`);
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Có lỗi xảy ra khi xác nhận thu tiền.');
+      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Error confirming cash payment.');
     } finally {
       setCashSubmitting(false);
     }
   };
 
-  // Tạo VietQR
+  // Create VietQR
   const handleGenerateQr = async () => {
     try {
       setQrLoading(true);
@@ -148,21 +148,21 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
       setQrData(data);
       setPollingActive(true);
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Không thể tạo mã VietQR lúc này.');
+      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Unable to create VietQR code right now.');
     } finally {
       setQrLoading(false);
     }
   };
 
-  // Shipper hoàn tất đơn khi khách đã chuyển khoản VietQR xong
+  // Shipper completes order after customer transfers via VietQR
   const handleCompleteVietQr = async () => {
     try {
       setCashSubmitting(true);
       await shipperService.completeDelivery(orderId);
-      onSuccess(`Thanh toán VietQR đã xác nhận thành công! Đơn hàng #${orderCode} đã hoàn tất.`);
+      onSuccess(`VietQR payment confirmed! Order #${orderCode} completed.`);
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Có lỗi xảy ra khi hoàn tất đơn.');
+      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Error completing order.');
     } finally {
       setCashSubmitting(false);
     }
@@ -192,27 +192,27 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
         </div>
 
         {/* =========================================================================
-            TRƯỜNG HỢP 1: ĐƠN ĐÃ THANH TOÁN ONLINE (VNPAY / PAID) -> POPUP RIÊNG BIỆT KHÔNG BẮT THU TIỀN
+            CASE 1: PREPAID ONLINE (VNPAY / PAID) -> NO CASH COLLECTION NEEDED
            ========================================================================= */}
         {isPrepaid ? (
           <div>
             <h3 className="shipper-settlement-title">
-              Xác nhận bàn giao rượu
+              Confirm Wine Handover
             </h3>
 
             <div className="shipper-prepaid-highlight-box">
               <div className="shipper-prepaid-badge">
                 <CheckCircle2 size={16} />
-                <span>ĐÃ THANH TOÁN ONLINE (VNPAY)</span>
+                <span>PAID ONLINE (VNPAY)</span>
               </div>
 
               <div className="shipper-prepaid-amount-row">
-                <span>Số tiền Shipper cần thu:</span>
-                <span className="shipper-prepaid-zero">0 VNĐ</span>
+                <span>Amount to collect:</span>
+                <span className="shipper-prepaid-zero">0 VND</span>
               </div>
 
               <p className="shipper-prepaid-desc">
-                Đơn hàng <strong>#{orderCode}</strong> đã được thanh toán 100% trước qua cổng thanh toán online. Shipper chỉ cần kiểm tra rượu và trao tận tay khách hàng.
+                Order <strong>#{orderCode}</strong> is fully paid online. Just check the bottles and hand over to customer.
               </p>
             </div>
 
@@ -226,12 +226,12 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
               disabled={cashSubmitting}
             >
               <PackageCheck size={18} />
-              <span>{cashSubmitting ? 'Đang xác nhận...' : 'XÁC NHẬN GIAO HÀNG THÀNH CÔNG'}</span>
+              <span>{cashSubmitting ? 'Confirming...' : 'CONFIRM DELIVERY COMPLETED'}</span>
             </button>
           </div>
         ) : (
           /* =========================================================================
-              TRƯỜNG HỢP 2: ĐƠN COD / THU TIỀN TẠI CHỖ (Tiền mặt hoặc Quét VietQR)
+              CASE 2: COD / PAY ON DELIVERY (Cash or VietQR)
              ========================================================================= */
           <div>
             <h3 className="shipper-settlement-title">
@@ -298,7 +298,7 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
                   <span className="shipper-cash-unit">₫</span>
                 </div>
 
-                {/* Tiền thối lại */}
+                {/* Change due */}
                 <div className="shipper-change-due-box">
                   <div className="shipper-change-left">
                     <span className="shipper-change-icon">⇄</span>
@@ -321,7 +321,7 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
                   disabled={cashSubmitting}
                 >
                   <CheckCircle2 size={17} />
-                  <span>{cashSubmitting ? 'Đang xác nhận...' : 'CONFIRM CASH RECEIVED'}</span>
+                  <span>{cashSubmitting ? 'Confirming...' : 'CONFIRM CASH RECEIVED'}</span>
                 </button>
               </div>
             )}
@@ -332,7 +332,7 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
                 {qrLoading ? (
                   <div style={{ padding: '3rem 0', color: '#d4af37' }}>
                     <Loader2 size={32} className="spin" style={{ margin: '0 auto 0.75rem auto' }} />
-                    <div style={{ fontSize: '0.85rem' }}>Đang sinh mã VietQR động bảo mật...</div>
+                    <div style={{ fontSize: '0.85rem' }}>Creating secure VietQR code...</div>
                   </div>
                 ) : qrData ? (
                   <div>
@@ -367,12 +367,12 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
                       {isQrPaid ? (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: '#22c55e' }}>
                           <CheckCircle2 size={16} />
-                          <span style={{ fontWeight: 600 }}>Khách hàng đã chuyển khoản thành công!</span>
+                          <span style={{ fontWeight: 600 }}>Payment received successfully!</span>
                         </div>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: '#e5be3e' }}>
                           <Loader2 size={15} className="spin" />
-                          <span>Awaiting customer payment webhook...</span>
+                          <span>Waiting for customer payment...</span>
                         </div>
                       )}
                     </div>
@@ -399,17 +399,17 @@ export const PaymentSettlementModal: React.FC<PaymentSettlementModalProps> = ({
                       disabled={!isQrPaid || cashSubmitting}
                     >
                       <CheckCircle2 size={17} />
-                      <span>{cashSubmitting ? 'Đang hoàn tất...' : 'Mark Order Completed'}</span>
+                      <span>{cashSubmitting ? 'Completing...' : 'Mark Order Completed'}</span>
                     </button>
                   </div>
                 ) : (
                   <div style={{ padding: '2rem 0' }}>
                     <AlertCircle size={32} color="#ef4444" style={{ margin: '0 auto 0.75rem auto' }} />
                     <div style={{ fontSize: '0.85rem', color: '#fff', marginBottom: '1rem' }}>
-                      Không thể kết nối đến cổng VietQR
+                      Unable to connect to VietQR service
                     </div>
                     <button type="button" className="shipper-btn-secondary" onClick={handleGenerateQr}>
-                      Thử lại
+                      Retry
                     </button>
                   </div>
                 )}

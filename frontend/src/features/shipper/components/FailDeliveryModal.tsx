@@ -24,15 +24,15 @@ export const FailDeliveryModal: React.FC<FailDeliveryModalProps> = ({
   if (!isOpen) return null;
 
   const quickReasons = [
-    { label: 'Khách không nghe máy (đã gọi 3 lần)', icon: PhoneOff },
-    { label: 'Khách từ chối nhận hàng (boom hàng)', icon: UserX },
-    { label: 'Sai địa chỉ, không tìm thấy người nhận', icon: MapPinOff },
+    { label: 'Customer did not answer (called 3 times)', icon: PhoneOff },
+    { label: 'Customer refused order', icon: UserX },
+    { label: 'Wrong address, customer not found', icon: MapPinOff },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason.trim()) {
-      setErrorMsg('Vui lòng chọn hoặc nhập lý do giao hàng không thành công');
+      setErrorMsg('Please choose or enter a reason for failed delivery');
       return;
     }
 
@@ -40,10 +40,10 @@ export const FailDeliveryModal: React.FC<FailDeliveryModalProps> = ({
       setSubmitting(true);
       setErrorMsg('');
       await shipperService.failDelivery(orderId, reason.trim());
-      onSuccess(`Đã báo cáo giao hàng không thành công cho đơn #${orderCode}. Kiện hàng rượu sẽ được hệ thống hoàn kho tự động.`);
+      onSuccess(`Reported failed delivery for order #${orderCode}. Items will be returned to stock.`);
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Có lỗi xảy ra khi báo thất bại.');
+      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Error reporting failed delivery.');
     } finally {
       setSubmitting(false);
     }
@@ -57,7 +57,7 @@ export const FailDeliveryModal: React.FC<FailDeliveryModalProps> = ({
         <div className="shipper-modal-header">
           <div className="shipper-modal-title-wrap">
             <XCircle size={20} color="#ef4444" />
-            <h3 className="shipper-modal-title">Báo cáo giao không thành công</h3>
+            <h3 className="shipper-modal-title">Report Failed Delivery</h3>
           </div>
           <button type="button" className="shipper-modal-close-btn" onClick={onClose}>
             <X size={18} />
@@ -65,7 +65,7 @@ export const FailDeliveryModal: React.FC<FailDeliveryModalProps> = ({
         </div>
 
         <div className="shipper-modal-sub">
-          Đơn hàng <strong>#{orderCode}</strong> sẽ chuyển sang trạng thái HỦY (CANCELLED) và tự động hoàn trả số lượng rượu vào kho theo quy tắc BR-04.
+          Order <strong>#{orderCode}</strong> will be CANCELLED and wine bottles will be returned to stock.
         </div>
 
         {errorMsg && <div className="shipper-error-banner">{errorMsg}</div>}
@@ -86,11 +86,11 @@ export const FailDeliveryModal: React.FC<FailDeliveryModalProps> = ({
           </div>
 
           <div style={{ marginBottom: '1.25rem' }}>
-            <label className="shipper-form-label">Ghi chú chi tiết lý do thất bại:</label>
+            <label className="shipper-form-label">Detailed reason for failed delivery:</label>
             <textarea
               className="shipper-textarea"
               rows={3}
-              placeholder="Nhập ghi chú chi tiết kết quả liên lạc với khách hàng..."
+              placeholder="Enter details about why delivery failed..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
@@ -103,7 +103,7 @@ export const FailDeliveryModal: React.FC<FailDeliveryModalProps> = ({
               onClick={onClose}
               disabled={submitting}
             >
-              Quay lại
+              Back
             </button>
             <button
               type="submit"
@@ -111,7 +111,7 @@ export const FailDeliveryModal: React.FC<FailDeliveryModalProps> = ({
               disabled={submitting}
             >
               <Send size={15} />
-              <span>{submitting ? 'Đang cập nhật...' : 'Xác nhận thất bại'}</span>
+              <span>{submitting ? 'Updating...' : 'Confirm Failed'}</span>
             </button>
           </div>
         </form>

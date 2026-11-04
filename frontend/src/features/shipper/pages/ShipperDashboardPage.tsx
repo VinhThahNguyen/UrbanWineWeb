@@ -40,7 +40,7 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
   const [pinnedId, setPinnedId] = useState<number | null>(shipperService.getPinnedOrderId());
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Custom modal thông báo
+  // Custom notification modal
   const [customAlert, setCustomAlert] = useState<{
     isOpen: boolean;
     type: ShipperToastType;
@@ -55,7 +55,7 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
     onConfirm: () => {},
   });
 
-  // Tải thông tin shipper & danh sách đơn hàng thực tế từ backend
+  // Load shipper info & real orders from backend
   useEffect(() => {
     try {
       const userStr = localStorage.getItem('urbanwine_user');
@@ -85,18 +85,18 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
     fetchData();
   }, []);
 
-  // Xác định đơn hàng ưu tiên tiếp theo (Đã Ghim hoặc Đơn SHIPPING mới nhất)
+  // Determine next priority delivery (Pinned or newest SHIPPING order)
   const nextDelivery = useMemo(() => {
     return shipperService.resolveNextDelivery(orders);
   }, [orders, pinnedId]);
 
-  // Đếm đơn đang chờ trong hàng đợi
+  // Count orders waiting in queue
   const queuedOrdersCount = useMemo(() => {
     const shippingOrders = orders.filter((o) => o.orderStatus === 'SHIPPING');
     return nextDelivery ? Math.max(0, shippingOrders.length - 1) : shippingOrders.length;
   }, [orders, nextDelivery]);
 
-  // Tính toán số liệu thống kê ca trực trong ngày (Completed, Pending, COD collected)
+  // Calculate shift stats (Completed, Pending, COD collected)
   const stats: ShiftStats = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
 
@@ -105,11 +105,11 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
     let codAmount = 0;
 
     orders.forEach((o) => {
-      // Đơn đang giao
+      // Active delivery
       if (o.orderStatus === 'SHIPPING') {
         pending += 1;
       }
-      // Đơn đã hoàn tất hôm nay
+      // Completed delivery today
       if (o.orderStatus === 'COMPLETED') {
         const orderDate = (o.completedAt || o.createdAt || '').slice(0, 10);
         if (orderDate === today) {
@@ -128,7 +128,7 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
     };
   }, [orders]);
 
-  // Xử lý bật/tắt ghim đơn hàng
+  // Handle pin/unpin order
   const handleTogglePin = (orderId: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (pinnedId === orderId) {
@@ -140,27 +140,27 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
     }
   };
 
-  // Format tiền tệ Việt Nam (VNĐ hoặc triệu VNĐ)
+  // Format VND Currency
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('vi-VN').format(val) + 'đ';
+    return new Intl.NumberFormat('vi-VN').format(val) + '₫';
   };
 
   const formatShortMillion = (val: number) => {
-    if (val === 0) return '0đ';
+    if (val === 0) return '0₫';
     const mil = val / 1_000_000;
-    return `${mil.toFixed(2)}Mđ`;
+    return `${mil.toFixed(2)}M₫`;
   };
 
-  // Lấy tên người dùng hiển thị
+  // Get display name
   const shipperName = currentUser?.fullName || currentUser?.name || 'Shipper';
 
-  // Số lượng thông báo chưa đọc
+  // Unread notification count
   const unreadNotifCount = notifications.filter((n) => !n.isRead).length;
 
   return (
     <div className="shipper-viewport-container">
       <div className="shipper-app-frame">
-        {/* Status Bar mô phỏng smartphone */}
+        {/* Smartphone Status Bar */}
         <div className="shipper-status-bar">
           <span>9:41</span>
           <div className="shipper-status-island" />
@@ -177,7 +177,7 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
             type="button" 
             className="shipper-brand-avatar-btn" 
             onClick={onNavigateToProfile}
-            title="Trang cá nhân của bạn"
+            title="Your profile"
           >
             <div className="shipper-brand-avatar-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <UserIcon size={22} color="#d4af37" />
@@ -192,15 +192,15 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
           <button 
             type="button" 
             className="shipper-bell-btn" 
-            title="Thông báo"
+            title="Notifications"
             onClick={() => {
               setCustomAlert({
                 isOpen: true,
                 type: 'INFO',
-                title: 'Hộp thư thông báo',
+                title: 'Notifications',
                 message: unreadNotifCount > 0 
-                  ? `Bạn có ${unreadNotifCount} thông báo điều phối mới từ Quản trị viên cửa hàng!` 
-                  : 'Hiện tại bạn chưa có thông báo mới nào.',
+                  ? `You have ${unreadNotifCount} new dispatch notifications!` 
+                  : 'No new notifications.',
                 onConfirm: () => {},
               });
             }}
@@ -212,26 +212,26 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
 
         {/* Scrollable Content Body */}
         <div className="shipper-content-scroll">
-          {/* Lời chào & Ngày hiện tại */}
+          {/* Greeting & Date */}
           <div className="shipper-greeting-section">
             <div className="shipper-date-label">
-              {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
             </div>
             <h1 className="shipper-greeting-title">
-              Xin chào, <span>{shipperName}.</span>
+              Hello, <span>{shipperName}.</span>
             </h1>
             <p className="shipper-greeting-sub">A little care. An exceptional delivery.</p>
           </div>
 
-          {/* Trạng thái ca trực thực tế (isOnline: Sẵn sàng nhận đơn) */}
+          {/* Duty status */}
           <div className="shipper-duty-card">
             <div className="shipper-duty-left">
               <span className="shipper-duty-dot" />
-              <span className="shipper-duty-text">Đang trực tuyến: Sẵn sàng nhận đơn</span>
+              <span className="shipper-duty-text">Online: Ready for orders</span>
             </div>
             <div className="shipper-duty-right">
               <Sparkles size={14} color="#d4af37" />
-              <span>Hệ thống phân luồng</span>
+              <span>Dispatch Active</span>
             </div>
           </div>
 
@@ -255,7 +255,7 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
                   type="button"
                   className="shipper-pin-icon-btn"
                   onClick={(e) => handleTogglePin(nextDelivery.orderId, e)}
-                  title={pinnedId === nextDelivery.orderId ? 'Bỏ ghim đơn này' : 'Ghim đơn hàng ưu tiên này lên đầu'}
+                  title={pinnedId === nextDelivery.orderId ? 'Unpin this order' : 'Pin this delivery to top'}
                 >
                   <Pin 
                     size={17} 
@@ -275,12 +275,12 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
               <div className="shipper-total-amount">
                 {nextDelivery.paymentMethod === 'COD' 
                   ? formatCurrency(nextDelivery.totalAmount) 
-                  : '0đ (Đã thanh toán)'}
+                  : '0₫ (Prepaid)'}
               </div>
 
               <div className="shipper-divider" />
 
-              {/* Thông tin người nhận & nút gọi nhanh */}
+              {/* Recipient info & quick call */}
               <div className="shipper-info-row">
                 <div className="shipper-info-left">
                   <span>{nextDelivery.recipientName}</span>
@@ -290,7 +290,7 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
                   <a 
                     href={`tel:${nextDelivery.recipientPhone}`} 
                     className="shipper-call-circle"
-                    title="Gọi ngay cho người nhận"
+                    title="Call customer"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Phone size={14} />
@@ -298,7 +298,7 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
                 </div>
               </div>
 
-              {/* Địa chỉ giao */}
+              {/* Delivery address */}
               <div className="shipper-address-row">
                 <MapPin size={16} className="shipper-address-icon" />
                 <div>
@@ -306,12 +306,12 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
                 </div>
               </div>
 
-              {/* Thông tin kiện hàng rượu vang */}
+              {/* Wine bottles summary */}
               <div className="shipper-wine-preview-box">
                 <div className="shipper-wine-img-box">
                   {nextDelivery.items && nextDelivery.items[0]?.wineImageUrl ? (
                     <img 
-                      src={nextDelivery.items[0].wineImageUrl} 
+                       src={nextDelivery.items[0].wineImageUrl} 
                       alt="Wine bottle" 
                       className="shipper-wine-img" 
                     />
@@ -321,17 +321,17 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
                 </div>
                 <div className="shipper-wine-details">
                   <div className="shipper-wine-name">
-                    {nextDelivery.items?.[0]?.wineName || 'Vang hảo hạng'}
+                    {nextDelivery.items?.[0]?.wineName || 'Fine Wine'}
                   </div>
                   <div className="shipper-wine-sub">
-                    <span>{nextDelivery.items?.reduce((sum, it) => sum + it.quantity, 0) || 1} chai</span>
+                    <span>{nextDelivery.items?.reduce((sum, it) => sum + it.quantity, 0) || 1} bottles</span>
                     <span>•</span>
                     <span className="shipper-wine-care-tag">Handle with care</span>
                   </div>
                 </div>
               </div>
 
-              {/* Nút to Open Delivery Task */}
+              {/* Button to Open Delivery Task */}
               <button
                 type="button"
                 className="shipper-action-btn-primary"
@@ -344,9 +344,9 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
           ) : (
             <div className="shipper-empty-delivery">
               <ClipboardList size={38} className="shipper-empty-icon" />
-              <div className="shipper-empty-title">Không có đơn hàng nào đang giao</div>
+              <div className="shipper-empty-title">No deliveries in progress</div>
               <div className="shipper-empty-sub">
-                Các đơn hàng mới được điều phối sẽ tự động xuất hiện tại đây.
+                New assigned orders will appear here automatically.
               </div>
             </div>
           )}
@@ -402,8 +402,8 @@ export const ShipperDashboardPage: React.FC<ShipperDashboardPageProps> = ({
                 <div className="shipper-queue-title">Assigned Orders Queue</div>
                 <div className="shipper-queue-sub">
                   {queuedOrdersCount > 0 
-                    ? `${queuedOrdersCount} đơn đang xếp hàng chờ bạn giao tiếp`
-                    : 'Không còn đơn nào chờ trong hàng đợi'}
+                    ? `${queuedOrdersCount} orders waiting in queue` 
+                    : 'No orders waiting in queue'}
                 </div>
               </div>
             </div>

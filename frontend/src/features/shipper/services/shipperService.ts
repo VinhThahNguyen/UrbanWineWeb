@@ -4,48 +4,48 @@ import { ShipperOrder, ShipperNotification } from '../types/shipper';
 const PINNED_ORDER_STORAGE_KEY = 'urbanwine_shipper_pinned_order_id';
 
 export const shipperService = {
-  // 1. Lấy danh sách đơn hàng được gán cho shipper
+  // 1. Get assigned orders for shipper
   async getMyOrders(): Promise<ShipperOrder[]> {
     const res = await apiClient.get<ShipperOrder[]>('/shipper/orders');
     return res.data;
   },
 
-  // 2. Lấy chi tiết một đơn hàng
+  // 2. Get order detail
   async getOrderDetail(orderId: number): Promise<ShipperOrder> {
     const res = await apiClient.get<ShipperOrder>(`/shipper/orders/${orderId}`);
     return res.data;
   },
 
-  // 3. Lấy thông báo của shipper
+  // 3. Get shipper notifications
   async getNotifications(): Promise<ShipperNotification[]> {
     const res = await apiClient.get<ShipperNotification[]>('/shipper/notifications');
     return res.data;
   },
 
-  // 4. Đánh dấu đã đọc thông báo
+  // 4. Mark notification as read
   async markNotificationRead(notificationId: number): Promise<void> {
     await apiClient.patch(`/shipper/notifications/${notificationId}/read`);
   },
 
-  // 5. Shipper xác nhận giao hàng thành công (hoàn tất tiền mặt COD hoặc đơn trả trước)
+  // 5. Shipper completes delivery (COD cash or prepaid order)
   async completeDelivery(orderId: number): Promise<ShipperOrder> {
     const res = await apiClient.post<ShipperOrder>(`/shipper/orders/${orderId}/complete`);
     return res.data;
   },
 
-  // 6. Shipper báo cáo giao hàng thất bại (khách boom/không liên lạc được)
+  // 6. Shipper reports failed delivery (cannot contact customer / refused)
   async failDelivery(orderId: number, reason: string): Promise<ShipperOrder> {
     const res = await apiClient.post<ShipperOrder>(`/shipper/orders/${orderId}/fail`, { reason });
     return res.data;
   },
 
-  // 7. Báo sự cố gán lại đơn cho shipper khác (Request Reassign Modal 5.9)
+  // 7. Request order reassignment to another shipper (Request Reassign Modal)
   async requestRejectOrder(orderId: number, reason: string): Promise<ShipperOrder> {
     const res = await apiClient.post<ShipperOrder>(`/shipper/orders/${orderId}/request-reject`, { reason });
     return res.data;
   },
 
-  // 8. Tạo mã VietQR động thu tiền tại chỗ
+  // 8. Generate dynamic VietQR code for on-site payment
   async generateVietQr(orderId: number): Promise<{
     orderId: number;
     orderCode: string;
@@ -63,13 +63,13 @@ export const shipperService = {
     return res.data;
   },
 
-  // 9. Hủy mã VietQR quay về thu tiền mặt
+  // 9. Cancel VietQR and revert to cash payment
   async cancelVietQr(orderId: number): Promise<ShipperOrder> {
     const res = await apiClient.post<ShipperOrder>(`/shipper/orders/${orderId}/cancel-qr`);
     return res.data;
   },
 
-  // 10. Polling kiểm tra trạng thái thanh toán VietQR
+  // 10. Polling check VietQR payment status
   async getPaymentStatus(orderId: number): Promise<{
     orderId: number;
     orderCode: string;
@@ -82,10 +82,10 @@ export const shipperService = {
   },
 
   // =========================================================================
-  // LOGIC GHIM ĐƠN HÀNG THÔNG MINH (PINNED ORDER)
-  // Ưu tiên:
-  // 1. Đơn hàng mà Shipper tự tay Ghim (lưu ở localStorage)
-  // 2. Nếu chưa ghim hoặc đơn ghim đã hoàn tất -> Tự động chọn đơn SHIPPING mới nhất
+  // PINNED ORDER LOGIC
+  // Priority:
+  // 1. Manually pinned by Shipper (stored in localStorage)
+  // 2. If unpinned or completed -> automatically choose the latest SHIPPING order
   // =========================================================================
   getPinnedOrderId(): number | null {
     const val = localStorage.getItem(PINNED_ORDER_STORAGE_KEY);
@@ -110,7 +110,7 @@ export const shipperService = {
       if (pinnedOrder) return pinnedOrder;
     }
 
-    // Nếu không có ghim hoặc đơn đã ghim không còn ở trạng thái SHIPPING, lấy đơn đầu tiên
+    // If no pin or pinned order is no longer SHIPPING, pick the first one
     return activeDeliveries[0];
   },
 };

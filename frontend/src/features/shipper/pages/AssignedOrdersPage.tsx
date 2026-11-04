@@ -58,7 +58,7 @@ export const AssignedOrdersPage: React.FC<AssignedOrdersPageProps> = ({
   };
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('vi-VN').format(val) + 'đ';
+    return new Intl.NumberFormat('vi-VN').format(val) + '₫';
   };
 
   const activeOrders = orders.filter((o) => o.orderStatus === 'SHIPPING');
@@ -99,13 +99,13 @@ export const AssignedOrdersPage: React.FC<AssignedOrdersPageProps> = ({
 
           {loading ? (
             <div style={{ padding: '3rem 0', textAlign: 'center', color: '#d4af37' }}>
-              <span>Đang tải danh sách đơn hàng...</span>
+              <span>Loading assigned orders...</span>
             </div>
           ) : orders.length === 0 ? (
             <div className="shipper-empty-delivery">
               <ClipboardList size={38} className="shipper-empty-icon" />
-              <div className="shipper-empty-title">Chưa có đơn hàng nào được phân công</div>
-              <div className="shipper-empty-sub">Hãy chờ Quản lý cửa hàng điều phối đơn mới cho bạn.</div>
+              <div className="shipper-empty-title">No assigned orders yet</div>
+              <div className="shipper-empty-sub">Please wait for the store manager to assign orders to you.</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
@@ -132,7 +132,7 @@ export const AssignedOrdersPage: React.FC<AssignedOrdersPageProps> = ({
                           type="button"
                           className="shipper-pin-icon-btn"
                           onClick={(e) => handleTogglePin(order.orderId, e)}
-                          title={isPinned ? 'Bỏ ghim' : 'Ghim đơn ưu tiên này'}
+                          title={isPinned ? 'Unpin' : 'Pin as priority delivery'}
                         >
                           <Pin size={16} fill={isPinned ? '#d4af37' : 'none'} color="#d4af37" />
                         </button>
@@ -160,7 +160,7 @@ export const AssignedOrdersPage: React.FC<AssignedOrdersPageProps> = ({
                       <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#d4af37' }}>
                         {order.paymentMethod === 'COD' 
                           ? `COD: ${formatCurrency(order.totalAmount)}`
-                          : 'Prepaid Online (0đ)'}
+                          : 'Prepaid Online (0₫)'}
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem', color: '#9ca3af' }}>

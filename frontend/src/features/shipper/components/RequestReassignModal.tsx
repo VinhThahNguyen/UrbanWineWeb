@@ -24,15 +24,15 @@ export const RequestReassignModal: React.FC<RequestReassignModalProps> = ({
   if (!isOpen) return null;
 
   const quickReasons = [
-    { label: 'Hỏng xe / thủng lốp', icon: Wrench },
-    { label: 'Sự cố / va chạm giao thông', icon: ShieldAlert },
-    { label: 'Sức khỏe đột xuất / ngất xỉu', icon: HeartPulse },
+    { label: 'Vehicle breakdown / flat tire', icon: Wrench },
+    { label: 'Traffic incident / accident', icon: ShieldAlert },
+    { label: 'Sudden illness / medical issue', icon: HeartPulse },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason.trim()) {
-      setErrorMsg('Vui lòng cung cấp lý do bạn cần bàn giao đơn hàng này');
+      setErrorMsg('Please provide a reason why you need to reassign this order');
       return;
     }
 
@@ -40,10 +40,10 @@ export const RequestReassignModal: React.FC<RequestReassignModalProps> = ({
       setSubmitting(true);
       setErrorMsg('');
       await shipperService.requestRejectOrder(orderId, reason.trim());
-      onSuccess(`Đã gửi yêu cầu bàn giao đơn #${orderCode} tới Quản lý thành công! Đơn hàng sẽ được Admin điều phối lại cho shipper khác.`);
+      onSuccess(`Reassign request for order #${orderCode} sent to Admin! The order will be assigned to another shipper.`);
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'Có lỗi xảy ra khi gửi yêu cầu bàn giao.');
+      setErrorMsg(err.response?.data?.message || err.response?.data?.error || 'An error occurred while sending the request.');
     } finally {
       setSubmitting(false);
     }
@@ -57,7 +57,7 @@ export const RequestReassignModal: React.FC<RequestReassignModalProps> = ({
         <div className="shipper-modal-header">
           <div className="shipper-modal-title-wrap">
             <AlertTriangle size={20} color="#e5be3e" />
-            <h3 className="shipper-modal-title">Báo sự cố & Bàn giao đơn</h3>
+            <h3 className="shipper-modal-title">Report Issue & Reassign Order</h3>
           </div>
           <button type="button" className="shipper-modal-close-btn" onClick={onClose}>
             <X size={18} />
@@ -65,7 +65,7 @@ export const RequestReassignModal: React.FC<RequestReassignModalProps> = ({
         </div>
 
         <div className="shipper-modal-sub">
-          Đơn hàng <strong>#{orderCode}</strong> sẽ được gửi lên Quản trị viên để gán lại cho một Shipper khác đang trực ca. Ca làm việc của bạn vẫn duy trì (ON DUTY).
+          Order <strong>#{orderCode}</strong> will be sent to the Store Admin to assign to another on-duty shipper. You remain on duty.
         </div>
 
         {errorMsg && <div className="shipper-error-banner">{errorMsg}</div>}
@@ -86,11 +86,11 @@ export const RequestReassignModal: React.FC<RequestReassignModalProps> = ({
           </div>
 
           <div style={{ marginBottom: '1.25rem' }}>
-            <label className="shipper-form-label">Chi tiết lý do sự cố:</label>
+            <label className="shipper-form-label">Issue details & reason:</label>
             <textarea
               className="shipper-textarea"
               rows={3}
-              placeholder="Mô tả cụ thể sự cố (ví dụ: xe hỏng tại ngã tư Tràng Tiền lúc 14:15, không kịp giao cho khách)..."
+              placeholder="Describe the issue (e.g. flat tire at 2:15 PM, cannot deliver in time)..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
@@ -103,7 +103,7 @@ export const RequestReassignModal: React.FC<RequestReassignModalProps> = ({
               onClick={onClose}
               disabled={submitting}
             >
-              Hủy bỏ
+              Cancel
             </button>
             <button
               type="submit"
@@ -111,7 +111,7 @@ export const RequestReassignModal: React.FC<RequestReassignModalProps> = ({
               disabled={submitting}
             >
               <Send size={15} />
-              <span>{submitting ? 'Đang gửi...' : 'Gửi yêu cầu bàn giao'}</span>
+              <span>{submitting ? 'Sending...' : 'Send Reassign Request'}</span>
             </button>
           </div>
         </form>

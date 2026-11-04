@@ -56,7 +56,7 @@ export const ShipperProfilePage: React.FC<ShipperProfilePageProps> = ({
     onConfirm: () => {},
   });
 
-  const fullName = currentUser?.fullName || currentUser?.name || 'Nguyễn Văn Hùng';
+  const fullName = currentUser?.fullName || currentUser?.name || 'Courier Staff';
   const staffId = currentUser?.userId ? `#SHP-0${currentUser.userId}` : '#SHP-01';
   const phone = currentUser?.phoneNumber || '0911 111 111';
 
@@ -122,7 +122,7 @@ export const ShipperProfilePage: React.FC<ShipperProfilePageProps> = ({
                   <span>{isOnDuty ? 'On Duty' : 'Off Duty'}</span>
                 </div>
                 <div style={{ fontSize: '0.72rem', color: '#8b857d', marginTop: '2px' }}>
-                  {isOnDuty ? 'Sẵn sàng nhận các đơn rượu cao cấp' : 'Tạm dừng nhận đơn mới'}
+                  {isOnDuty ? 'Ready to accept deliveries' : 'Paused - not accepting new orders'}
                 </div>
               </div>
 
@@ -138,7 +138,7 @@ export const ShipperProfilePage: React.FC<ShipperProfilePageProps> = ({
 
             <div style={{ fontSize: '0.72rem', color: '#8b857d', borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '0.85rem', paddingTop: '0.65rem', display: 'flex', gap: '0.45rem' }}>
               <Sparkles size={14} color="#d4af37" style={{ flexShrink: 0 }} />
-              <span>Khi bật On Duty, điều phối viên có thể thấy bạn trực tuyến và gán đơn hàng.</span>
+              <span>When On Duty, the dispatcher can see you online and assign orders.</span>
             </div>
           </div>
 
@@ -154,8 +154,8 @@ export const ShipperProfilePage: React.FC<ShipperProfilePageProps> = ({
                 setCustomAlert({
                   isOpen: true,
                   type: 'WARNING',
-                  title: 'Báo nghỉ ca khẩn cấp',
-                  message: 'Yêu cầu xin nghỉ ca đột xuất của bạn đã được chuyển tới Điều phối viên cửa hàng. Vui lòng chờ xác nhận qua điện thoại.',
+                  title: 'Emergency Shift Leave',
+                  message: 'Your emergency shift leave request was sent to the store dispatcher. Please wait for confirmation.',
                   onConfirm: () => {},
                 });
               }}
@@ -165,7 +165,7 @@ export const ShipperProfilePage: React.FC<ShipperProfilePageProps> = ({
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>Request Emergency Shift Leave</div>
-                <div style={{ fontSize: '0.7rem', color: '#8b857d' }}>Báo nghỉ ca khẩn cấp với điều phối</div>
+                <div style={{ fontSize: '0.7rem', color: '#8b857d' }}>Notify dispatcher of emergency leave</div>
               </div>
             </div>
 
@@ -175,8 +175,8 @@ export const ShipperProfilePage: React.FC<ShipperProfilePageProps> = ({
                 setCustomAlert({
                   isOpen: true,
                   type: 'INFO',
-                  title: 'Đổi mật khẩu',
-                  message: 'Để đổi mật khẩu tài khoản giao hàng, vui lòng liên hệ Bộ phận Kỹ thuật / Quản lý cửa hàng hoặc sử dụng cổng bảo mật quản trị.',
+                  title: 'Change Password',
+                  message: 'To change your password, please contact the Store Manager or IT Support.',
                   onConfirm: () => {},
                 });
               }}
@@ -186,21 +186,21 @@ export const ShipperProfilePage: React.FC<ShipperProfilePageProps> = ({
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>Change Password</div>
-                <div style={{ fontSize: '0.7rem', color: '#8b857d' }}>Bảo mật tài khoản giao hàng</div>
+                <div style={{ fontSize: '0.7rem', color: '#8b857d' }}>Delivery account security</div>
               </div>
             </div>
 
-            {/* Nút Đăng xuất */}
+            {/* Logout button */}
             <div 
               className="shipper-menu-item" 
               onClick={() => {
                 setCustomAlert({
                   isOpen: true,
                   type: 'WARNING',
-                  title: 'Đăng xuất ca làm việc',
-                  message: 'Bạn có chắc chắn muốn đăng xuất khỏi ca làm việc hiện tại không? Hệ thống sẽ tạm dừng phân bổ đơn mới cho bạn.',
+                  title: 'End Shift & Sign Out',
+                  message: 'Are you sure you want to sign out? You will stop receiving new orders.',
                   showCancel: true,
-                  confirmText: 'Đăng xuất',
+                  confirmText: 'Sign Out',
                   onConfirm: () => onLogout(),
                 });
               }} 
@@ -210,8 +210,8 @@ export const ShipperProfilePage: React.FC<ShipperProfilePageProps> = ({
                 <LogOut size={17} />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#ef4444' }}>Đăng xuất / Kết thúc ca</div>
-                <div style={{ fontSize: '0.7rem', color: '#8b857d' }}>Rời khỏi phiên làm việc hiện tại</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#ef4444' }}>Sign Out / End Shift</div>
+                <div style={{ fontSize: '0.7rem', color: '#8b857d' }}>Exit your current work session</div>
               </div>
             </div>
           </div>
