@@ -31,6 +31,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
+    
     public User register(RegisterRequest request) {
         // 1. Kiểm tra xem email đã tồn tại hay chưa
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
